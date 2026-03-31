@@ -10,17 +10,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.17.1",
+    "@heroicons/react": "^2.2.0",
+    "@react-oauth/google": "^0.13.4",
     "axios": "^1.7.8",
-    "humanize-duration": "^3.32.1",
+    "framer-motion": "^12.36.0",
+    "html2canvas": "^1.4.1",
+    "humanize-duration": "^3.33.2",
+    "i18next": "^25.9.0",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.577.0",
     "quill": "^2.0.3",
     "rc-progress": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^16.5.8",
     "react-router-dom": "^7.0.1",
     "react-simple-star-rating": "^5.1.7",
     "react-toastify": "^10.0.6",
     "react-youtube": "^10.1.0",
+    "recharts": "^3.8.0",
     "uniqid": "^5.4.0"
   },
   "devDependencies": {

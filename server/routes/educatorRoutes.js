@@ -1,25 +1,36 @@
-import express from 'express'
-import { addCourse, educatorDashboardData, getEducatorCourses, getEnrolledStudentsData, updateRoleToEducator } from '../controllers/educatorController.js';
+import express from 'express';
+import {
+    addCourse, updateCourse, deleteCourse,
+    getInstructorCourses, instructorDashboardData,
+    getEnrolledStudentsData, seedDashboardTestData,
+    getInstructorMyPanel, getInstructorPayouts,
+    getInstructorRevenue, getInstructorCourseStats,
+    getInstructorQA, replyToQuestion
+} from '../controllers/instructorController.js';
 import upload from '../configs/multer.js';
-import { protectEducator } from '../middlewares/authMiddleware.js';
+import { authMiddleware, authorize, instructorApproved } from '../middlewares/authMiddleware.js';
 
+const instructorRouter = express.Router();
 
-const educatorRouter = express.Router()
+// Seed Dashboard Test Data (TEMP - Unauthenticated for easy seeding)
+instructorRouter.get('/seed-test-data', seedDashboardTestData);
 
-// Add Educator Role 
-educatorRouter.get('/update-role', updateRoleToEducator)
+// All instructor routes require auth + instructor role + admin approval
+instructorRouter.use(authMiddleware, authorize('instructor', 'admin'), instructorApproved);
 
-// Add Courses 
-educatorRouter.post('/add-course', upload.single('image'), protectEducator, addCourse)
+instructorRouter.post('/add-course', upload.single('image'), addCourse);
+instructorRouter.put('/update-course/:id', upload.single('image'), updateCourse);
+instructorRouter.delete('/delete-course/:id', deleteCourse);
+instructorRouter.get('/courses', getInstructorCourses);
+instructorRouter.get('/dashboard', instructorDashboardData);
+instructorRouter.get('/enrolled-students', getEnrolledStudentsData);
 
-// Get Educator Courses 
-educatorRouter.get('/courses', protectEducator, getEducatorCourses)
+// New instructor panel routes
+instructorRouter.get('/my-panel', getInstructorMyPanel);
+instructorRouter.get('/payouts', getInstructorPayouts);
+instructorRouter.get('/revenue', getInstructorRevenue);
+instructorRouter.get('/course-stats', getInstructorCourseStats);
+instructorRouter.get('/qa', getInstructorQA);
+instructorRouter.post('/qa/reply', replyToQuestion);
 
-// Get Educator Dashboard Data
-educatorRouter.get('/dashboard', protectEducator, educatorDashboardData)
-
-// Get Educator Students Data
-educatorRouter.get('/enrolled-students', protectEducator, getEnrolledStudentsData)
-
-
-export default educatorRouter;
+export default instructorRouter;

@@ -1,32 +1,91 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import compression from 'compression'
+import rateLimit from 'express-rate-limit'
 import 'dotenv/config'
 import connectDB from './configs/mongodb.js'
+import seedDatabase from './configs/seedDB.js'
 import connectCloudinary from './configs/cloudinary.js'
 import userRouter from './routes/userRoutes.js'
-import { clerkMiddleware } from '@clerk/express'
-import { clerkWebhooks, stripeWebhooks } from './controllers/webhooks.js'
-import educatorRouter from './routes/educatorRoutes.js'
+import instructorRouter from './routes/educatorRoutes.js'
 import courseRouter from './routes/courseRoute.js'
+import adminRouter from './routes/adminRoutes.js'
+import quizRouter from './routes/quizRoutes.js'
+import reviewRouter from './routes/reviewRoutes.js'
+import discussionRouter from './routes/discussionRoutes.js'
+import auditRouter from './routes/auditRoutes.js'
+import educationRouter from './routes/educationRoutes.js'
+import financeRouter from './routes/financeRoutes.js'
+import commRouter from './routes/communicationRoutes.js'
+import paymentRouter from './routes/paymentRoutes.js'
+import settingRouter from './routes/settingRoutes.js'
+import walletRouter from './routes/walletRoutes.js'
+import assignmentRouter from './routes/assignmentRoutes.js'
+import supportRouter from './routes/supportRoutes.js'
+import couponRouter from './routes/couponRoutes.js'
+import cmsRouter from './routes/cmsRoutes.js'
+import blogRouter from './routes/blogRoutes.js'
+import subCategoryRouter from './routes/subCategoryRoutes.js'
+
+
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Initialize Express
 const app = express()
 
 // Connect to database
 await connectDB()
+await seedDatabase()
 await connectCloudinary()
 
 // Middlewares
+app.use(helmet())
+app.use(compression())
 app.use(cors())
-app.use(clerkMiddleware())
+app.use(express.json())
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+app.use('/api/', limiter)
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // Routes
-app.get('/', (req, res) => res.send("API Working"))
-app.post('/clerk', express.json() , clerkWebhooks)
-app.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhooks)
-app.use('/api/educator', express.json(), educatorRouter)
-app.use('/api/course', express.json(), courseRouter)
-app.use('/api/user', express.json(), userRouter)
+app.get('/', (req, res) => res.send("LMS API Working"))
+app.use('/api/user', userRouter)
+app.use('/api/course', courseRouter)
+app.use('/api/instructor', instructorRouter)
+app.use('/api/admin', adminRouter)
+app.use('/api/quiz', quizRouter)
+app.use('/api/review', reviewRouter)
+app.use('/api/discussion', discussionRouter)
+app.use('/api/audit', auditRouter)
+app.use('/api/education', educationRouter)
+app.use('/api/finance', financeRouter)
+app.use('/api/comm', commRouter)
+app.use('/api/payment', paymentRouter)
+app.use('/api/setting', settingRouter)
+app.use('/api/wallet', walletRouter)
+app.use('/api/assignment', assignmentRouter)
+app.use('/api/support', supportRouter)
+app.use('/api/coupon', couponRouter)
+app.use('/api/cms', cmsRouter)
+app.use('/api/blog', blogRouter)
+app.use('/api/sub-category', subCategoryRouter)
+
+
 
 // Port
 const PORT = process.env.PORT || 5000

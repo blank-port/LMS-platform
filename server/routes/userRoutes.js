@@ -1,15 +1,25 @@
-import express from 'express'
-import { addUserRating, getUserCourseProgress, getUserData, purchaseCourse, updateUserCourseProgress, userEnrolledCourses } from '../controllers/userController.js';
+import express from 'express';
+import { 
+    register, login, googleLogin, getProfile, updateProfile, getUserData, 
+    updateAccountProfile, changePassword, updateSecondaryDetails, deleteAccount 
+} from '../controllers/userController.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import upload from '../configs/multer.js';
 
+const userRouter = express.Router();
 
-const userRouter = express.Router()
+// Auth routes
+userRouter.post('/register', register);
+userRouter.post('/login', login);
+userRouter.post('/google-login', googleLogin);
 
-// Get user Data
-userRouter.get('/data', getUserData)
-userRouter.post('/purchase', purchaseCourse)
-userRouter.get('/enrolled-courses', userEnrolledCourses)
-userRouter.post('/update-course-progress', updateUserCourseProgress)
-userRouter.post('/get-course-progress', getUserCourseProgress)
-userRouter.post('/add-rating', addUserRating)
+// Protected routes
+userRouter.get('/profile', authMiddleware, getProfile);
+userRouter.put('/profile', authMiddleware, upload.single('profilePicture'), updateProfile);
+userRouter.put('/update-account-profile', authMiddleware, upload.single('profilePicture'), updateAccountProfile);
+userRouter.put('/change-password', authMiddleware, changePassword);
+userRouter.put('/update-secondary-details', authMiddleware, updateSecondaryDetails);
+userRouter.post('/delete-account', authMiddleware, deleteAccount);
+userRouter.get('/data', authMiddleware, getUserData);
 
 export default userRouter;

@@ -1,0 +1,28 @@
+{
+  "common": {
+    "welcome": "Welcome to PrismEd",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "search": "Search for courses...",
+    "loading": "Loading..."
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Manage Users",
+    "courses": "Manage Courses",
+    "settings": "System Settings",
+    "localization": "Localization",
+    "real_time": "Real-Time Pulse"
+  },
+  "educator": {
+    "dashboard": "Instructor Dashboard",
+    "add_course": "Add New Course",
+    "my_courses": "My Courses"
+  },
+  "student": {
+    "dashboard": "My Learning",
+    "courses": "All Courses",
+    "enrollments": "My Enrollments"
+  }
+}

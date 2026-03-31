@@ -97,21 +97,21 @@ export const dummyTestimonial = [
         role: 'SWE 1 @ Amazon',
         image: assets.profile_img_1,
         rating: 5,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        feedback: 'I\'ve been using PrismEd for nearly two years, primarily for learning new technologies, and it has been incredibly user-friendly, making my growth much easier.',
     },
     {
         name: 'Richard Nelson',
         role: 'SWE 2 @ Samsung',
         image: assets.profile_img_2,
         rating: 4,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        feedback: 'I\'ve been using PrismEd for nearly two years, primarily for learning new technologies, and it has been incredibly user-friendly, making my work much easier.',
     },
     {
         name: 'James Washington',
         role: 'SWE 2 @ Google',
         image: assets.profile_img_3,
         rating: 4.5,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        feedback: 'I\'ve been using PrismEd for nearly two years, primarily for learning new technologies, and it has been incredibly user-friendly, making my work much easier.',
     },
 ];
 
@@ -128,7 +128,7 @@ export const dummyCourses = [
                 <li>Create dynamic web applications</li>
             </ul>
         `,
-        courseThumbnail: "https://example.com/thumbnails/js-course.jpg",
+        courseThumbnail: assets.course_1_thumbnail,
         coursePrice: 49.99,
         isPublished: true,
         discount: 20,
@@ -180,7 +180,7 @@ export const dummyCourses = [
                 ]
             }
         ],
-        educator: "605c72efb3f1c2b1f8e4e1a1", 
+        instructor: "605c72efb3f1c2b1f8e4e1a1",
         courseRatings: [
             {
                 userId: "user1",
@@ -192,7 +192,7 @@ export const dummyCourses = [
             }
         ],
         enrolledStudents: [
-        
+
         ]
     },
     {
@@ -207,7 +207,7 @@ export const dummyCourses = [
                 <li>Work with libraries and frameworks</li>
             </ul>
         `,
-        courseThumbnail: "https://example.com/thumbnails/python-course.jpg",
+        courseThumbnail: assets.course_2_thumbnail,
         coursePrice: 79.99,
         isPublished: true,
         discount: 15,
@@ -259,7 +259,7 @@ export const dummyCourses = [
                 ]
             }
         ],
-        educator: "605c72efb3f1c2b1f8e4e1a4", 
+        instructor: "605c72efb3f1c2b1f8e4e1a4",
         courseRatings: [
             {
                 userId: "user3",
@@ -271,7 +271,7 @@ export const dummyCourses = [
             }
         ],
         enrolledStudents: [
-           
+
         ]
     },
     {
@@ -286,7 +286,7 @@ export const dummyCourses = [
                 <li>Understand databases and server-side programming</li>
             </ul>
         `,
-        courseThumbnail: "https://example.com/thumbnails/web-dev-bootcamp.jpg",
+        courseThumbnail: assets.course_3_thumbnail,
         coursePrice: 99.99,
         isPublished: true,
         discount: 25,
@@ -338,7 +338,7 @@ export const dummyCourses = [
                 ]
             }
         ],
-        educator: "605c72efb3f1c2b1f8e4e1a7", 
+        instructor: "605c72efb3f1c2b1f8e4e1a7",
         courseRatings: [
             {
                 userId: "user5",
@@ -350,7 +350,7 @@ export const dummyCourses = [
             }
         ],
         enrolledStudents: [
-           
+
         ]
     },
     {
@@ -365,7 +365,7 @@ export const dummyCourses = [
                 <li>Work with popular data science libraries like Pandas and Scikit-Learn</li>
             </ul>
         `,
-        courseThumbnail: "https://example.com/thumbnails/data-science.jpg",
+        courseThumbnail: assets.course_4_thumbnail,
         coursePrice: 89.99,
         isPublished: true,
         discount: 30,
@@ -417,7 +417,7 @@ export const dummyCourses = [
                 ]
             }
         ],
-        educator: "605c72efb3f1c2b1f8e4e1aa", 
+        instructor: "605c72efb3f1c2b1f8e4e1aa",
         courseRatings: [
             {
                 userId: "user7",
