@@ -15,6 +15,7 @@ import IssuedCertificate from '../models/IssuedCertificate.js';
 import Coupon from '../models/Coupon.js';
 import CmsPage from '../models/CmsPage.js';
 import Blog from '../models/Blog.js';
+import { seedGamificationSettings } from '../services/gamificationService.js';
 
 
 const seedDatabase = async () => {
@@ -58,7 +59,8 @@ const seedDatabase = async () => {
             password: hashedAdmin, 
             role: 'admin', 
             customRole: rolesMap['admin'],
-            isApproved: true 
+            isApproved: true,
+            referralCode: 'ADMIN' + Math.random().toString(36).substring(2, 5).toUpperCase()
         });
 
         // 2. Create 5 Instructors
@@ -77,7 +79,8 @@ const seedDatabase = async () => {
                 ...inst, 
                 password: hashedPass, 
                 customRole: rolesMap['instructor'],
-                isApproved: true 
+                isApproved: true,
+                referralCode: 'INST' + Math.random().toString(36).substring(2, 6).toUpperCase()
             });
             instructorDocs.push(doc);
         }
@@ -91,7 +94,8 @@ const seedDatabase = async () => {
             role: 'student', 
             customRole: rolesMap['student'],
             isApproved: true,
-            walletBalance: 10000
+            walletBalance: 10000,
+            referralCode: 'STUDENT1'
         });
 
         // 4. Create Categories
@@ -385,6 +389,7 @@ const seedDatabase = async () => {
             }
         ];
         await Blog.insertMany(blogData);
+        await seedGamificationSettings();
 
         console.log('Database seeded for PrismEd successfully!');
         console.log(`  → ${createdCourses.length} courses (first has 3 lessons)`);
@@ -394,6 +399,36 @@ const seedDatabase = async () => {
 
         console.log(`  → Student wallet: ₹10,000`);
         console.log(`  → Quiz created for: ${firstCourse.courseTitle}`);
+
+        // 9. Simulation: Scholarly Expansion (15+ Students)
+        console.log('Populating 15 additional student personas for competitive ranking...');
+        const studentNames = [
+            'Arjun Sharma', 'Priya Patel', 'Siddharth Rao', 'Ananya Iyer', 
+            'Vikram Singh', 'Ishita Gupta', 'Rohan Das', 'Meera Reddy',
+            'Aditya Verma', 'Sana Khan', 'Rahul Malhotra', 'Kriti Sanon',
+            'Varun Dhawan', 'Alia Bhatt', 'Ranbir Kapoor'
+        ];
+
+        const studentHashedPass = await bcrypt.hash('student123', 10);
+        for (let i = 0; i < studentNames.length; i++) {
+            const points = i < 3 ? 15000 - (i * 2000) : Math.floor(Math.random() * 8000);
+            await User.create({
+                name: studentNames[i],
+                email: `active_student_${i + 1}@prismed.com`,
+                password: studentHashedPass,
+                role: 'student',
+                customRole: rolesMap['student'],
+                isApproved: true,
+                referralCode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+                gamification: {
+                    totalPoints: points,
+                    currentPoints: points,
+                    level: Math.floor(points / 3000) + 1,
+                    badges: [] // Will be seeded by service if thresholds met (manually added for simulation)
+                }
+            });
+        }
+        console.log(`  → 15 Simulated students added.`);
     } catch (error) {
         console.error('Seed error:', error.message);
     }

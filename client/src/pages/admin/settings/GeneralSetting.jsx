@@ -64,6 +64,7 @@ const FormField = ({ label, value, onChange, type = "text", placeholder, tooltip
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-5 py-3 rounded-xl border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500 transition-all font-medium text-[var(--text-main)] bg-[var(--surface)] placeholder:text-gray-300"
+      autoComplete="off"
     />
   </div>
 );

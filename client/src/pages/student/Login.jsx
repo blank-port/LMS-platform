@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import { 
     Mail, Lock, ArrowRight, Loader2, GraduationCap, 
-    User as UserIcon, ShieldCheck, ChevronRight 
+    User as UserIcon, ShieldCheck, ChevronRight, Star
 } from 'lucide-react';
 
 const Login = () => {
@@ -20,7 +20,13 @@ const Login = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
     const [role, setRole] = useState('student');
+    const [referralCode, setReferralCode] = useState('');
     const [loading, setLoading] = useState(false);
+    const isMounted = React.useRef(true);
+
+    useEffect(() => {
+        return () => { isMounted.current = false; };
+    }, []);
 
     // Sync mode with URL parameter if present
     useEffect(() => {
@@ -31,16 +37,20 @@ const Login = () => {
     }, [location]);
 
     // Redirect if already logged in
-    if (user) {
-        navigate('/');
-        return null;
-    }
+    useEffect(() => {
+        if (user && isMounted.current) {
+            const userRole = user.role;
+            if (userRole === 'admin') navigate('/admin');
+            else if (userRole === 'instructor') navigate('/educator');
+            else navigate('/');
+        }
+    }, [user, navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         const result = await login(email, password);
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
         if (result) {
             const userRole = result.user.role;
             if (userRole === 'admin') navigate('/admin');
@@ -57,8 +67,8 @@ const Login = () => {
         }
 
         setLoading(true);
-        const result = await register(name, email, password, role);
-        setLoading(false);
+        const result = await register(name, email, password, role, referralCode);
+        if (isMounted.current) setLoading(false);
         if (result) {
             if (result.user.role === 'instructor') navigate('/educator');
             else navigate('/');
@@ -68,7 +78,7 @@ const Login = () => {
     const handleGoogleSuccess = async (response) => {
         setLoading(true);
         const result = await googleLogin(response.credential);
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
         if (result) {
             const userRole = result.user.role;
             if (userRole === 'admin') navigate('/admin');
@@ -111,14 +121,18 @@ const Login = () => {
                         <p className="text-white/80 text-lg mb-10 font-medium leading-relaxed">
                             {isRegisterMode 
                                 ? "To keep connected with us please login with your personal info" 
-                                : "Enter your personal details and start your journey with us"}
+                                : settings.public_registration === false && settings.instructor_registration === false 
+                                    ? "Registration is currently restricted to invited scholars only."
+                                    : "Enter your personal details and start your journey with us"}
                         </p>
-                        <button 
-                            onClick={() => setIsRegisterMode(!isRegisterMode)}
-                            className="px-10 py-3.5 border-2 border-white rounded-full font-bold text-lg hover:bg-white hover:text-blue-600 transition-all active:scale-[0.97]"
-                        >
-                            {isRegisterMode ? "SIGN IN" : "SIGN UP"}
-                        </button>
+                        {(!isRegisterMode || (settings.public_registration !== false || settings.instructor_registration !== false)) && (
+                            <button 
+                                onClick={() => setIsRegisterMode(!isRegisterMode)}
+                                className="px-10 py-3.5 border-2 border-white rounded-full font-bold text-lg hover:bg-white hover:text-blue-600 transition-all active:scale-[0.97] shadow-lg shadow-white/10"
+                            >
+                                {isRegisterMode ? "SIGN IN" : "SIGN UP"}
+                            </button>
+                        )}
                     </div>
                 </motion.div>
 
@@ -132,7 +146,7 @@ const Login = () => {
                         </div>
 
                         <div className="flex justify-center gap-4 mb-6">
-                            <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="100%" text="signin_with" />
+                            <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="320" text="signin_with" />
                         </div>
 
                         <div className="relative my-4">
@@ -175,63 +189,92 @@ const Login = () => {
 
                     {/* SignUp Form (Right) */}
                     <div className={`w-1/2 p-12 flex flex-col justify-center transition-all duration-500 ${isRegisterMode ? 'opacity-100 z-30 translate-x-0' : 'opacity-0 z-0 -translate-x-12 pointer-events-none'}`}>
-                        <div className="text-center mb-8">
-                            <h2 className="text-3xl font-extrabold text-white mb-2">Create Account</h2>
-                            <p className="text-gray-400 text-sm font-medium">Join thousands of students learning online</p>
-                        </div>
-                        
-                        <div className="flex justify-center gap-4 mb-6">
-                            <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="100%" text="signup_with" />
-                        </div>
+                        {settings.public_registration === false && settings.instructor_registration === false ? (
+                            <div className="text-center p-8 bg-blue-600/5 rounded-[2rem] border border-blue-500/20">
+                                <ShieldCheck className="w-16 h-16 text-blue-500 mx-auto mb-6" />
+                                <h3 className="text-2xl font-black text-white mb-4 italic">Access Governance Engaged</h3>
+                                <p className="text-gray-400 font-medium leading-relaxed">
+                                    Public registration is currently offline by administrative order. Please contact the institution for institutional credentials.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="text-center mb-8">
+                                    <h2 className="text-3xl font-extrabold text-white mb-2">Create Account</h2>
+                                    <p className="text-gray-400 text-sm font-medium">Join thousands of students learning online</p>
+                                </div>
+                                
+                                <div className="flex justify-center gap-4 mb-6">
+                                    <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="100%" text="signup_with" />
+                                </div>
 
-                        <div className="relative my-4">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                            <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-[#121214] px-4 text-gray-500 font-bold tracking-widest italic">Or use email</span></div>
-                        </div>
+                                <div className="relative my-4">
+                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                                    <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-[#121214] px-4 text-gray-500 font-bold tracking-widest italic">Or use email</span></div>
+                                </div>
 
-                        <form onSubmit={handleRegister} className="space-y-4">
-                            <div className="relative group">
-                                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
-                                    type="text" value={name} onChange={(e) => setName(e.target.value)}
-                                    placeholder="Full Name" required
-                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
-                                />
-                            </div>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
-                                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Email Address" required
-                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
-                                />
-                            </div>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
-                                    type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Password" required
-                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
-                                />
-                            </div>
-                            <div className="relative group">
-                                <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
-                                    type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm Password" required
-                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
-                                />
-                            </div>
-                            
-                            <div className="flex gap-2 p-1.5 bg-white/[0.03] rounded-xl border border-white/10">
-                                <button type="button" onClick={() => setRole('student')} className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${role === 'student' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-500 hover:text-gray-300'}`}>STUDENT</button>
-                                <button type="button" onClick={() => setRole('instructor')} className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${role === 'instructor' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-500 hover:text-gray-300'}`}>INSTRUCTOR</button>
-                            </div>
+                                <form onSubmit={handleRegister} className="space-y-4">
+                                    <div className="relative group">
+                                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <input 
+                                            type="text" value={name} onChange={(e) => setName(e.target.value)}
+                                            placeholder="Full Name" required
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <input 
+                                            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Email Address" required
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                    <div className="relative group">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <input 
+                                            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="Password" required
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                    <div className="relative group">
+                                        <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <input 
+                                            type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="Confirm Password" required
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                        />
+                                    </div>
 
-                            <button type="submit" disabled={loading} className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20">
-                                {loading ? <Loader2 className="animate-spin size-5" /> : "CREATE ACCOUNT"}
-                            </button>
-                        </form>
+                                    <div className="relative group">
+                                        <Star className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <input 
+                                            type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)}
+                                            placeholder="Referral Code (Optional)"
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                    
+                                    <div className="flex gap-2 p-1.5 bg-white/[0.03] rounded-xl border border-white/10">
+                                        {settings.public_registration !== false && (
+                                            <button type="button" onClick={() => setRole('student')} className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${role === 'student' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-500 hover:text-gray-300'}`}>STUDENT</button>
+                                        )}
+                                        {settings.instructor_registration !== false && (
+                                            <button type="button" onClick={() => setRole('instructor')} className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${role === 'instructor' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-500 hover:text-gray-300'}`}>INSTRUCTOR</button>
+                                        )}
+                                    </div>
+
+                                    {(role === 'student' && settings.public_registration === false) || (role === 'instructor' && settings.instructor_registration === false) ? (
+                                        <div className="text-[10px] font-bold text-blue-500 text-center uppercase tracking-widest mt-2">{role} Registration Offline</div>
+                                    ) : (
+                                        <button type="submit" disabled={loading} className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20">
+                                            {loading ? <Loader2 className="animate-spin size-5" /> : "CREATE ACCOUNT"}
+                                        </button>
+                                    )}
+                                </form>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -266,6 +309,14 @@ const Login = () => {
                             <input 
                                 type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="Confirm Password" required
+                                className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
+                            />
+                        )}
+                        
+                        {isRegisterMode && (
+                            <input 
+                                type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)}
+                                placeholder="Referral Code (Optional)"
                                 className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                             />
                         )}

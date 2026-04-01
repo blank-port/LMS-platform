@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { User, Mail, Lock, Camera, Shield, Save, Key } from 'lucide-react';
+import { User, Mail, Lock, Camera, Shield, Save, Key, Copy, Share2, Star } from 'lucide-react';
 
 const Profile = () => {
     const { user, token, backendUrl, fetchUserData } = useContext(AppContext);
@@ -75,7 +75,7 @@ const Profile = () => {
                         <div className="relative group mb-8">
                             <div className="w-40 h-40 bg-gray-50 rounded-[3rem] p-1 shadow-2xl overflow-hidden border-4 border-white ring-8 ring-gray-50/50">
                                 <img
-                                    src={image ? URL.createObjectURL(image) : user?.imageUrl || 'https://via.placeholder.com/150'}
+                                    src={image ? URL.createObjectURL(image) : user?.imageUrl || 'https://placehold.co/150'}
                                     className="w-full h-full object-cover rounded-[2.5rem]"
                                 />
                             </div>
@@ -96,6 +96,44 @@ const Profile = () => {
                             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
                                 <span>Verification</span>
                                 <span className="text-indigo-500 flex items-center gap-2 italic font-black text-xs uppercase ml-1"><Key size={12} /> Tier 1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Referral Program Card */}
+                    <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[3.5rem] p-10 text-white shadow-2xl shadow-indigo-200 border border-white/10 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+                        <div className="relative z-10 flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                                <Star fill="currentColor" size={24} />
+                            </div>
+                            <h3 className="text-xl font-black tracking-tight mb-2">Expansion Protocol</h3>
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-8 leading-relaxed px-4">
+                                Recruit new scholars using your unique sequence to earn massive intelligence rewards.
+                            </p>
+                            
+                            <div className="w-full bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 flex items-center justify-between group/code transition-all hover:bg-white/15">
+                                <div className="text-left">
+                                    <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">Your Sequence</p>
+                                    <p className="text-lg font-black tracking-widest font-mono text-indigo-100">{user?.referralCode || 'N/A'}</p>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(user?.referralCode);
+                                        toast.success('Sequence copied to clipboard!');
+                                    }}
+                                    className="w-12 h-12 bg-white text-indigo-600 rounded-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                                >
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+                            
+                            <div className="mt-8 pt-8 border-t border-white/10 w-full flex items-center justify-between">
+                                <div className="flex flex-col items-start">
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Global Payoff</span>
+                                    <span className="text-sm font-black italic">100 PTS / JOIN</span>
+                                </div>
+                                <Share2 size={20} className="text-white/40 hover:text-white cursor-pointer transition-colors" />
                             </div>
                         </div>
                     </div>

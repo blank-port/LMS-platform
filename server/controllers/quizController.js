@@ -1,5 +1,6 @@
 import Quiz from '../models/Quiz.js';
 import QuizAttempt from '../models/QuizAttempt.js';
+import { grantPoints } from '../services/gamificationService.js';
 
 // Create Quiz (Instructor)
 export const createQuiz = async (req, res) => {
@@ -105,6 +106,11 @@ export const submitQuiz = async (req, res) => {
             percentage,
             isPassed
         });
+
+        // Gamification hook
+        if (isPassed) {
+            await grantPoints(userId, 'quiz_pass', { percentage });
+        }
 
         res.json({
             success: true,

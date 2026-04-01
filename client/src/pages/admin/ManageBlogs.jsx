@@ -12,6 +12,7 @@ import {
     TagIcon,
     UserCircleIcon
 } from '@heroicons/react/24/outline';
+import SafeImage from '../../components/common/SafeImage.jsx';
 
 const ManageBlogs = () => {
     const { backendUrl, token } = useContext(AppContext);
@@ -126,7 +127,11 @@ const ManageBlogs = () => {
                     <div key={blog._id} className="bg-[var(--surface)] border border-[var(--border)] rounded-[2.5rem] overflow-hidden group hover:shadow-2xl hover:shadow-emerald-900/10 transition-all">
                         <div className="h-48 bg-gray-900 relative overflow-hidden">
                             {blog.featuredImage ? (
-                                <img src={blog.featuredImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-60" />
+                                <SafeImage 
+                                    src={blog.featuredImage} 
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-60" 
+                                    fallback="https://placehold.co/800x450?text=Narrative+Asset+Standby"
+                                />
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center bg-emerald-900/20">
                                     <NewspaperIcon className="w-12 h-12 text-emerald-500 opacity-30" />
@@ -216,7 +221,7 @@ const ManageBlogs = () => {
                                             />
                                             {form.featuredImage && (
                                                 <div className="w-14 h-14 bg-gray-900 rounded-xl overflow-hidden border border-[var(--border)]">
-                                                    <img src={form.featuredImage} className="w-full h-full object-cover" alt="Preview" />
+                                                    <SafeImage src={form.featuredImage} className="w-full h-full object-cover" alt="Preview" />
                                                 </div>
                                             )}
                                         </div>

@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
+import SafeImage from '../common/SafeImage.jsx';
 import {
     BarChart3, PlusCircle, BookOpen, Users, HelpCircle,
     MessageSquare, ChevronDown, ChevronRight, Wallet,
@@ -187,9 +188,13 @@ const SideBar = () => {
             {/* Studio Profile */}
             <div className="mt-8 mx-4 p-5 bg-slate-900/50 rounded-2xl border border-slate-800 mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-indigo-400 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/10">
-                        {user?.name?.charAt(0)?.toUpperCase()}
-                    </div>
+                    {user?.avatar ? (
+                        <SafeImage src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-800 shadow-xl" />
+                    ) : (
+                        <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-indigo-400 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/10">
+                            {user?.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                    )}
                     <div className="flex flex-col min-w-0">
                         <span className="text-sm font-black text-white tracking-tight leading-none truncate">{user?.name}</span>
                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.15em] mt-1 opacity-80">Lead Instructor</span>

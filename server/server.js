@@ -27,6 +27,7 @@ import couponRouter from './routes/couponRoutes.js'
 import cmsRouter from './routes/cmsRoutes.js'
 import blogRouter from './routes/blogRoutes.js'
 import subCategoryRouter from './routes/subCategoryRoutes.js'
+import gamificationRouter from './routes/gamificationRoutes.js'
 
 
 import path from 'path'
@@ -84,6 +85,7 @@ app.use('/api/coupon', couponRouter)
 app.use('/api/cms', cmsRouter)
 app.use('/api/blog', blogRouter)
 app.use('/api/sub-category', subCategoryRouter)
+app.use('/api/gamification', gamificationRouter)
 
 
 

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { assets } from '../../assets/assets';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { Link } from 'react-router-dom';
+import SafeImage from '../common/SafeImage.jsx';
 
 const CourseCard = ({ course }) => {
   const { currency, calculateRating, settings } = useContext(AppContext);
@@ -13,7 +14,12 @@ const CourseCard = ({ course }) => {
     >
       {/* Thumbnail & Badges */}
       <div className="relative aspect-video overflow-hidden">
-        <img src={course.courseThumbnail} alt={course.courseTitle} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        <SafeImage 
+            src={course.courseThumbnail} 
+            alt={course.courseTitle} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            fallback="https://placehold.co/1280x720?text=Curriculum+Asset+Standby"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
         {/* Level Badge */}
@@ -50,7 +56,7 @@ const CourseCard = ({ course }) => {
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-7 h-7 rounded-full bg-[var(--background)] border-2 border-[var(--surface)] shadow-sm flex items-center justify-center overflow-hidden">
             {course.instructor?.profilePicture ? (
-              <img src={course.instructor.profilePicture} alt="" className="w-full h-full object-cover" />
+              <SafeImage src={course.instructor.profilePicture} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-[10px] font-black text-indigo-300">{course.instructor?.name?.charAt(0)}</span>
             )}

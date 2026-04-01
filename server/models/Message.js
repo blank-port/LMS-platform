@@ -8,5 +8,9 @@ const messageSchema = new mongoose.Schema({
     isRead: { type: Boolean, default: false }
 }, { timestamps: true });
 
+// Institutional Integrity: Strategic Indexing for High-Performance Relays
+messageSchema.index({ sender: 1, receiver: 1 });
+messageSchema.index({ createdAt: -1 });
+
 const Message = mongoose.model('Message', messageSchema);
 export default Message;

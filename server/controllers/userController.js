@@ -1,7 +1,10 @@
 import User from "../models/User.js";
+import Setting from "../models/Setting.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { grantPoints } from "../services/gamificationService.js";
+import PointHistory from "../models/PointHistory.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -13,6 +16,20 @@ const generateToken = (id) => {
 export const register = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
+        const userRole = role === 'instructor' ? 'instructor' : 'student';
+
+        // Governance Protocol Audit
+        if (userRole === 'student') {
+            const publicReg = await Setting.findOne({ key: 'public_registration' });
+            if (publicReg && publicReg.value === false) {
+                return res.status(403).json({ success: false, message: 'Public student registration is currently offline.' });
+            }
+        } else if (userRole === 'instructor') {
+            const instructorReg = await Setting.findOne({ key: 'instructor_registration' });
+            if (instructorReg && instructorReg.value === false) {
+                return res.status(403).json({ success: false, message: 'Instructor on-boarding is currently closed.' });
+            }
+        }
 
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -25,15 +42,33 @@ export const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const userRole = role === 'instructor' ? 'instructor' : 'student';
+
+        // Generate Unique Referral Code (8 characters)
+        const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        // Check for Referring Scholar
+        let referrer = null;
+        if (req.body.referralCode) {
+            referrer = await User.findOne({ referralCode: req.body.referralCode.toUpperCase() });
+        }
 
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
             role: userRole,
-            isApproved: userRole === 'student' ? true : false
+            isApproved: userRole === 'student' ? true : false,
+            referralCode,
+            referredBy: referrer ? referrer._id : null
         });
+
+        // Grant registration points to new scholar
+        await grantPoints(user._id, 'registration');
+
+        // Grant referral points to referring scholar
+        if (referrer) {
+            await grantPoints(referrer._id, 'referral_success');
+        }
 
         const token = generateToken(user._id);
 
@@ -77,6 +112,9 @@ export const login = async (req, res) => {
 
         const token = generateToken(user._id);
 
+        // Grant login points
+        await grantPoints(user._id, 'login');
+
         res.json({
             success: true,
             message: 'Login successful',
@@ -111,6 +149,12 @@ export const googleLogin = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
+            // Governance Protocol Audit for Google Registration
+            const publicReg = await Setting.findOne({ key: 'public_registration' });
+            if (publicReg && publicReg.value === false) {
+                return res.status(403).json({ success: false, message: 'Google Registration is unavailable as public sign-up is offline.' });
+            }
+
             // Register new user via Google
              user = await User.create({
                 name,
@@ -187,12 +231,11 @@ export const updateProfile = async (req, res) => {
             updateData,
             { new: true }
         ).select('-password');
+        await user.save();
+        res.json({ success: true, user });
 
-        res.json({ 
-            success: true, 
-            message: 'Global identity synchronized successfully', 
-            user 
-        });
+        // Grant reward for digital identity synchronization (profile completion)
+        await grantPoints(req.user._id, 'profile_update');
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

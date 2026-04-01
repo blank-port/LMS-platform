@@ -96,7 +96,9 @@ const StudentDetails = () => {
                     <div>
                         <h1 className="text-3xl font-black text-[var(--text-main)] tracking-tight">Identity Dossier</h1>
                         <div className="flex items-center gap-3 mt-1">
-                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">Institutional Node: {student.institute?.name || 'Central Command'}</span>
+                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">
+                                Institutional Node: {student.institute?.name || 'Central Command'} | {student.role?.toUpperCase()}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -122,12 +124,14 @@ const StudentDetails = () => {
                             )}
                         </div>
                         <h2 className="text-2xl font-black text-white tracking-tight z-10 relative">{student.name}</h2>
-                        <p className="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mt-2 z-10 relative">Scholar / Student</p>
+                        <p className={`text-xs font-black uppercase tracking-[0.2em] mt-2 z-10 relative ${student.role === 'admin' ? 'text-red-400' : student.role === 'instructor' ? 'text-purple-400' : 'text-blue-400'}`}>
+                            {student.role === 'admin' ? 'Executive / Admin' : student.role === 'instructor' ? 'Educator / Instructor' : 'Scholar / Student'}
+                        </p>
                         
                         <div className="mt-8 pt-8 border-t border-white/10 flex justify-center gap-8 z-10 relative">
                             <div className="text-center">
-                                <p className="text-[10px] font-black text-gray-500 uppercase">Courses</p>
-                                <p className="text-lg font-black text-white">{student.enrolledCourses?.length || 0}</p>
+                                <p className="text-[10px] font-black text-gray-500 uppercase">{student.role === 'instructor' ? 'Courses Authored' : 'Courses Enrolled'}</p>
+                                <p className="text-lg font-black text-white">{student.enrolledCourses?.length || student.authoredCourses?.length || 0}</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-[10px] font-black text-gray-500 uppercase">Balance</p>

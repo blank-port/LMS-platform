@@ -1,5 +1,6 @@
 import Review from '../models/Review.js';
 import Course from '../models/Course.js';
+import { grantPoints } from '../services/gamificationService.js';
 
 // Add Review
 export const addReview = async (req, res) => {
@@ -20,6 +21,9 @@ export const addReview = async (req, res) => {
 
         await Review.create({ courseId, userId, rating, comment });
         await updateCourseRating(courseId);
+
+        // Grant points for feedback cycle
+        await grantPoints(userId, 'course_review');
 
         res.json({ success: true, message: 'Review added' });
     } catch (error) {

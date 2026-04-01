@@ -3,11 +3,16 @@ import Coupon from '../models/Coupon.js';
 // Get all coupons
 export const getAllCoupons = async (req, res) => {
     try {
+        const { page = 1, limit = 10 } = req.query;
         const coupons = await Coupon.find()
             .populate('applicableCourses', 'courseTitle')
             .populate('assignedUser', 'name email')
-            .sort({ createdAt: -1 });
-        res.json({ success: true, coupons });
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+            
+        const total = await Coupon.countDocuments();
+        res.json({ success: true, coupons, total, pages: Math.ceil(total / limit) });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

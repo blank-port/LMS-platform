@@ -1,4 +1,6 @@
 import Blog from '../models/Blog.js';
+import Comment from '../models/Comment.js';
+import { grantPoints } from '../services/gamificationService.js';
 
 // Get all blogs (admin)
 export const getAllBlogs = async (req, res) => {
@@ -39,10 +41,18 @@ export const getBlogBySlug = async (req, res) => {
             { slug: req.params.slug, status: 'published' },
             { $inc: { views: 1 } },
             { new: true }
-        ).populate('author', 'name avatar')
-         .populate('comments.user', 'name avatar');
+        ).populate('author', 'name avatar');
+        
         if (!blog) return res.status(404).json({ success: false, message: 'Blog not found' });
-        res.json({ success: true, blog });
+
+        // Institutional Commentary Retrieval (Consolidated Nexus)
+        const comments = await Comment.find({ 
+            targetId: blog._id, 
+            targetType: 'Blog',
+            status: 'approved'
+        }).populate('user', 'name avatar').sort({ createdAt: -1 });
+
+        res.json({ success: true, blog: { ...blog._doc, comments } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -62,6 +72,9 @@ export const createBlog = async (req, res) => {
             author: req.user._id,
             category, tags, featuredImage, status, allowComments
         });
+        
+        // Grant points for community contribution
+        await grantPoints(req.user._id, 'blog_create');
         
         res.status(201).json({ success: true, message: 'Blog post created', blog });
     } catch (error) {

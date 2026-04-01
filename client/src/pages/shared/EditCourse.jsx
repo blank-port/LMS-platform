@@ -282,7 +282,7 @@ const EditCourse = ({ isAdmin = false }) => {
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Visual Identity</label>
                                         <div className="flex items-center gap-6">
                                             <div className="relative w-24 h-16 rounded-xl overflow-hidden shadow-lg shadow-black/5 flex-shrink-0">
-                                                <img src={existingImage || 'https://via.placeholder.com/120x80'} alt="" className="w-full h-full object-cover" />
+                                                <img src={existingImage || 'https://placehold.co/120x80'} alt="" className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                                                     <span className="text-[8px] font-bold text-white uppercase">Current</span>
                                                 </div>

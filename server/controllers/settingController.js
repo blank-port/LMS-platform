@@ -48,15 +48,21 @@ export const updateBatchSettings = async (req, res) => {
     try {
         const { settings, isSensitive } = req.body; // settings: { key: value, key2: value2 }
         
-        for (const [key, value] of Object.entries(settings)) {
-            let setting = await Setting.findOne({ key });
-            if (setting) {
-                setting.value = value;
-                if (isSensitive !== undefined) setting.isSensitive = isSensitive;
-                await setting.save();
-            } else {
-                await Setting.create({ key, value, isSensitive });
+        const bulkOperations = Object.entries(settings).map(([key, value]) => ({
+            updateOne: {
+                filter: { key },
+                update: { 
+                    $set: { 
+                        value,
+                        ...(isSensitive !== undefined && { isSensitive })
+                    } 
+                },
+                upsert: true
             }
+        }));
+
+        if (bulkOperations.length > 0) {
+            await Setting.bulkWrite(bulkOperations);
         }
         
         res.json({ success: true, message: "Batch settings updated successfully" });

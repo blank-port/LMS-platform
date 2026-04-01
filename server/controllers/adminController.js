@@ -33,15 +33,21 @@ export const getDashboardStats = async (req, res) => {
     }
 };
 
-// Get All Users (with optional role filtering)
+// Get All Users (with institutional pagination)
 export const getAllUsers = async (req, res) => {
     try {
-        const { role } = req.query;
+        const { role, page = 1, limit = 10 } = req.query;
         let query = {};
         if (role) query.role = role;
         
-        const users = await User.find(query).select('-password').sort({ createdAt: -1 });
-        res.json({ success: true, users });
+        const users = await User.find(query)
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const total = await User.countDocuments(query);
+        res.json({ success: true, users, total, pages: Math.ceil(total / limit) });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -121,11 +127,18 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-// Get All Instructors
+// Get All Instructors (with institutional pagination)
 export const getAllInstructors = async (req, res) => {
     try {
-        const instructors = await User.find({ role: 'instructor' }).select('-password').sort({ createdAt: -1 });
-        res.json({ success: true, instructors });
+        const { page = 1, limit = 10 } = req.query;
+        const instructors = await User.find({ role: 'instructor' })
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const total = await User.countDocuments({ role: 'instructor' });
+        res.json({ success: true, instructors, total, pages: Math.ceil(total / limit) });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -146,6 +159,14 @@ export const approveInstructor = async (req, res) => {
         if (!instructor) {
             return res.status(404).json({ success: false, message: 'Instructor not found' });
         }
+
+        // Real-time Relay: Alert Educator of Authorization State
+        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
+        await PushNotificationService.broadcast(`user-${id}`, 'authorization-update', {
+            status: isApproved ? 'APPROVED' : 'REVOKED',
+            message: isApproved ? 'Your scholarly credentials have been authorized.' : 'Your educator privileges have been suspended.',
+            type: 'IDENTITY'
+        });
 
         res.json({
             success: true,
@@ -193,10 +214,18 @@ export const updateCourseStatus = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid status' });
         }
 
-        const course = await Course.findByIdAndUpdate(id, { status }, { new: true });
+        const course = await Course.findByIdAndUpdate(id, { status }, { new: true }).populate('instructor', 'name');
         if (!course) {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
+
+        // Real-time Relay: Alert Instructor of Course Lifecycle State
+        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
+        await PushNotificationService.broadcast(`user-${course.instructor._id}`, 'course-status-update', {
+            courseTitle: course.courseTitle,
+            status: status.toUpperCase(),
+            message: `Your course "${course.courseTitle}" has been ${status}.`
+        });
 
         res.json({ success: true, message: `Course ${status}`, course });
     } catch (error) {

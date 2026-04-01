@@ -56,7 +56,15 @@ const userSchema = new mongoose.Schema({
             ref: 'Course'
         }
     ],
+    referralCode: { type: String, unique: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     walletBalance: { type: Number, default: 0 },
+    gamification: {
+        totalPoints: { type: Number, default: 0 },
+        currentPoints: { type: Number, default: 0 },
+        level: { type: Number, default: 1 },
+        badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }]
+    }
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

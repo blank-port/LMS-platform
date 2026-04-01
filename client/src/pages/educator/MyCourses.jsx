@@ -81,7 +81,7 @@ const MyCourses = () => {
                                         <td className="px-10 py-8">
                                             <div className="flex items-center gap-6">
                                                 <div className="relative flex-shrink-0">
-                                                    <img src={course.courseThumbnail || 'https://via.placeholder.com/120x80'} alt="" className="w-24 h-16 rounded-xl object-cover shadow-lg shadow-black/5" />
+                                                    <img src={course.courseThumbnail || 'https://placehold.co/120x80'} alt="" className="w-24 h-16 rounded-xl object-cover shadow-lg shadow-black/5" />
                                                     <div className="absolute inset-0 bg-black/5 rounded-xl border border-white/10"></div>
                                                 </div>
                                                 <div className="min-w-0">

@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { assets } from '../../assets/assets';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
+import SafeImage from '../common/SafeImage.jsx';
 
 const Navbar = () => {
   const location = useLocation();
@@ -82,7 +83,7 @@ const Navbar = () => {
                   className="flex items-center gap-2 bg-white dark:bg-white/5 p-1 pr-3 rounded-full border border-gray-200 dark:border-white/10 hover:border-indigo-500/30 transition-all shadow-sm"
                 >
                   {user.avatar ? (
-                    <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-white/10" />
+                    <SafeImage src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-white/10" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm text-white">
                       {user.name?.charAt(0)?.toUpperCase()}

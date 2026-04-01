@@ -1,8 +1,9 @@
-import React, { useContext, useEffect } from 'react'
-import { Route, Routes, useMatch } from 'react-router-dom'
+import { useContext, useEffect } from 'react'
+import { Route, Routes, useMatch, useNavigate } from 'react-router-dom'
 import { AppContext } from './context/AppContextObject.jsx';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pusher from 'pusher-js';
 
 // Student Imports
 import Navbar from './components/student/Navbar'
@@ -23,7 +24,9 @@ import Support from './pages/student/Support'
 import Certificates from './pages/student/Certificates'
 import Profile from './pages/student/Profile'
 import AccountSettings from './pages/student/AccountSettings'
+import Leaderboard from './pages/student/Leaderboard'
 
+// Educator Imports
 // Educator Imports
 import Educator from './pages/educator/Educator';
 import Dashboard from './pages/educator/Dashboard';
@@ -40,8 +43,6 @@ import InstructorPayouts from './pages/educator/InstructorPayouts';
 import InstructorRevenue from './pages/educator/InstructorRevenue';
 import InstructorCourseStats from './pages/educator/InstructorCourseStats';
 import InstructorQA from './pages/educator/InstructorQA';
-import NavbarEducator from './components/educator/Navbar';
-import FooterEducator from './components/educator/Footer';
 
 // Admin Imports
 import Admin from './pages/admin/Admin';
@@ -85,9 +86,9 @@ import GamificationHistory from './pages/admin/GamificationHistory';
 import ManageCommunication from './pages/admin/ManageCommunication';
 import ManageMessages from './pages/admin/ManageMessages';
 import ManageQA from './pages/admin/ManageQA';
+import ManageComments from './pages/admin/ManageComments';
+import CommunicationSettings from './pages/admin/settings/CommunicationSettings';
 import ManageCoupons from './pages/admin/ManageCoupons';
-import ManageCMS from './pages/admin/ManageCMS';
-import ManageBlogs from './pages/admin/ManageBlogs';
 
 
 // Administration Settings
@@ -97,7 +98,6 @@ import GeneralSetting from './pages/admin/settings/GeneralSetting';
 import Commission from './pages/admin/settings/Commission';
 import EmailSetup from './pages/admin/settings/EmailSetup';
 import EmailTemplate from './pages/admin/settings/EmailTemplate';
-import PaymentMethodSetting from './pages/admin/settings/PaymentMethodSetting';
 import ApiSettings from './pages/admin/settings/ApiSettings';
 import VimeoConfiguration from './pages/admin/settings/VimeoConfiguration';
 import VdoCipherConfiguration from './pages/admin/settings/VdoCipherConfiguration';
@@ -112,7 +112,6 @@ import QueueSettings from './pages/admin/settings/QueueSettings';
 import CronJob from './pages/admin/settings/CronJob';
 import ReCaptcha from './pages/admin/settings/ReCaptcha';
 import SocialLogin from './pages/admin/settings/SocialLogin';
-import PayoutAccount from './pages/admin/settings/PayoutAccount';
 import CookieGdprSetting from './pages/admin/settings/CookieGdprSetting';
 import SmsSettings from './pages/admin/settings/SmsSettings';
 import AnalyticsTool from './pages/admin/settings/AnalyticsTool';
@@ -121,32 +120,76 @@ import ModuleManager from './pages/admin/settings/ModuleManager';
 import AboutUpdate from './pages/admin/settings/AboutUpdate';
 import ManageCourses from './pages/admin/ManageCourses';
 import ManageCategories from './pages/admin/ManageCategories';
+import ManageCMS from './pages/admin/ManageCMS';
+import ManageBlogs from './pages/admin/ManageBlogs';
 
-const Placeholder = ({ title }) => (
-  <div className="p-8 text-center text-gray-500 italic border-2 border-dashed border-gray-200 rounded-2xl m-6">
-    Module Gateway: {title}
-  </div>
-);
 
 const App = () => {
-  const { settings } = useContext(AppContext);
-  const isEducatorRoute = useMatch('/educator/*');
-  const isAdminRoute = useMatch('/admin/*');
+    const context = useContext(AppContext);
+    const { settings, user } = context || {};
+    const navigate = useNavigate();
+    const isEducatorRoute = useMatch('/educator/*');
+    const isAdminRoute = useMatch('/admin/*');
 
+    useEffect(() => {
+        if (settings?.site_title) {
+            document.title = settings.site_title;
+        }
+        if (settings?.site_favicon) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
+            link.href = settings.site_favicon;
+        }
+    }, [settings?.site_title, settings?.site_favicon]);
+
+  // Strategic Real-time Relay (Module 5: Notifications)
   useEffect(() => {
-    if (settings.site_title) {
-      document.title = settings.site_title;
+    if (!settings.pusher_app_key || !settings.pusher_active) return;
+    
+    const pusher = new Pusher(settings.pusher_app_key, {
+      cluster: settings.pusher_cluster || 'ap2',
+      forceTLS: true
+    });
+
+    // Strategy 1: Private Protocol (Direct Messages & Moderation)
+    if (user && user._id) {
+       const channel = pusher.subscribe(`user-${user._id}`);
+       channel.bind('new-message', (data) => {
+         toast.info(`Strategic Message from ${data.sender}: ${data.content}`, { 
+           onClick: () => navigate('/student/messages'),
+           position: "bottom-right",
+           autoClose: 5000
+         });
+       });
+       channel.bind('comment-status-update', (data) => {
+         toast.success(`Discourse Protocol Calibrated: ${data.status.toUpperCase()}`, {
+           position: "bottom-right"
+         });
+       });
     }
-    if (settings.site_favicon) {
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = settings.site_favicon;
+
+    // Strategy 2: Modular Protocol (Course Discussions)
+    if (user && user.enrolledCourses?.length > 0) {
+      user.enrolledCourses.forEach(id => {
+        const courseChannel = pusher.subscribe(`course-${id}`);
+        courseChannel.bind('new-discussion', (data) => {
+            if (data.author !== user.name) {
+                toast.info(`Scholar Interaction (${data.type}): ${data.author} posted in course node.`, {
+                    position: "bottom-right"
+                });
+            }
+        });
+      });
     }
-  }, [settings.site_title, settings.site_favicon]);
+
+    return () => {
+      pusher.disconnect();
+    };
+  }, [settings, user, navigate]);
 
   return (
     <div className="text-[var(--text-main)] min-h-screen bg-[var(--background)]">
@@ -173,6 +216,7 @@ const App = () => {
           <Route path="support" element={<Support />} />
           <Route path="profile" element={<Profile />} />
           <Route path="account-settings" element={<AccountSettings />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
         </Route>
 
         {/* Legacy / Direct Routes for Compatibility */}
@@ -244,10 +288,9 @@ const App = () => {
 
           <Route path='referral' element={<ManageECommerce />} />
           <Route path='payments' element={<ManagePayments title="Global Revenue Streams" method="all" />} />
-          <Route path='payment-online' element={<ManagePayments title="Online Transaction Nexus" method="razorpay" />} />
-          <Route path='payment-offline' element={<ManagePayments title="Offline Fiscal Protocols" method="cod" />} />
-          <Route path='payment-bank' element={<ManagePayments title="Bank Transfer Verification" method="bank_transfer" />} />
-          <Route path='payment-bank' element={<ManagePayments title="Bank Transfer Verification" method="bank_transfer" />} />
+          <Route path='payment-online' element={<ManagePayments title="Online Transaction Nexus" method="online" />} />
+          <Route path='payment-offline' element={<ManagePayments title="Offline Fiscal Protocols" method="offline" />} />
+          <Route path='payment-bank' element={<ManagePayments title="Bank Transfer Verification" method="bank" />} />
           <Route path='coupons' element={<ManageCoupons />} />
           <Route path='payout-settings' element={<PayoutSettings />} />
 
@@ -257,8 +300,9 @@ const App = () => {
           <Route path='gamification-history' element={<GamificationHistory />} />
 
           <Route path='communication' element={<ManageCommunication />} />
+          <Route path='comm-settings' element={<CommunicationSettings />} />
           <Route path='messages' element={<ManageMessages />} />
-          <Route path='comments' element={<ManageReviews />} />
+          <Route path='comments' element={<ManageComments />} />
           <Route path='qa' element={<ManageQA />} />
           <Route path='cms' element={<ManageCMS />} />
           <Route path='blogs' element={<ManageBlogs />} />
@@ -271,7 +315,6 @@ const App = () => {
           <Route path='commission' element={<Commission />} />
           <Route path='email-setup' element={<EmailSetup />} />
           <Route path='email-template' element={<EmailTemplate />} />
-          <Route path='payment-method' element={<PaymentMethodSetting />} />
           <Route path='api-settings' element={<ApiSettings />} />
           <Route path='vimeo-config' element={<VimeoConfiguration />} />
           <Route path='vdocipher-config' element={<VdoCipherConfiguration />} />
@@ -286,7 +329,6 @@ const App = () => {
           <Route path='cron-job' element={<CronJob />} />
           <Route path='recaptcha' element={<ReCaptcha />} />
           <Route path='social-login' element={<SocialLogin />} />
-          <Route path='payout-account' element={<PayoutAccount />} />
           <Route path='cookie-gdpr' element={<CookieGdprSetting />} />
           <Route path='sms-settings' element={<SmsSettings />} />
           <Route path='analytics-tool' element={<AnalyticsTool />} />

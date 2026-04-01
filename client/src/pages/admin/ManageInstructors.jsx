@@ -7,15 +7,20 @@ const ManageInstructors = () => {
     const { backendUrl, token, navigate } = useContext(AppContext);
     const [instructors, setInstructors] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => { fetchInstructors(); }, []);
+    useEffect(() => { fetchInstructors(); }, [page]);
 
     const fetchInstructors = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/instructors`, {
+            const { data } = await axios.get(`${backendUrl}/api/admin/instructors?page=${page}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (data.success) setInstructors(data.instructors);
+            if (data.success) {
+                setInstructors(data.instructors);
+                setTotalPages(data.pages);
+            }
         } catch (error) { toast.error('Educator Directory Retrieval Failure'); }
         setLoading(false);
     };
@@ -121,6 +126,25 @@ const ManageInstructors = () => {
                     </div>
                 )}
             </div>
+
+            {/* Pagination Protocol */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-[var(--surface)] p-6 rounded-[2rem] border border-[var(--border)]">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Page {page} of {totalPages}</p>
+                    <div className="flex gap-2">
+                        <button 
+                            disabled={page === 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Prev</button>
+                        <button 
+                            disabled={page === totalPages}
+                            onClick={() => setPage(p => p + 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Next</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -10,10 +10,10 @@ const GamificationHistory = () => {
 
     const fetchHistory = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/history`, getHeaders());
+            const { data } = await axios.get(`${backendUrl}/api/gamification/history-all`, getHeaders());
             if (data.success) setHistory(data.history);
         } catch (error) {
-            toast.error('Achievement Ledger Retrieval Failure');
+            toast.error('Audit Log Synchronization Failure');
         } finally {
             setLoading(false);
         }
@@ -24,7 +24,7 @@ const GamificationHistory = () => {
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-[60vh]">
             <div className="w-16 h-16 border-4 border-[var(--border)] border-t-yellow-500 rounded-full animate-spin"></div>
-            <p className="mt-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Aggregating Achievement Streams...</p>
+            <p className="mt-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Retrieving Intelligence Audit Logs...</p>
         </div>
     );
 
@@ -32,54 +32,61 @@ const GamificationHistory = () => {
         <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
             <div className="flex items-end justify-between border-b border-[var(--border)] pb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-[var(--text-main)] tracking-tight">Achievement History Ledger</h1>
-                    <p className="text-gray-500 font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">Institutional Recognition Logs & Scholar Milestone Tracking</p>
+                    <h1 className="text-3xl font-black text-[var(--text-main)] tracking-tight uppercase">Cognitive Audit History</h1>
+                    <p className="text-gray-500 font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">Global Points Disbursement & Behavioral Attribution Registry</p>
                 </div>
             </div>
 
-            <div className="bg-[var(--surface)] rounded-[3.5rem] shadow-sm border border-[var(--border)] overflow-hidden">
-                <div className="px-10 py-8 border-b border-[var(--border)] flex justify-between items-center">
-                    <h3 className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.3em]">Recognition Logs</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-[var(--background)]/50">
-                                <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Scholar Entity</th>
-                                <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Recognition Token</th>
-                                <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Descriptor</th>
-                                <th className="px-10 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Synchronization Date</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border)]">
-                            {history.map(item => (
-                                <tr key={item._id} className="group hover:bg-[var(--background)]/30 transition-colors">
-                                    <td className="px-10 py-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-[var(--background)] flex items-center justify-center text-[10px] font-black text-gray-400">
-                                                {item.student?.name?.charAt(0)}
-                                            </div>
-                                            <span className="font-black text-[var(--text-main)] text-sm">{item.student?.name}</span>
+            <div className="bg-[var(--surface)] p-10 rounded-[3rem] border border-[var(--border)] shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b border-[var(--border)]">
+                            <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Scholar Identity</th>
+                            <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Behavioral Event</th>
+                            <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Protocol Attribution</th>
+                            <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Impact Ratio</th>
+                            <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4 text-right">Synchronization Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                        {history.map((log) => (
+                            <tr key={log._id} className="group hover:bg-[var(--background)]/30 transition-colors">
+                                <td className="py-6 px-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-400 font-black text-sm">
+                                            {log.userId?.name?.charAt(0)}
                                         </div>
-                                    </td>
-                                    <td className="px-10 py-6 text-center">
-                                        <div className="text-3xl mb-1">{item.badge?.icon || '🏅'}</div>
-                                        <span className="text-[9px] font-black text-yellow-600 uppercase tracking-widest">{item.badge?.title}</span>
-                                    </td>
-                                    <td className="px-10 py-6">
-                                        <p className="text-xs font-bold text-gray-500 max-w-xs">{item.badge?.description}</p>
-                                    </td>
-                                    <td className="px-10 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{new Date(item.createdAt).toLocaleDateString()}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        <div>
+                                            <p className="text-sm font-black text-[var(--text-main)]">{log.userId?.name || 'Anonymous Session'}</p>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{log.userId?.email}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="py-6 px-4">
+                                    <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest bg-gray-100 text-gray-500`}>
+                                        {log.event.replace('_', ' ')}
+                                    </span>
+                                </td>
+                                <td className="py-6 px-4 text-xs font-bold text-[var(--text-muted)] italic">
+                                    {log.description}
+                                </td>
+                                <td className="py-6 px-4">
+                                    <span className={`text-sm font-black ${log.points > 0 ? 'text-green-500' : 'text-red-400'}`}>
+                                        {log.points > 0 ? `+${log.points}` : log.points}
+                                    </span>
+                                </td>
+                                <td className="py-6 px-4 text-right tabular-nums text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+                                    {new Date(log.createdAt).toLocaleString()}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
                 {history.length === 0 && (
-                    <div className="py-24 text-center">
-                        <div className="w-24 h-24 bg-[var(--background)] rounded-full flex items-center justify-center mx-auto mb-8 text-5xl opacity-10 italic">#</div>
-                        <h3 className="text-xl font-black text-[var(--text-main)] uppercase tracking-tight">Milestone Neutral Zone</h3>
-                        <p className="text-xs font-bold text-gray-400 mt-2 uppercase tracking-widest">No achievement synchronization detected in the matrix.</p>
+                    <div className="py-32 text-center">
+                        <div className="text-4xl mb-6 opacity-20">📜</div>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">Audit Registry Void - No Data Synchronized</p>
                     </div>
                 )}
             </div>

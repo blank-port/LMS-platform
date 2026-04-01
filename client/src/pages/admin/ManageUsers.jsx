@@ -10,6 +10,8 @@ const ManageUsers = () => {
     const [users, setUsers] = useState([]);
     const [institutes, setInstitutes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [filterInstitute, setFilterInstitute] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ 
@@ -27,7 +29,7 @@ const ManageUsers = () => {
     useEffect(() => {
         fetchUsers();
         fetchInstitutes();
-    }, []);
+    }, [page]);
 
     const fetchInstitutes = async () => {
         try {
@@ -38,9 +40,10 @@ const ManageUsers = () => {
 
     const fetchUsers = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/users?role=student`, getHeaders())
+            const { data } = await axios.get(`${backendUrl}/api/admin/users?role=student&page=${page}`, getHeaders())
             if (data.success) {
-                setUsers(data.users)
+                setUsers(data.users);
+                setTotalPages(data.pages);
             }
         } catch (error) {
             toast.error('Identity Retrieval Failure');
@@ -226,6 +229,25 @@ const ManageUsers = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Pagination Protocol */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-[var(--surface)] p-6 rounded-[2rem] border border-[var(--border)]">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Page {page} of {totalPages}</p>
+                    <div className="flex gap-2">
+                        <button 
+                            disabled={page === 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Prev</button>
+                        <button 
+                            disabled={page === totalPages}
+                            onClick={() => setPage(p => p + 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Next</button>
+                    </div>
+                </div>
+            )}
 
             {/* Identity Calibration Surface (Modal) */}
             {showModal && (

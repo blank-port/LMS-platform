@@ -64,10 +64,10 @@ export const AppContextProvider = (props) => {
         }
     };
 
-    const register = async (name, email, password, role) => {
+    const register = async (name, email, password, role, referralCode = '') => {
         try {
             const { data } = await axios.post(backendUrl + '/api/user/register', {
-                name, email, password, role
+                name, email, password, role, referralCode
             });
             if (data.success) {
                 setToken(data.token);

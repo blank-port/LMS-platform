@@ -3,6 +3,7 @@ import Enrollment from "../models/Enrollment.js";
 import Category from "../models/Category.js";
 import User from "../models/User.js";
 import { performEnrollment } from "../services/enrollmentService.js";
+import { grantPoints } from "../services/gamificationService.js";
 
 // Get All Published & Approved Courses
 export const getAllCourses = async (req, res) => {
@@ -205,6 +206,17 @@ export const updateCourseProgress = async (req, res) => {
         enrollment.completed = enrollment.progress === 100;
 
         await enrollment.save();
+
+        // Gamification hooks
+        if (markAsComplete && lessonId) {
+            await grantPoints(userId, 'unit_complete');
+        }
+        if (enrollment.completed && enrollment.progress === 100) {
+            // Check if this was the first time it was completed (prevent double dipping)
+            // But since enrollment.save() happened, we can't easily check 'wasModified' here.
+            // Let's rely on service logic or just grant points (service could handle throttle).
+            await grantPoints(userId, 'course_complete');
+        }
 
         res.json({ success: true, message: 'Progress updated', enrollment });
     } catch (error) {

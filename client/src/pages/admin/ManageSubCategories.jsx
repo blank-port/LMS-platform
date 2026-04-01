@@ -7,14 +7,19 @@ const ManageSubCategories = () => {
     const { backendUrl, getHeaders } = useContext(AppContext);
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [formData, setFormData] = useState({ name: '', categoryId: '', description: '' });
 
     const fetchData = async () => {
         try {
             const catRes = await axios.get(`${backendUrl}/api/course/categories`, getHeaders());
-            const subRes = await axios.get(`${backendUrl}/api/sub-category/all`, getHeaders());
+            const subRes = await axios.get(`${backendUrl}/api/sub-category/all?page=${page}`, getHeaders());
             if (catRes.data.success) setCategories(catRes.data.categories);
-            if (subRes.data.success) setSubCategories(subRes.data.subCategories);
+            if (subRes.data.success) {
+                setSubCategories(subRes.data.subCategories);
+                setTotalPages(subRes.data.pages);
+            }
         } catch (error) {
             toast.error('Failed to fetch stratification data');
         }
@@ -22,7 +27,7 @@ const ManageSubCategories = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [page]);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -120,6 +125,25 @@ const ManageSubCategories = () => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Protocol */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between bg-[var(--background)]/30 p-6 border-t border-[var(--border)]">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Page {page} of {totalPages}</p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        disabled={page === 1}
+                                        onClick={() => setPage(p => p - 1)}
+                                        className="px-6 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all text-[var(--text-main)]"
+                                    >Prev</button>
+                                    <button 
+                                        disabled={page === totalPages}
+                                        onClick={() => setPage(p => p + 1)}
+                                        className="px-6 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all text-[var(--text-main)]"
+                                    >Next</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

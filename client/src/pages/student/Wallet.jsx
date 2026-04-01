@@ -12,10 +12,13 @@ const Wallet = () => {
     const [amount, setAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('');
     const [processing, setProcessing] = useState(false);
+    const [pointsData, setPointsData] = useState({ totalPoints: 0, currentPoints: 0 });
+    const [pointHistory, setPointHistory] = useState([]);
 
     useEffect(() => {
         if (token) {
             fetchTransactions();
+            fetchPointsData();
         }
     }, [token]);
 
@@ -33,6 +36,46 @@ const Wallet = () => {
         setLoading(false);
     };
 
+    const fetchPointsData = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/api/gamification/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                setPointsData(data.stats);
+            }
+            const { data: histData } = await axios.get(`${backendUrl}/api/gamification/history`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (histData.success) {
+                setPointHistory(histData.history);
+            }
+        } catch (error) {
+            console.error('Failed to load points data');
+        }
+    };
+
+    const handleRedeemPoints = async () => {
+        if (pointsData.currentPoints < 500) {
+            return toast.error('Insufficient Intelligence Points (Min 500 required)');
+        }
+        setProcessing(true);
+        try {
+            const { data } = await axios.post(`${backendUrl}/api/gamification/redeem`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                toast.success(data.message);
+                fetchUserData();
+                fetchTransactions();
+                fetchPointsData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Redemption failure');
+        }
+        setProcessing(false);
+    };
+
     const handleAddBalance = async () => {
         if (!amount || isNaN(amount) || amount <= 0) {
             return toast.error('Enter a valid amount');
@@ -42,7 +85,6 @@ const Wallet = () => {
         }
 
         setProcessing(true);
-        // Simulate Payment Gateway Delay
         setTimeout(async () => {
             try {
                 const { data } = await axios.post(`${backendUrl}/api/wallet/deposit`, {
@@ -96,6 +138,35 @@ const Wallet = () => {
                     </div>
                 </div>
 
+                {/* Points Card */}
+                <div className="lg:col-span-1 bg-indigo-50 rounded-[3rem] p-12 border border-indigo-100 flex flex-col justify-between group transition-all hover:bg-white hover:shadow-2xl hover:shadow-indigo-100/50">
+                    <div>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-indigo-100 group-hover:rotate-12 transition-transform">🏆</div>
+                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-100/50 px-4 py-1.5 rounded-full uppercase tracking-widest">Sync Active</span>
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Intelligence Capital</p>
+                        <h2 className="text-4xl font-black text-indigo-900 tracking-tighter mb-4">{pointsData.currentPoints?.toLocaleString() || 0} <span className="text-sm font-bold text-indigo-300">PTS</span></h2>
+                        <p className="text-[10px] font-bold text-indigo-600/60 uppercase tracking-widest leading-relaxed">
+                            Currently indexing at 500 PTS per ₹1 liquidity
+                        </p>
+                    </div>
+                    <button 
+                        onClick={handleRedeemPoints}
+                        disabled={processing || pointsData.currentPoints < 500}
+                        className="w-full mt-8 h-14 bg-indigo-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:bg-indigo-600 shadow-xl shadow-indigo-900/10 disabled:opacity-30"
+                    >
+                        {processing ? 'Processing...' : 'Redeem Intelligence'}
+                    </button>
+                </div>
+
+                {/* Conversion Logic Info */}
+                <div className="lg:col-span-1 bg-gray-50 rounded-[3rem] p-10 flex flex-col justify-center border border-gray-100 italic">
+                    <p className="text-[11px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest text-center">
+                        "Your knowledge is your greatest asset. Maintain a high engagement ratio to optimize your fiscal baseline through strategic participation."
+                    </p>
+                </div>
+
                 {/* Transaction History */}
                 <div className="lg:col-span-2 bg-white rounded-[3rem] p-12 shadow-2xl shadow-gray-200/40 border border-gray-50 flex flex-col">
                     <h3 className="text-xl font-black text-gray-900 tracking-tight mb-8">Audited Transactions</h3>
@@ -109,7 +180,7 @@ const Wallet = () => {
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${
                                             txn.amount > 0 ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'
                                         }`}>
-                                            {txn.amount > 0 ? <ArrowDownLeft /> : <ArrowUpRight />}
+                                            {txn.amount > 0 ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                                         </div>
                                         <div>
                                             <p className="text-sm font-black text-gray-900 tracking-tight">{txn.description || 'System Update'}</p>
@@ -129,6 +200,23 @@ const Wallet = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Point History (Minified) */}
+                <div className="lg:col-span-1 bg-white rounded-[3rem] p-10 shadow-2xl shadow-gray-200/40 border border-gray-50 flex flex-col">
+                    <h3 className="text-sm font-black text-gray-900 tracking-tight mb-6 uppercase">Intelligence Log</h3>
+                    <div className="space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+                        {pointHistory.map((log, i) => (
+                            <div key={i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-700 capitalize">{log.event.replace('_', ' ')}</p>
+                                    <p className="text-[8px] font-bold text-gray-400 uppercase">{new Date(log.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <span className="text-[10px] font-black text-indigo-600">+{log.points}</span>
+                            </div>
+                        ))}
+                        {pointHistory.length === 0 && <p className="text-center py-10 text-[10px] font-bold text-gray-300 uppercase tracking-widest">No logs recorded</p>}
+                    </div>
+                </div>
             </div>
 
             {/* Razorpay-like Payment Modal */}
@@ -142,7 +230,6 @@ const Wallet = () => {
                             <X size={24} />
                         </button>
 
-                        {/* Modal Header */}
                         <div className="bg-[#0C132B] p-10 text-white flex items-center justify-between">
                             <div>
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Checkout Simulation</h4>
@@ -154,7 +241,6 @@ const Wallet = () => {
                             </div>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="p-12 space-y-10">
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Enter Supplement Amount</label>

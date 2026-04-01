@@ -12,7 +12,7 @@ const Commission = () => {
   const { fetchAllSettings, updateBatchSettings } = useContext(AppContext);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
-    admin_commission_percentage: 20,
+    global_commission_percentage: 20,
     instructor_revenue_share: 80,
     tax_deduction_percentage: 0,
     platform_fee_fixed: 0
@@ -24,7 +24,18 @@ const Commission = () => {
       if (data && data.length > 0) {
         const settingsMap = {};
         data.forEach(s => settingsMap[s.key] = s.value);
-        setSettings(prev => ({ ...prev, ...settingsMap }));
+        
+        // Handle Key Alignment for older settings if they exist
+        if (settingsMap.admin_commission_percentage && !settingsMap.global_commission_percentage) {
+            settingsMap.global_commission_percentage = settingsMap.admin_commission_percentage;
+        }
+
+        setSettings(prev => ({ 
+            ...prev, 
+            ...settingsMap,
+            // Derived instructor revenue share logic override
+            instructor_revenue_share: 100 - (Number(settingsMap.global_commission_percentage) || 20)
+        }));
       }
     };
     loadSettings();
@@ -79,16 +90,16 @@ const Commission = () => {
               <div className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
                     <label className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Admin Commission</label>
-                    <span className="text-purple-400 font-black">{settings.admin_commission_percentage}%</span>
+                    <span className="text-purple-400 font-black">{settings.global_commission_percentage}%</span>
                  </div>
                  <input 
                     type="range" 
                     min="0" 
                     max="100" 
-                    value={settings.admin_commission_percentage}
+                    value={settings.global_commission_percentage}
                     onChange={(e) => {
                       const admin = parseInt(e.target.value);
-                      setSettings({ ...settings, admin_commission_percentage: admin, instructor_revenue_share: 100 - admin });
+                      setSettings({ ...settings, global_commission_percentage: admin, instructor_revenue_share: 100 - admin });
                     }}
                     className="w-full h-2 bg-[var(--background)] rounded-lg appearance-none cursor-pointer accent-purple-600"
                  />

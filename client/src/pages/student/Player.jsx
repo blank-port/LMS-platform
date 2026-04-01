@@ -12,6 +12,9 @@ const Player = () => {
     const [courseData, setCourseData] = useState(null);
     const [enrollment, setEnrollment] = useState(null);
     const [currentLecture, setCurrentLecture] = useState(null);
+    const [activeTab, setActiveTab] = useState('description');
+    const [discussions, setDiscussions] = useState([]);
+    const [newQuestion, setNewQuestion] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -41,6 +44,37 @@ const Player = () => {
         }
         setLoading(false);
     };
+
+    const fetchDiscussions = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/api/comm/qa?courseId=${courseId}&lessonId=${currentLecture?._id || ''}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) setDiscussions(data.discussions);
+        } catch (error) { console.error('Discourse Retrieval Failure'); }
+    };
+
+    const handleSubmitQuestion = async (e) => {
+        e.preventDefault();
+        if (!newQuestion.trim()) return;
+        try {
+            const { data } = await axios.post(`${backendUrl}/api/comm/qa`, {
+                courseId,
+                lessonId: currentLecture?._id,
+                message: newQuestion
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            
+            if (data.success) {
+                setNewQuestion('');
+                fetchDiscussions();
+                toast.success('Inquiry Dispatched to Nexus');
+            }
+        } catch (error) { toast.error('Nexus Dispatch Failure'); }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'qa') fetchDiscussions();
+    }, [activeTab, currentLecture]);
 
     const markComplete = async (lectureId) => {
         try {
@@ -135,31 +169,100 @@ const Player = () => {
                         )}
                     </div>
 
-                    {/* Content Intelligence Panel */}
-                    {currentLecture && (
-                        <div className="p-8 md:p-12 border-t border-white/5 bg-[#0C132B]">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20">Video Lecture</span>
-                                        <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest">{currentLecture.lectureDuration} Minutes of Wisdom</span>
-                                    </div>
-                                    <h2 className="text-2xl md:text-3xl font-black tracking-tighter">{currentLecture.lectureTitle}</h2>
-                                    <p className="text-white/40 max-w-2xl text-sm leading-relaxed font-medium">This lecture covers critical concepts in {courseData.category?.name || 'this module'}. Ensure you take notes during the presentation to maximize retention.</p>
-                                </div>
-                                <button
-                                    onClick={() => markComplete(currentLecture._id)}
-                                    disabled={isLectureCompleted(currentLecture._id)}
-                                    className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl ${isLectureCompleted(currentLecture._id)
-                                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default'
-                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
-                                        }`}
+                    {/* Content Intelligence Tabs */}
+                    <div className="bg-[#0C132B] border-t border-white/5">
+                        <div className="flex px-8 md:px-12 border-b border-white/5">
+                            {['description', 'qa', 'reviews'].map(tab => (
+                                <button 
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${activeTab === tab ? 'text-indigo-400' : 'text-white/40 hover:text-white/60'}`}
                                 >
-                                    {isLectureCompleted(currentLecture._id) ? '✓ Mastery Achieved' : 'Finalize Module'}
+                                    {tab}
+                                    {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]"></div>}
                                 </button>
-                            </div>
+                            ))}
                         </div>
-                    )}
+
+                        <div className="p-8 md:p-12 min-h-[400px]">
+                            {activeTab === 'description' && currentLecture && (
+                                <div className="animate-in fade-in duration-500">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20">Video Lecture</span>
+                                                <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest">{currentLecture.lectureDuration} Minutes of Wisdom</span>
+                                            </div>
+                                            <h2 className="text-2xl md:text-3xl font-black tracking-tighter">{currentLecture.lectureTitle}</h2>
+                                            <p className="text-white/40 max-w-2xl text-sm leading-relaxed font-medium">This lecture covers critical concepts in {courseData.category?.name || 'this module'}. Ensure you take notes during the presentation to maximize retention.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => markComplete(currentLecture._id)}
+                                            disabled={isLectureCompleted(currentLecture._id)}
+                                            className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl ${isLectureCompleted(currentLecture._id)
+                                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default'
+                                                : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
+                                                }`}
+                                        >
+                                            {isLectureCompleted(currentLecture._id) ? '✓ Mastery Achieved' : 'Finalize Module'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'qa' && (
+                                <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-12">
+                                    <form onSubmit={handleSubmitQuestion} className="bg-white/5 p-8 rounded-[2rem] border border-white/5">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">Initiate Academic Inquiry</h3>
+                                        <textarea 
+                                            value={newQuestion}
+                                            onChange={(e) => setNewQuestion(e.target.value)}
+                                            placeholder="Specify your inquiry protocol for this lecture..." 
+                                            className="w-full bg-black/40 border border-white/5 rounded-xl p-6 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-indigo-500/30 transition-all min-h-[120px] resize-none"
+                                        />
+                                        <div className="mt-6 flex justify-end">
+                                            <button className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Submit Protocol</button>
+                                        </div>
+                                    </form>
+
+                                    <div className="space-y-6">
+                                        {discussions.length === 0 ? (
+                                            <div className="py-20 text-center opacity-20">
+                                                <div className="text-6xl mb-4 italic italic">e</div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest">Inquiry Void</p>
+                                            </div>
+                                        ) : discussions.map(q => (
+                                            <div key={q._id} className="p-8 rounded-[2rem] border border-white/5 bg-white/2 group hover:bg-white/5 transition-all">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-xs font-black">
+                                                        {q.userId?.name?.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black text-white/80 tracking-tight">{q.userId?.name}</p>
+                                                        <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{new Date(q.createdAt).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-white/60 leading-relaxed italic border-l-2 border-indigo-500/20 pl-4 py-1">"{q.message}"</p>
+                                                {q.isReplied && (
+                                                    <div className="mt-6 flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                                                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                                        Institutional Resolution Captured
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'reviews' && (
+                                <div className="py-20 text-center opacity-20">
+                                    <div className="text-6xl mb-4 italic tracking-widest italic">e</div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Evaluation Node Standby</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Completion Milestone CTA */}
                     {enrollment?.progress === 100 && (

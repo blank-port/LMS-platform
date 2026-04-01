@@ -11,12 +11,7 @@ const blogSchema = new mongoose.Schema({
     featuredImage: { type: String, default: '' },
     status: { type: String, enum: ['published', 'draft'], default: 'draft' },
     views: { type: Number, default: 0 },
-    allowComments: { type: Boolean, default: true },
-    comments: [{
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        text: String,
-        createdAt: { type: Date, default: Date.now }
-    }]
+    allowComments: { type: Boolean, default: true }
 }, { timestamps: true });
 
 export default mongoose.model('Blog', blogSchema);

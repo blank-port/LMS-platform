@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import Setting from "../models/Setting.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import { performEnrollment } from "../services/enrollmentService.js";
+import { grantPoints } from "../services/gamificationService.js";
 
 // Helper to get Razorpay Instance
 const getRazorpayInstance = async () => {
@@ -129,6 +130,9 @@ export const verifyPayment = async (req, res) => {
                 paymentId: payment._id
             });
 
+            // Grant points for education investment
+            await grantPoints(userId, 'course_purchase');
+
             res.json({ success: true, message: "Payment Verified & Enrolled" });
         } else {
             res.status(400).json({ success: false, message: "Invalid Signature" });
@@ -182,6 +186,9 @@ export const approveCOD = async (req, res) => {
             paymentMethod: 'cod',
             paymentId: payment._id
         });
+
+        // Grant points for education investment
+        await grantPoints(userId, 'course_purchase');
 
         res.json({ success: true, message: "COD Payment Approved & Student Enrolled" });
     } catch (error) {
@@ -257,6 +264,9 @@ export const buyWithWallet = async (req, res) => {
             paymentMethod: 'wallet',
             paymentId: payment._id
         });
+
+        // Grant points for education investment
+        await grantPoints(userId, 'course_purchase');
 
         res.json({ success: true, message: "Course purchased successfully via wallet" });
     } catch (error) {

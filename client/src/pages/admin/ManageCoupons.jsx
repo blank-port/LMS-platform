@@ -18,6 +18,8 @@ const ManageCoupons = () => {
     const [coupons, setCoupons] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState({
@@ -41,12 +43,15 @@ const ManageCoupons = () => {
     useEffect(() => {
         fetchCoupons();
         fetchCourses();
-    }, []);
+    }, [page]);
 
     const fetchCoupons = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/coupon`, getHeaders());
-            if (data.success) setCoupons(data.coupons);
+            const { data } = await axios.get(`${backendUrl}/api/coupon?page=${page}`, getHeaders());
+            if (data.success) {
+                setCoupons(data.coupons);
+                setTotalPages(data.pages);
+            }
         } catch (error) { toast.error('Failed to fetch coupons'); }
         setLoading(false);
     };
@@ -225,6 +230,25 @@ const ManageCoupons = () => {
                         </div>
                     )}
                 </div>
+
+            {/* Pagination Protocol */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-[var(--surface)] p-6 rounded-[2rem] border border-[var(--border)]">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Page {page} of {totalPages}</p>
+                    <div className="flex gap-2">
+                        <button 
+                            disabled={page === 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Prev</button>
+                        <button 
+                            disabled={page === totalPages}
+                            onClick={() => setPage(p => p + 1)}
+                            className="px-6 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 hover:bg-[var(--border)] transition-all"
+                        >Next</button>
+                    </div>
+                </div>
+            )}
             </div>
 
             {/* Modal */}
