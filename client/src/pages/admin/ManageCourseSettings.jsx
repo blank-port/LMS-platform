@@ -2,117 +2,160 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { 
+    CheckBadgeIcon, 
+    VideoCameraIcon, 
+    BeakerIcon, 
+    ChatBubbleLeftRightIcon, 
+    StarIcon, 
+    EnvelopeOpenIcon 
+} from '@heroicons/react/24/outline';
 
 const ManageCourseSettings = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl, getHeaders, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
-        autoApproveCourses: false,
-        enableGuestCheckout: true,
-        defaultCourseExpiry: 365,
-        enableCourseComments: true,
-        maxStudentPerCourse: 0, // 0 for unlimited
-        enableInstructorPayouts: true
+        course_approval: 'Yes',
+        show_seekbar: 'Yes',
+        drip_content: 'Show all',
+        hide_qa: 'No',
+        hide_review: 'No',
+        mail_before_expire: 7
     });
 
-    const fetchSettings = async () => {
+    const loadSettingsData = async () => {
+        setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/settings/course`, getHeaders());
-            if (data.success) setSettings(data.settings);
+            const data = await fetchAllSettings();
+            if (data && Array.isArray(data)) {
+                const mappedSettings = {};
+                data.forEach(s => {
+                    if (Object.keys(settings).includes(s.key)) {
+                        mappedSettings[s.key] = s.value;
+                    }
+                });
+                setSettings(prev => ({ ...prev, ...mappedSettings }));
+            }
         } catch (error) {
-            console.error('Settings retrieval failure');
+            toast.error('Strategic Settings Retrieval Failure');
         } finally {
             setLoading(false);
         }
     };
 
     const handleSave = async () => {
-        const actionToast = toast.loading('Synchronizing Global Course Policies...');
-        try {
-            const { data } = await axios.post(`${backendUrl}/api/admin/settings/course`, settings, getHeaders());
-            if (data.success) {
-                toast.update(actionToast, { render: 'Global policies synchronized.', type: "success", isLoading: false, autoClose: 3000 });
-            }
-        } catch (error) {
-            toast.update(actionToast, { render: 'Policy synchronization failure.', type: "error", isLoading: false, autoClose: 3000 });
+        const success = await updateBatchSettings(settings);
+        if (success) {
+            toast.success('System Policies Synchronized');
         }
     };
 
-    useEffect(() => { fetchSettings(); }, []);
+    useEffect(() => { loadSettingsData(); }, []);
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-[60vh]">
-            <div className="w-16 h-16 border-4 border-[var(--border)] border-t-purple-600 rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
             <p className="mt-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.4em]">Calibrating Global Pedagogical Constants...</p>
         </div>
     );
 
+    const SettingCard = ({ icon: Icon, title, description, value, field, options, type = 'select' }) => (
+        <div className="bg-[var(--surface)] rounded-[2.5rem] border border-[var(--border)] p-10 flex flex-col justify-between group hover:border-indigo-500/30 transition-all shadow-sm">
+            <div>
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
+                    <Icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-black text-[var(--text-main)] tracking-tight mb-2 uppercase">{title}</h3>
+                <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed mb-8">{description}</p>
+            </div>
+            {type === 'select' ? (
+                <div className="relative">
+                    <select 
+                        value={value}
+                        onChange={e => setSettings({...settings, [field]: e.target.value})}
+                        className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl px-6 py-4 text-sm font-black text-[var(--text-main)] outline-none focus:border-indigo-500/50 transition-all appearance-none cursor-pointer"
+                    >
+                        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
+                </div>
+            ) : (
+                <div className="relative">
+                    <input 
+                        type="number" 
+                        value={value}
+                        onChange={e => setSettings({...settings, [field]: parseInt(e.target.value) || 0})}
+                        className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl px-6 py-4 text-sm font-black text-[var(--text-main)] outline-none focus:border-indigo-500/50 transition-all"
+                    />
+                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-indigo-500 uppercase tracking-widest">{options[0]}</span>
+                </div>
+            )}
+        </div>
+    );
+
     return (
-        <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
+        <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
             <div className="flex items-end justify-between border-b border-[var(--border)] pb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-[var(--text-main)] tracking-tight">Global Course Policy Governance</h1>
-                    <p className="text-gray-500 font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">Platform-Wide Instructional Parameters & Operational Settings</p>
+                    <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tight">System Governance</h1>
+                    <p className="text-[var(--text-muted)] font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">Platform-Wide Instructional Parameters & Operational Settings</p>
                 </div>
                 <button onClick={handleSave} 
-                    className="px-8 py-4 bg-gray-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.25em] hover:bg-purple-600 transition-all shadow-2xl shadow-black/10">
+                    className="px-10 py-5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-500/20 active:scale-95">
                     💾 Persist Policies
                 </button>
             </div>
 
-            <div className="bg-[var(--surface)] rounded-[3rem] shadow-sm border border-[var(--border)] p-12 space-y-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    {/* Approval & Access */}
-                    <div className="space-y-6">
-                        <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] border-b border-purple-50 pb-4">Acquisition & Approval</h3>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-black text-[var(--text-main)]">Auto-Authorize Assets</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Bypass manual review for instructor deployments</p>
-                            </div>
-                            <input type="checkbox" className="w-6 h-6 rounded-lg accent-purple-600" checked={settings.autoApproveCourses} onChange={e => setSettings({...settings, autoApproveCourses: e.target.checked})} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-black text-[var(--text-main)]">Guest Learning Flux</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Allow unauthenticated checkout protocols</p>
-                            </div>
-                            <input type="checkbox" className="w-6 h-6 rounded-lg accent-purple-600" checked={settings.enableGuestCheckout} onChange={e => setSettings({...settings, enableGuestCheckout: e.target.checked})} />
-                        </div>
-                    </div>
-
-                    {/* Engagement & Payouts */}
-                    <div className="space-y-6">
-                        <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] border-b border-purple-50 pb-4">Engagement & Fiscal Flow</h3>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-black text-[var(--text-main)]">Collaborative Feedback</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Enable comment streams on curriculum assets</p>
-                            </div>
-                            <input type="checkbox" className="w-6 h-6 rounded-lg accent-purple-600" checked={settings.enableCourseComments} onChange={e => setSettings({...settings, enableCourseComments: e.target.checked})} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-black text-[var(--text-main)]">Instructor Remuneration</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Enable automated payout synchronization</p>
-                            </div>
-                            <input type="checkbox" className="w-6 h-6 rounded-lg accent-purple-600" checked={settings.enableInstructorPayouts} onChange={e => setSettings({...settings, enableInstructorPayouts: e.target.checked})} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-12 border-t border-[var(--border)]">
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Asset Expiration (Days)</label>
-                        <input type="number" className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-sm" value={settings.defaultCourseExpiry} onChange={e => setSettings({...settings, defaultCourseExpiry: parseInt(e.target.value)})} />
-                        <p className="text-[9px] font-bold text-gray-400 uppercase italic">Time-to-excision for scholar access protocols.</p>
-                    </div>
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Max Scholar Density</label>
-                        <input type="number" className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-sm" value={settings.maxStudentPerCourse} onChange={e => setSettings({...settings, maxStudentPerCourse: parseInt(e.target.value)})} />
-                        <p className="text-[9px] font-bold text-gray-400 uppercase italic">Capacity limit per asset (0 for infinite flux).</p>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <SettingCard 
+                    icon={CheckBadgeIcon}
+                    title="Course Approval"
+                    description=" authorization protocol for new instructional assets. If set to 'No', deployments bypass the review nexus."
+                    value={settings.course_approval}
+                    field="course_approval"
+                    options={['Yes', 'No']}
+                />
+                <SettingCard 
+                    icon={VideoCameraIcon}
+                    title="Show Seekbar"
+                    description="Governs technical navigation interface. Disabling this restricts scholars from bypassing media segments."
+                    value={settings.show_seekbar}
+                    field="show_seekbar"
+                    options={['Yes', 'No']}
+                />
+                <SettingCard 
+                    icon={BeakerIcon}
+                    title="Drip Content"
+                    description="Defines availability logic. 'Restricted' implements linear progression based on time or mastery thresholds."
+                    value={settings.drip_content}
+                    field="drip_content"
+                    options={['Show all', 'Restricted']}
+                />
+                <SettingCard 
+                    icon={ChatBubbleLeftRightIcon}
+                    title="Hide QA Section"
+                    description="Toggles collaborative inquiry interface. Disabling removes peer discussion clusters from the student panel."
+                    value={settings.hide_qa}
+                    field="hide_qa"
+                    options={['Yes', 'No']}
+                />
+                <SettingCard 
+                    icon={StarIcon}
+                    title="Hide Review"
+                    description="Governs public evaluation feed. Disabling hides scholar feedback and ratings from public catalog assets."
+                    value={settings.hide_review}
+                    field="hide_review"
+                    options={['Yes', 'No']}
+                />
+                <SettingCard 
+                    icon={EnvelopeOpenIcon}
+                    title="Expiry Warning"
+                    description="Defines the temporal window for automated warnings. Scholars are notified prior to asset excision."
+                    value={settings.mail_before_expire}
+                    field="mail_before_expire"
+                    options={['Days']}
+                    type="input"
+                />
             </div>
         </div>
     );

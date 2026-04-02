@@ -3,7 +3,8 @@ import {
     getDashboardStats, getAllUsers, createUser, updateUser, deleteUser, getUserById,
     getAllInstructors, approveInstructor,
     getAllCoursesAdmin, updateCourseStatus, deleteCourseAdmin, updateCourseAdmin,
-    createCategory, updateCategory, deleteCategory
+    createCategory, updateCategory, deleteCategory, getScholarPerformance,
+    getAllPayouts, updatePayoutStatus
 } from '../controllers/adminController.js';
 import { getAllCategories } from '../controllers/courseController.js';
 import { authMiddleware, authorize } from '../middlewares/authMiddleware.js';
@@ -40,5 +41,12 @@ adminRouter.get('/categories', getAllCategories);
 adminRouter.post('/categories', createCategory);
 adminRouter.put('/categories/:id', updateCategory);
 adminRouter.delete('/categories/:id', deleteCategory);
+
+// Reports
+adminRouter.get('/scholar-performance', getScholarPerformance);
+
+// Instructor Payouts
+adminRouter.get('/instructor-payouts', getAllPayouts);
+adminRouter.put('/instructor-payouts/:id/status', updatePayoutStatus);
 
 export default adminRouter;

@@ -15,6 +15,8 @@ import IssuedCertificate from '../models/IssuedCertificate.js';
 import Coupon from '../models/Coupon.js';
 import CmsPage from '../models/CmsPage.js';
 import Blog from '../models/Blog.js';
+import Setting from '../models/Setting.js';
+import Institute from '../models/Institute.js';
 import { seedGamificationSettings } from '../services/gamificationService.js';
 
 
@@ -37,6 +39,9 @@ const seedDatabase = async () => {
         await Coupon.deleteMany({});
         await CmsPage.deleteMany({});
         await Blog.deleteMany({});
+        await Setting.deleteMany({});
+        await Institute.deleteMany({});
+        await Payment.deleteMany({});
 
 
         console.log('Seeding database for PrismEd...');
@@ -429,6 +434,54 @@ const seedDatabase = async () => {
             });
         }
         console.log(`  → 15 Simulated students added.`);
+
+        // 10. Initialization of Course Settings
+        console.log('Initializing Platform-Wide Pedagogical Constants...');
+        const initialSettings = [
+            { key: 'course_approval', value: 'Yes', isSensitive: false },
+            { key: 'show_seekbar', value: 'Yes', isSensitive: false },
+            { key: 'drip_content', value: 'Show all', isSensitive: false },
+            { key: 'hide_qa', value: 'No', isSensitive: false },
+            { key: 'hide_review', value: 'No', isSensitive: false },
+            { key: 'mail_before_expire', value: '7', isSensitive: false },
+
+            // Advanced Communication Protocols (FCM & Pusher)
+            { key: 'fcm_project_id', value: '', isSensitive: false },
+            { key: 'fcm_client_email', value: '', isSensitive: false },
+            { key: 'fcm_private_key', value: '', isSensitive: true },
+            { key: 'pusher_app_id', value: '', isSensitive: false },
+            { key: 'pusher_app_key', value: '', isSensitive: false },
+            { key: 'pusher_app_secret', value: '', isSensitive: true },
+            { key: 'pusher_app_cluster', value: '', isSensitive: false },
+
+            // Notification Trigger Matrix
+            { key: 'notify_course_published', value: 'Yes', isSensitive: false },
+            { key: 'notify_new_enrollment', value: 'Yes', isSensitive: false },
+            { key: 'notify_assignment_submitted', value: 'No', isSensitive: false }
+        ];
+        await Setting.insertMany(initialSettings);
+        console.log('  → 16 Global Platform Settings initialized.');
+
+        // 11. Institution Seeding
+        console.log('Establishing Institutional Nodes...');
+        const institutes = await Institute.insertMany([
+            { name: 'PrismEd Main Campus', location: 'New Delhi, India', instructors: [instructorDocs[0]._id], students: [studentUser._id] },
+            { name: 'Global Tech Academy', location: 'San Francisco, USA', instructors: [instructorDocs[1]._id], students: [] }
+        ]);
+        console.log(`  → ${institutes.length} Institutes established.`);
+
+        // 12. Fiscal Simulation: Legacy Payments
+        console.log('Simulating Fiscal Ingestions...');
+        await Payment.insertMany([
+            { user: studentUser._id, course: firstCourse._id, amount: 1299, status: 'completed', paymentMethod: 'razorpay', razorpayOrderId: 'order_1' },
+            { user: studentUser._id, course: instructorDocs[0]._id, amount: 999, status: 'completed', paymentMethod: 'bank', razorpayOrderId: 'order_2' }
+        ]);
+        
+        // Synchronize Course Enrollment counts
+        await Course.findByIdAndUpdate(firstCourse._id, { $addToSet: { enrolledStudents: studentUser._id } });
+        console.log('  → Course enrollment synchronized for statistics.');
+        console.log('  → Legacy payments ingested for revenue reports.');
+
     } catch (error) {
         console.error('Seed error:', error.message);
     }

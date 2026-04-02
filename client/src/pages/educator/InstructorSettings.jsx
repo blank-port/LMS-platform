@@ -43,6 +43,16 @@ const InstructorSettings = () => {
     const [experience, setExperience] = useState(user?.experience || []);
     const [skills, setSkills] = useState(user?.skills || []);
     const [newSkill, setNewSkill] = useState('');
+    const [avatar, setAvatar] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setAvatar(file);
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleAddEducation = () => {
         setEducation([...education, { institution: '', degree: '', year: '' }]);
@@ -97,17 +107,23 @@ const InstructorSettings = () => {
         if (e) e.preventDefault();
         setLoading(true);
         try {
-            const token = await getToken();
+            const formData = new FormData();
+            // Append basic profile data
+            Object.keys(profileData).forEach(key => formData.append(key, profileData[key]));
+            
+            // Append complex objects (stringify for form-data)
+            formData.append('socialLinks', JSON.stringify(socialLinks));
+            formData.append('payoutSettings', JSON.stringify(fiscalData));
+            formData.append('education', JSON.stringify(education));
+            formData.append('experience', JSON.stringify(experience));
+            formData.append('skills', JSON.stringify(skills));
+            
+            // Append avatar if selected
+            if (avatar) formData.append('profilePicture', avatar);
+
             const { data } = await axios.put(
                 `${backendUrl}/api/user/profile`,
-                { 
-                    ...profileData, 
-                    socialLinks, 
-                    payoutSettings: fiscalData,
-                    education,
-                    experience,
-                    skills
-                },
+                formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (data.success) {
@@ -197,17 +213,24 @@ const InstructorSettings = () => {
                                 {activeTab === 'profile' && (
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-6 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <div className="w-24 h-24 bg-gradient-to-tr from-slate-900 to-slate-700 rounded-2xl flex items-center justify-center text-3xl text-white font-black shadow-xl">
-                                                {user?.avatar ? (
-                                                    <img src={user.avatar} alt="Profile" className="w-full h-full object-cover rounded-2xl" />
-                                                ) : (
-                                                    user?.name?.charAt(0)?.toUpperCase()
-                                                )}
+                                            <div className="relative w-24 h-24">
+                                                <div className="w-24 h-24 bg-gradient-to-tr from-slate-900 to-slate-700 rounded-2xl flex items-center justify-center text-3xl text-white font-black shadow-xl overflow-hidden">
+                                                    {avatarPreview ? (
+                                                        <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        user?.name?.charAt(0)?.toUpperCase()
+                                                    )}
+                                                </div>
                                             </div>
                                             <div>
                                                 <h3 className="text-sm font-black text-slate-900">Profile Avatar</h3>
                                                 <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-tight">Max 2MB, Square, Direct URL or Upload</p>
-                                                <button type="button" className="mt-4 px-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest hover:border-indigo-500 transition-colors">Change Image</button>
+                                                <div className="mt-4">
+                                                    <label className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest hover:border-indigo-500 cursor-pointer transition-colors block w-fit">
+                                                        Change Image
+                                                        <input type="file" className="hidden" onChange={handleAvatarChange} />
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
 

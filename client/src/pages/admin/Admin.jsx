@@ -82,6 +82,7 @@ const menuGroups = [
       { path: '/admin/payment-online', icon: '🌐', label: 'Online Payment' },
       { path: '/admin/payment-offline', icon: '🤝', label: 'Offline Payment' },
       { path: '/admin/payment-bank', icon: '🏦', label: 'Bank Payment' },
+      { path: '/admin/instructor-payouts', icon: '💸', label: 'Instructor Payout' },
       { path: '/admin/payout-settings', icon: '🏗️', label: 'Payout Settings' },
       { path: '/admin/coupons', icon: '🎟️', label: 'Coupons' },
     ]
@@ -111,6 +112,7 @@ const menuGroups = [
       { path: '/admin/messages', icon: '✉️', label: 'Private Messages' },
       { path: '/admin/comments', icon: '🗨️', label: 'Comments' },
       { path: '/admin/qa', icon: '❓', label: 'Q&A Discussions' },
+      { path: '/admin/push-notifications', icon: '🔔', label: 'Push Notifications' },
     ]
   },
   {
@@ -147,9 +149,15 @@ const menuGroups = [
           { path: '/admin/analytics-tool', icon: '📊', label: 'Analytics Tool' },
           { path: '/admin/pusher-setting', icon: '🔔', label: 'Pusher Setting' },
           { path: '/admin/module-manager', icon: '🧩', label: 'Module Manager' },
-          { path: '/admin/about-update', icon: '🔄', label: 'About & Update' },
         ]
       }
+    ]
+  },
+  {
+    title: 'Account',
+    icon: '👤',
+    items: [
+      { path: '/admin/my-profile', icon: '👤', label: 'My Profile' }
     ]
   }
 ];
@@ -185,7 +193,8 @@ const Admin = () => {
               ...prev, 
               [group.title]: true, 
               [`sub_${item.label}`]: true 
-            }));
+              })
+            );
           }
         } else if (location.pathname === item.path) {
           setExpandedGroups(prev => ({ ...prev, [group.title]: true }));
@@ -215,44 +224,48 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)] admin-theme animate-fade-in">
       {/* Executive Navbar */}
-      <header className="fixed top-0 left-0 right-0 h-20 bg-[var(--surface)]/80 backdrop-blur-xl border-b border-[var(--border)] z-50 flex items-center justify-between px-8">
+      <header className="fixed top-0 left-0 right-0 h-20 bg-[var(--surface)]/70 backdrop-blur-2xl border-b border-[var(--border)] z-50 flex items-center justify-between px-8 shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all duration-500">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-indigo-500/20">
               <span className="text-white font-black text-lg">P</span>
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-black text-[var(--text-main)] tracking-tighter leading-none">PRISMED</span>
-              <span className="text-[10px] font-black text-purple-400 tracking-[0.3em] uppercase leading-none mt-1">Command Hub</span>
+              <span className="text-[10px] font-black text-indigo-500 tracking-[0.3em] uppercase leading-none mt-1">Command Hub</span>
             </div>
           </div>
 
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-gray-800 rounded-xl transition-colors md:flex hidden"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors md:flex hidden"
           >
-            <div className="w-5 h-0.5 bg-gray-400 mb-1 transition-all"></div>
-            <div className="w-3 h-0.5 bg-gray-400 mb-1 transition-all"></div>
-            <div className="w-5 h-0.5 bg-gray-400 transition-all"></div>
+            <div className="w-5 h-0.5 bg-slate-400 mb-1 transition-all"></div>
+            <div className="w-3 h-0.5 bg-slate-400 mb-1 transition-all"></div>
+            <div className="w-5 h-0.5 bg-slate-400 transition-all"></div>
           </button>
         </div>
 
         <div className="flex items-center gap-6">
           <div className="md:flex hidden flex-col items-end">
             <span className="text-sm font-black text-[var(--text-main)] leading-none">{user?.name}</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Executive Administrator</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Executive Administrator</span>
           </div>
           <div className="relative group">
-            <div className="w-12 h-12 bg-gradient-to-tr from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-lg shadow-black/10 group-hover:scale-105 transition-transform">
-              {user?.name?.charAt(0)?.toUpperCase()}
+            <div className="w-12 h-12 bg-gradient-to-tr from-slate-900 to-slate-700 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-lg shadow-black/10 group-hover:scale-105 transition-transform overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Admin" className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.charAt(0)?.toUpperCase()
+              )}
             </div>
             <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
           </div>
           <button
             onClick={logout}
-            className="md:flex hidden px-5 py-2.5 bg-gray-800 hover:bg-red-900/20 text-gray-400 hover:text-red-400 text-xs font-black rounded-xl transition-all duration-300 uppercase tracking-widest"
+            className="md:flex hidden px-5 py-2.5 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 text-xs font-black rounded-xl transition-all duration-300 uppercase tracking-widest border border-slate-200"
           >
             Terminate Session
           </button>
@@ -261,12 +274,12 @@ const Admin = () => {
 
       <div className="flex pt-20">
         {/* Navigation Nexus */}
-        <aside className={`${isSidebarOpen ? 'w-72' : 'w-0'} transition-all duration-500 border-r border-[var(--border)] bg-[var(--surface)] h-[calc(100vh-80px)] sticky top-20 overflow-y-auto overflow-x-hidden no-scrollbar md:block hidden shrink-0`}>
+        <aside className={`${isSidebarOpen ? 'w-72' : 'w-0'} transition-all duration-500 border-r border-[var(--border)] bg-[var(--surface)] h-[calc(100vh-80px)] sticky top-20 overflow-y-auto overflow-x-hidden no-scrollbar md:block hidden shrink-0 shadow-xl shadow-slate-200/50`}>
           <div className="p-6 space-y-4">
             <NavLink to="/admin" end
               className={({ isActive }) => `flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-black transition-all duration-300 mb-6 ${isActive
-                ? 'bg-indigo-600 text-white shadow-xl shadow-black/10/10'
-                : 'text-gray-400 hover:bg-[var(--background)]'}`}>
+                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600'}`}>
               <span className="text-xl">📊</span>
               Strategic Overview
             </NavLink>
@@ -275,16 +288,16 @@ const Admin = () => {
               <div key={group.title} className="space-y-1">
                 <button
                   onClick={() => toggleGroup(group.title)}
-                  className={`w-full flex items-center justify-between px-5 py-3 rounded-xl text-sm font-black transition-all duration-300 ${expandedGroups[group.title] ? 'text-[var(--text-main)] bg-[var(--background)]/50' : 'text-gray-400 hover:text-[var(--text-main)] hover:bg-[var(--background)]/30'}`}
+                  className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-sm font-black transition-all duration-300 ${expandedGroups[group.title] ? 'text-indigo-600 bg-indigo-50/50 shadow-sm border border-indigo-100/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{group.icon}</span>
-                    <span className="uppercase tracking-[0.1em]">{group.title}</span>
+                    <span className="text-xl filter drop-shadow-sm">{group.icon}</span>
+                    <span className="uppercase tracking-widest text-[11px]">{group.title}</span>
                   </div>
                   <motion.span
                     animate={{ rotate: expandedGroups[group.title] ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
-                    className="text-[10px]"
+                    className="text-[8px] opacity-40"
                   >
                     ▼
                   </motion.span>
@@ -297,7 +310,7 @@ const Admin = () => {
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="overflow-hidden pl-4 border-l-2 border-[var(--border)] ml-7 space-y-1"
+                      className="overflow-hidden pl-4 border-l-2 border-slate-100 ml-8 my-2 space-y-1"
                     >
                       {group.items.map((item) => (
                         <div key={item.label || item.path}>
@@ -305,16 +318,16 @@ const Admin = () => {
                             <div className="space-y-1 mt-2">
                               <button
                                 onClick={() => toggleSubGroup(item.label)}
-                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-black transition-all duration-300 ${expandedGroups[`sub_${item.label}`] ? 'text-indigo-400 bg-indigo-500/5' : 'text-gray-500 hover:text-indigo-400'}`}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-black transition-all duration-300 ${expandedGroups[`sub_${item.label}`] ? 'text-indigo-600 bg-indigo-50/30' : 'text-slate-500 hover:text-indigo-500'}`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className="opacity-70">{item.icon}</span>
-                                  <span className="tracking-tight uppercase text-[11px]">{item.label}</span>
+                                  <span className="opacity-70 text-sm">{item.icon}</span>
+                                  <span className="tracking-tight uppercase text-[10px]">{item.label}</span>
                                 </div>
                                 <motion.span
                                   animate={{ rotate: expandedGroups[`sub_${item.label}`] ? 180 : 0 }}
                                   transition={{ duration: 0.3 }}
-                                  className="text-[8px]"
+                                  className="text-[6px] opacity-40"
                                 >
                                   ▼
                                 </motion.span>
@@ -327,13 +340,13 @@ const Admin = () => {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.3 }}
-                                    className="overflow-hidden pl-4 border-l border-gray-800 ml-4 space-y-1"
+                                    className="overflow-hidden pl-4 border-l border-slate-100 ml-4 space-y-1"
                                   >
                                     {item.children.map((child) => (
                                       <NavLink key={child.path} to={child.path}
-                                        className={({ isActive }) => `flex items-center gap-4 px-4 py-2 rounded-lg text-[12px] font-bold transition-all duration-300 ${isActive
-                                          ? 'text-indigo-400 font-black'
-                                          : 'text-gray-500 hover:text-[var(--text-main)] hover:translate-x-1'}`}>
+                                        className={({ isActive }) => `flex items-center gap-4 px-4 py-2 rounded-xl text-[12px] font-bold transition-all duration-300 ${isActive
+                                          ? 'text-indigo-600 font-black bg-white shadow-sm border border-slate-100'
+                                          : 'text-slate-400 hover:text-slate-700 hover:translate-x-1'}`}>
                                         <span className="text-sm opacity-50">{child.icon}</span>
                                         <span className="truncate">{child.label}</span>
                                       </NavLink>
@@ -345,9 +358,9 @@ const Admin = () => {
                           ) : (
                             <NavLink to={item.path}
                               className={({ isActive }) => `flex items-center gap-4 px-4 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${isActive
-                                ? 'bg-purple-900/40 text-purple-300'
-                                : 'text-gray-400 hover:bg-[var(--background)] hover:text-[var(--text-main)] hover:translate-x-1'}`}>
-                              <span className="text-base opacity-70">{item.icon}</span>
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'}`}>
+                              <span className="text-base filter drop-shadow-sm">{item.icon}</span>
                               <span className="tracking-tight">{item.label}</span>
                             </NavLink>
                           )}

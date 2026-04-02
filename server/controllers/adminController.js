@@ -3,6 +3,8 @@ import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
 import Category from '../models/Category.js';
 import Quiz from '../models/Quiz.js';
+import QuizAttempt from '../models/QuizAttempt.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from 'mongoose';
 
@@ -310,6 +312,105 @@ export const deleteCategory = async (req, res) => {
         const { id } = req.params;
         await Category.findByIdAndDelete(id);
         res.json({ success: true, message: 'Category deleted' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Get Global Scholar Mastery Data (Reports)
+export const getScholarPerformance = async (req, res) => {
+    try {
+        const students = await User.find({ role: 'student' }).select('name email');
+        
+        const performanceData = await Promise.all(students.map(async (student) => {
+            const enrollments = await Enrollment.find({ userId: student._id });
+            const attempts = await QuizAttempt.find({ userId: student._id });
+
+            // Calculate Curricular Saturation (Progress)
+            let totalProgress = 0;
+            if (enrollments.length > 0) {
+                const totalSaturation = enrollments.reduce((acc, curr) => {
+                    const progress = curr.courseContent?.length > 0 
+                        ? (curr.completedLectures?.length / curr.courseContent.length) * 100 
+                        : 0;
+                    return acc + progress;
+                }, 0);
+                totalProgress = totalSaturation / enrollments.length;
+            }
+
+            // Calculate Assessment Mastery (Avg Score)
+            let avgScore = 0;
+            if (attempts.length > 0) {
+                const totalScore = attempts.reduce((acc, curr) => acc + (curr.score || 0), 0);
+                avgScore = totalScore / attempts.length;
+            }
+
+            return {
+                name: student.name,
+                email: student.email,
+                completion: Math.round(totalProgress || 0),
+                avgScore: Math.round(avgScore || 0)
+            };
+        }));
+
+        res.json({ 
+            success: true, 
+            performance: performanceData.sort((a, b) => b.avgScore - a.avgScore) 
+        });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// ─── Instructor Payout Management ────────────────────────────────────
+export const getAllPayouts = async (req, res) => {
+    try {
+        const { instructor, status, startDate, endDate } = req.query;
+        let query = { source: 'withdrawal' };
+
+        if (instructor && instructor !== 'undefined') query.userId = instructor;
+        if (status && status !== 'undefined') query.status = status;
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) query.createdAt.$lte = new Date(endDate);
+        }
+
+        const payouts = await WalletTransaction.find(query)
+            .populate('userId', 'name email avatar')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, payouts });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export const updatePayoutStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['success', 'failed'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status transition.' });
+        }
+
+        const payout = await WalletTransaction.findByIdAndUpdate(id, { status }, { new: true })
+            .populate('userId', 'name email');
+
+        if (!payout) {
+            return res.status(404).json({ success: false, message: 'Payout record not found.' });
+        }
+
+        // Real-time Relay: Alert Instructor of Financial State Transition
+        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
+        await PushNotificationService.broadcast(`user-${payout.userId._id}`, 'payout-status-update', {
+            amount: payout.amount,
+            status: status.toUpperCase(),
+            message: `Your payout request for ${payout.amount} has been ${status === 'success' ? 'authorized and processed.' : 'rejected by administration.'}`
+        });
+
+        res.json({ success: true, message: `Payout marked as ${status}`, payout });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }

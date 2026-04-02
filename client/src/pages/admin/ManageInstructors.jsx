@@ -79,7 +79,7 @@ const ManageInstructors = () => {
                             {instructors.map((inst) => (
                                 <tr key={inst._id} className="group hover:bg-[var(--background)]/30 transition-colors">
                                     <td className="px-8 py-6">
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-all" onClick={() => navigate(`/admin/student-profile/${inst._id}`)}>
                                             <div className="w-12 h-12 bg-gradient-to-tr from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-lg shadow-black/10/10 group-hover:scale-105 transition-transform border border-white/10">
                                                 {inst.name?.charAt(0)?.toUpperCase()}
                                             </div>

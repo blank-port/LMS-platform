@@ -5,32 +5,74 @@
 @tailwind utilities;
 
 :root {
+  /* Universal Design Tokens */
   --primary: #6366F1;
   --primary-hover: #4F46E5;
-  --secondary: #6366F1;
-  --accent: #22C55E;
-  --background: #0C132B;
-  --surface: #161E3D;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
-  --border: #1E293B;
-  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
-  --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #6366F1;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Admin Panel: Professional & Minimal (Indigo + Slate) */
+.admin-theme {
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --background: #f1f5f9;
+  --surface: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border: #cbd5e1;
+  --accent: #6366F1;
+}
+
+/* Instructor Panel: Vibrant & Creative (Blue + Purple) */
+.instructor-theme {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border: #e2e8f0;
+  --accent: #8b5cf6;
+}
+
+/* Student Panel: Engaging & Gamified (Cyan + Purple + Gradients) */
+.student-theme {
+  --primary: #06b6d4;
+  --primary-hover: #0891b2;
+  --background: #ffffff;
+  --surface: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #f1f5f9;
+  --accent: #ec4899;
+}
+
+/* Optional Dark Mode Overrides (Reduced Harshness) */
+.dark {
+  --background: #0f172a;
+  --surface: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 }
 
 * {
   font-family: 'Inter', sans-serif;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   font-family: 'Poppins', sans-serif;
   color: var(--text-main);
+  @apply tracking-tight font-black;
 }
 
 @layer base {
@@ -42,19 +84,27 @@ h6 {
 
 @layer components {
   .btn-primary {
-    @apply bg-[#4F46E5] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm md:text-base;
+    @apply bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-8 py-3.5 rounded-2xl font-bold transition-all shadow-xl shadow-indigo-500/20 active:scale-95 hover:shadow-2xl hover:-translate-y-0.5 text-sm md:text-base;
   }
 
   .btn-secondary {
-    @apply bg-white/10 text-white px-8 py-3 rounded-xl font-bold border border-white/20 hover:bg-white/20 transition-all backdrop-blur-md text-sm md:text-base;
+    @apply bg-[var(--surface)] text-[var(--text-main)] px-8 py-3.5 rounded-2xl font-bold border border-[var(--border)] hover:bg-[var(--background)] transition-all shadow-lg active:scale-95 text-sm md:text-base;
   }
 
   .premium-card {
-    @apply bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 transition-all duration-300 hover:shadow-[var(--card-shadow-hover)] hover:-translate-y-1;
+    @apply bg-[var(--surface)] border border-[var(--border)] rounded-[2rem] p-8 transition-all duration-500 hover:shadow-[var(--card-shadow-hover)] hover:-translate-y-2;
   }
 
   .glass-effect {
-    @apply bg-white/10 backdrop-blur-lg border border-white/20;
+    @apply bg-white/70 backdrop-blur-3xl border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.05)];
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

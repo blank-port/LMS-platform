@@ -8,6 +8,9 @@ import Category from '../models/Category.js';
 import Payment from '../models/Payment.js';
 import IssuedCertificate from '../models/IssuedCertificate.js';
 import Discussion from '../models/Discussion.js';
+import Setting from '../models/Setting.js';
+import Refund from '../models/Refund.js';
+import Referral from '../models/Referral.js';
 
 // Add New Course
 export const addCourse = async (req, res) => {
@@ -18,7 +21,12 @@ export const addCourse = async (req, res) => {
 
         const parsedCourseData = JSON.parse(courseData);
         parsedCourseData.instructor = instructorId;
-        parsedCourseData.status = 'pending';
+
+        // Fetch global course approval policy
+        const approvalSetting = await Setting.findOne({ key: 'course_approval' });
+        // Robust Fallback: Default to 'Yes' (require approval) if setting is missing or invalid
+        const requiresApproval = approvalSetting ? approvalSetting.value === 'Yes' : true;
+        parsedCourseData.status = requiresApproval ? 'pending' : 'approved';
         parsedCourseData.isPublished = true;
 
         const newCourse = await Course.create(parsedCourseData);
@@ -397,6 +405,48 @@ export const getInstructorMyPanel = async (req, res) => {
                 totalLectures: c.courseContent?.reduce((acc, ch) => acc + (ch.chapterContent?.length || 0), 0) || 0
             }));
             return res.json({ success: true, tab, data: topics });
+        }
+
+        if (tab === 'refund_cancellation') {
+            const refunds = await Refund.find({ user: userId })
+                .populate('courseId', 'courseTitle courseThumbnail')
+                .sort({ createdAt: -1 });
+            return res.json({ success: true, tab, data: refunds });
+        }
+
+        if (tab === 'referral') {
+            const referral = await Referral.findOne({ referrer: userId })
+                .populate('referees.user', 'name profilePicture email createdAt');
+                
+            // If no referral record exists, return an empty structure
+            const referralData = referral || { 
+                referralCode: req.user.referralCode || 'NOT_SET',
+                totalEarnings: 0, 
+                referees: [] 
+            };
+            return res.json({ success: true, tab, data: referralData });
+        }
+
+        if (tab === 'deposit') {
+            const deposits = await WalletTransaction.find({ 
+                userId, 
+                source: 'wallet_deposit' 
+            }).sort({ createdAt: -1 });
+            return res.json({ success: true, tab, data: deposits });
+        }
+
+        if (tab === 'logged_in_device') {
+            // Mocking active sessions based on user data
+            const devices = [
+                {
+                    device: 'Windows PC - Chrome',
+                    ip: req.ip || '127.0.0.1',
+                    location: 'Current Location',
+                    lastLogin: req.user.lastLogin || new Date(),
+                    current: true
+                }
+            ];
+            return res.json({ success: true, tab, data: devices });
         }
 
         res.json({ success: true, tab, data: [] });

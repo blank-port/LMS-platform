@@ -8,7 +8,7 @@ import { assets } from '../../assets/assets';
 
 const Player = () => {
     const { courseId } = useParams();
-    const { backendUrl, token, navigate } = useContext(AppContext);
+    const { backendUrl, token, navigate, settings } = useContext(AppContext);
     const [courseData, setCourseData] = useState(null);
     const [enrollment, setEnrollment] = useState(null);
     const [currentLecture, setCurrentLecture] = useState(null);
@@ -16,6 +16,14 @@ const Player = () => {
     const [discussions, setDiscussions] = useState([]);
     const [newQuestion, setNewQuestion] = useState('');
     const [loading, setLoading] = useState(true);
+
+    const getYoutubeUrl = (url) => {
+        let base = url.replace('watch?v=', 'embed/').split('&')[0];
+        if (settings?.show_seekbar === 'No') {
+            base += (base.includes('?') ? '&' : '?') + 'controls=0';
+        }
+        return base;
+    };
 
     useEffect(() => {
         if (!token) { navigate('/login'); return; }
@@ -153,12 +161,17 @@ const Player = () => {
                             currentLecture.lectureUrl.includes('youtube.com') || currentLecture.lectureUrl.includes('youtu.be') ? (
                                 <iframe
                                     className="w-full h-full"
-                                    src={currentLecture.lectureUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                                    src={getYoutubeUrl(currentLecture.lectureUrl)}
                                     allowFullScreen
                                     title={currentLecture.lectureTitle}
                                 />
                             ) : (
-                                <video className="w-full h-full" controls src={currentLecture.lectureUrl} />
+                                <video 
+                                    className="w-full h-full" 
+                                    controls={settings?.show_seekbar === 'Yes'} 
+                                    controlsList={settings?.show_seekbar === 'No' ? 'noplaybackrate' : ''}
+                                    src={currentLecture.lectureUrl} 
+                                />
                             )
                         ) : (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10">
@@ -172,7 +185,10 @@ const Player = () => {
                     {/* Content Intelligence Tabs */}
                     <div className="bg-[#0C132B] border-t border-white/5">
                         <div className="flex px-8 md:px-12 border-b border-white/5">
-                            {['description', 'qa', 'reviews'].map(tab => (
+                            {['description', 'qa', 'reviews'].filter(tab => {
+                                if (tab === 'qa' && settings?.hide_qa === 'Yes') return false;
+                                return true;
+                            }).map(tab => (
                                 <button 
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}

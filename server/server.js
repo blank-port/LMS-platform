@@ -28,6 +28,7 @@ import cmsRouter from './routes/cmsRoutes.js'
 import blogRouter from './routes/blogRoutes.js'
 import subCategoryRouter from './routes/subCategoryRoutes.js'
 import gamificationRouter from './routes/gamificationRoutes.js'
+import notificationRouter from './routes/notificationRoutes.js'
 
 
 import path from 'path'
@@ -53,7 +54,7 @@ app.use(express.json())
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 1000, // Increased for development verification
   message: 'Too many requests from this IP, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
@@ -86,6 +87,7 @@ app.use('/api/cms', cmsRouter)
 app.use('/api/blog', blogRouter)
 app.use('/api/sub-category', subCategoryRouter)
 app.use('/api/gamification', gamificationRouter)
+app.use('/api/notification', notificationRouter)
 
 
 

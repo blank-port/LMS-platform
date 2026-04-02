@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { grantPoints } from "../services/gamificationService.js";
 import PointHistory from "../models/PointHistory.js";
+import { v2 as cloudinary } from 'cloudinary';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -224,14 +225,17 @@ export const updateProfile = async (req, res) => {
         if (payoutSettings) updateData.payoutSettings = typeof payoutSettings === 'string' ? JSON.parse(payoutSettings) : payoutSettings;
 
         // Avatar Handling
-        if (req.file) updateData.avatar = req.file.path;
+        if (req.file) {
+            const imageUpload = await cloudinary.uploader.upload(req.file.path);
+            updateData.avatar = imageUpload.secure_url;
+        }
 
         const user = await User.findByIdAndUpdate(
             req.user._id,
             updateData,
             { new: true }
         ).select('-password');
-        await user.save();
+        
         res.json({ success: true, user });
 
         // Grant reward for digital identity synchronization (profile completion)
@@ -266,7 +270,8 @@ export const updateAccountProfile = async (req, res) => {
         if (about) updateData.about = about;
         
         if (req.file) {
-            updateData.avatar = req.file.path;
+            const imageUpload = await cloudinary.uploader.upload(req.file.path);
+            updateData.avatar = imageUpload.secure_url;
         }
 
         const user = await User.findByIdAndUpdate(

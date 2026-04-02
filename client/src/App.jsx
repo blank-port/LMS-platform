@@ -43,6 +43,10 @@ import InstructorPayouts from './pages/educator/InstructorPayouts';
 import InstructorRevenue from './pages/educator/InstructorRevenue';
 import InstructorCourseStats from './pages/educator/InstructorCourseStats';
 import InstructorQA from './pages/educator/InstructorQA';
+import InstructorCourseSettings from './pages/educator/InstructorCourseSettings';
+import InstructorQuestionGroup from './pages/educator/InstructorQuestionGroup';
+import InstructorAddQuestion from './pages/educator/InstructorAddQuestion';
+import InstructorQuestionImport from './pages/educator/InstructorQuestionImport';
 
 // Admin Imports
 import Admin from './pages/admin/Admin';
@@ -57,6 +61,7 @@ import ManageDeleteRequests from './pages/admin/ManageDeleteRequests';
 import ManageLevels from './pages/admin/ManageLevels';
 import ManageSubjects from './pages/admin/ManageSubjects';
 import AdminSettings from './pages/admin/AdminSettings';
+import ManageCourseSettings from './pages/admin/ManageCourseSettings';
 import ManageQuestionGroups from './pages/admin/ManageQuestionGroups';
 import QuestionBank from './pages/admin/QuestionBank';
 import AddQuestion from './pages/admin/AddQuestion';
@@ -77,6 +82,7 @@ import UserPerformanceReport from './pages/admin/UserPerformanceReport';
 import NewEnrollment from './pages/admin/NewEnrollment';
 import ManageEnrollments from './pages/admin/ManageEnrollments';
 import RefundSettings from './pages/admin/RefundSettings';
+import ManageInstructorPayouts from './pages/admin/ManageInstructorPayouts';
 import ManageECommerce from './pages/admin/ManageECommerce';
 import ManagePayments from './pages/admin/ManagePayments';
 import PayoutSettings from './pages/admin/PayoutSettings';
@@ -87,8 +93,11 @@ import ManageCommunication from './pages/admin/ManageCommunication';
 import ManageMessages from './pages/admin/ManageMessages';
 import ManageQA from './pages/admin/ManageQA';
 import ManageComments from './pages/admin/ManageComments';
+import ManagePushNotifications from './pages/admin/ManagePushNotifications';
 import CommunicationSettings from './pages/admin/settings/CommunicationSettings';
 import ManageCoupons from './pages/admin/ManageCoupons';
+import StudentDetails from './pages/admin/StudentDetails';
+import AdminProfile from './pages/admin/AdminProfile';
 
 
 // Administration Settings
@@ -230,12 +239,18 @@ const App = () => {
           <Route index element={<Dashboard />} />
           <Route path='add-course' element={<AddCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
+          <Route path='course-settings' element={<InstructorCourseSettings />} />
+          
+          <Route path='question-group' element={<InstructorQuestionGroup />} />
+          <Route path='add-question' element={<InstructorAddQuestion />} />
+          <Route path='question-bank' element={<InstructorQuestionBank />} />
+          <Route path='question-import' element={<InstructorQuestionImport />} />
+          <Route path='create-quiz' element={<CreateQuiz />} />
+
           <Route path='student-enrolled/:courseId' element={<EnrolledStudents />} />
           <Route path='students-enrolled' element={<EnrolledStudents />} />
           <Route path='communication' element={<InstructorCommunication />} />
-          <Route path='question-bank' element={<InstructorQuestionBank />} />
           <Route path='quiz-reports' element={<InstructorQuizReports />} />
-          <Route path='create-quiz' element={<CreateQuiz />} />
           <Route path='settings' element={<InstructorSettings />} />
           <Route path='my-panel' element={<InstructorMyPanel />} />
           <Route path='payouts' element={<InstructorPayouts />} />
@@ -255,13 +270,15 @@ const App = () => {
           <Route path='departments' element={<ManageDepartments />} />
           <Route path='roles' element={<ManageRoles />} />
           <Route path='delete-requests' element={<ManageDeleteRequests />} />
+          <Route path='student-profile/:id' element={<StudentDetails />} />
 
           <Route path='courses' element={<ManageCourses />} />
           <Route path='categories' element={<ManageCategories />} />
           <Route path='sub-categories' element={<ManageSubCategories />} />
           <Route path='levels' element={<ManageLevels />} />
           <Route path='subjects' element={<ManageSubjects />} />
-          <Route path='settings' element={<AdminSettings />} />
+          <Route path='settings' element={<ManageCourseSettings />} />
+          <Route path='system-setting' element={<AdminSettings />} />
 
           <Route path='question-group' element={<ManageQuestionGroups />} />
           <Route path='question-bank' element={<QuestionBank />} />
@@ -280,6 +297,7 @@ const App = () => {
           <Route path='reviews' element={<ManageReviews />} />
           <Route path='report-institution' element={<InstitutionReport />} />
           <Route path='report-performance' element={<UserPerformanceReport />} />
+          <Route path='push-notifications' element={<ManagePushNotifications />} />
 
           <Route path='new-enroll' element={<NewEnrollment />} />
           <Route path='enrollments' element={<ManageEnrollments />} />
@@ -292,6 +310,7 @@ const App = () => {
           <Route path='payment-offline' element={<ManagePayments title="Offline Fiscal Protocols" method="offline" />} />
           <Route path='payment-bank' element={<ManagePayments title="Bank Transfer Verification" method="bank" />} />
           <Route path='coupons' element={<ManageCoupons />} />
+          <Route path='instructor-payouts' element={<ManageInstructorPayouts />} />
           <Route path='payout-settings' element={<PayoutSettings />} />
 
 
@@ -335,6 +354,7 @@ const App = () => {
           <Route path='pusher-setting' element={<PusherSetting />} />
           <Route path='module-manager' element={<ModuleManager />} />
           <Route path='about-update' element={<AboutUpdate />} />
+          <Route path='my-profile' element={<AdminProfile />} />
 
         </Route>
       </Routes>

@@ -1,131 +1,165 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { assets } from '../../assets/assets';
+import { motion } from 'framer-motion';
+import { Award, LayoutDashboard } from 'lucide-react';
 
 const Hero = () => {
   const { navigate } = useContext(AppContext);
 
   return (
-    <div className="relative w-full min-h-screen flex items-center justify-center bg-[var(--background)] overflow-hidden pt-20">
-      {/* Background Orbs & Gradients - Enhanced for depth */}
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#7C32FF]/10 rounded-full blur-[150px] -mr-64 -mt-64 animate-pulse"></div>
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] -ml-48 -mb-48"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_transparent_0%,_var(--background)_70%)] opacity-60"></div>
-
+    <div className="relative w-full min-h-screen flex items-center justify-center bg-[var(--background)] overflow-hidden pt-20 student-theme">
+      {/* Dynamic Background Surface */}
+      <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse"></div>
+      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[100px]"></div>
+      
       <div className="container mx-auto px-6 md:px-12 lg:px-24 z-10 py-20">
-        <div className="flex flex-col lg:flex-row items-center gap-20">
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
 
-          {/* Left Content */}
-          <div className="flex-1 text-center lg:text-left">
-            <div className="inline-flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 px-5 py-2.5 rounded-full mb-10 backdrop-blur-xl">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-              </span>
-              <span className="text-indigo-300 text-[10px] font-black tracking-[0.25em] uppercase">The Future of Education</span>
+          {/* Core Content Engine */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="flex-1 text-center lg:text-left"
+          >
+            <div className="inline-flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/20 px-6 py-3 rounded-2xl mb-12 backdrop-blur-xl group hover:bg-cyan-500/20 transition-all duration-500 cursor-pointer">
+              <div className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+              </div>
+              <span className="text-cyan-600 text-[11px] font-black tracking-[0.3em] uppercase">Intelligence Evolved</span>
             </div>
 
-            <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-[var(--text-main)] leading-[0.95] mb-10 tracking-tighter">
-              Master the <br className="hidden md:block" />
-              <span className="bg-gradient-to-r from-[#7C32FF] via-[#6366F1] to-[#FF3278] bg-clip-text text-transparent">Digital Frontier</span>
+            <h1 className="text-6xl md:text-7xl lg:text-9xl font-black text-slate-900 leading-[0.85] mb-10 tracking-tighter">
+              Unlock Your <br className="hidden md:block" />
+              <span className="bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 bg-clip-text text-transparent">Full Potential</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-[var(--text-muted)] max-w-2xl mb-14 leading-relaxed font-medium mx-auto lg:mx-0">
-              Access curated courses from global industry titans. Elevate your skills with immersive projects and professional certifications designed for the modern economy.
+            <p className="text-xl md:text-2xl text-slate-500 max-w-2xl mb-16 leading-relaxed font-bold mx-auto lg:mx-0 opacity-80">
+              Access the world's most advanced learning ecosystem. From quantum computing to generative design, master the skills of tomorrow, today.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start">
               <button
                 onClick={() => navigate('/course-list')}
-                className="w-full sm:w-auto btn-primary flex items-center justify-center gap-4 px-12 py-5 text-lg"
+                className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all duration-500 shadow-2xl shadow-blue-500/30 uppercase tracking-widest text-sm"
               >
-                <span>Browse Catalog</span>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+                Start Learning Now
               </button>
               <button
                 onClick={() => navigate('/register')}
-                className="w-full sm:w-auto btn-secondary flex items-center justify-center gap-4 px-12 py-5 text-lg"
+                className="w-full sm:w-auto px-12 py-5 bg-white border-2 border-slate-100 text-slate-900 font-black rounded-2xl hover:bg-slate-50 hover:border-blue-500/20 active:scale-95 transition-all duration-500 uppercase tracking-widest text-sm"
               >
-                Join as Educator
+                Become Instructor
               </button>
             </div>
 
-            {/* Premium Stats Row */}
-            <div className="mt-24 flex flex-wrap justify-center lg:justify-start gap-16 border-t border-white/5 pt-12">
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-[var(--text-main)] tracking-tighter">120+</span>
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-2 opacity-60">Curated Courses</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-[var(--text-main)] tracking-tighter">80+</span>
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-2 opacity-60">Verified Experts</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-3xl font-black text-[var(--text-main)] tracking-tighter">15K+</span>
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-2 opacity-60">Global Learners</span>
-              </div>
+            {/* High-Fidelity Stats Section */}
+            <div className="mt-24 grid grid-cols-3 gap-12 border-t border-slate-100 pt-16">
+              {[
+                { val: '250+', label: 'Premium Courses' },
+                { val: '45K+', label: 'Global Students' },
+                { val: '120+', label: 'Elite Mentors' }
+              ].map((stat, i) => (
+                <div key={i} className="flex flex-col items-center lg:items-start group">
+                  <span className="text-4xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors duration-300">{stat.val}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3">{stat.label}</span>
+                </div>
+              ))}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Right Imagery - Professional Abstract Composition */}
-          <div className="flex-1 relative hidden lg:block">
+          {/* Immersive Visual Composition */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="flex-1 relative hidden lg:block"
+          >
             <div className="relative w-full aspect-square max-w-xl mx-auto">
-              {/* Decorative Rings */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] border border-white/5 rounded-full"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] border border-white/5 rounded-full"></div>
+              {/* Dynamic Orbital Rings */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[115%] h-[115%] border border-slate-100 rounded-[4rem] rotate-45 animate-spin-slow"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] border border-slate-200/50 rounded-[3rem] -rotate-12"></div>
 
-              {/* Floating Professional Cards */}
-              <div className="absolute -top-4 right-10 p-8 bg-white/5 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 shadow-2xl animate-bounce-slow z-30 max-w-[240px]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-400 font-black">✓</div>
-                  <div className="space-y-2">
-                    <div className="h-2 w-20 bg-white/20 rounded-full"></div>
-                    <div className="h-2 w-12 bg-white/10 rounded-full"></div>
+              {/* Floating Interactive Elements */}
+              <motion.div 
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-8 -right-8 p-8 glass-effect rounded-[2.5rem] border border-white/50 shadow-2xl z-30 max-w-[260px]"
+              >
+                <div className="flex items-center gap-5 mb-5">
+                  <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <Award size={24} />
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="h-2.5 w-24 bg-slate-900 rounded-full"></div>
+                    <div className="h-2 w-16 bg-slate-200 rounded-full"></div>
                   </div>
                 </div>
-                <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Skill Validated</p>
-              </div>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Mastery Verified</p>
+              </motion.div>
 
-              <div className="absolute bottom-10 -left-12 p-8 bg-white/5 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 shadow-2xl animate-float z-30 max-w-[260px]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-[#7C32FF]/20 rounded-2xl flex items-center justify-center text-[#7C32FF] text-2xl">⚡</div>
-                  <div className="space-y-2">
-                    <div className="h-2 w-24 bg-white/20 rounded-full"></div>
-                    <div className="h-2 w-16 bg-white/10 rounded-full"></div>
+              <motion.div 
+                animate={{ y: [0, 20, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-10 -left-10 p-8 glass-effect rounded-[2.5rem] border border-white/50 shadow-2xl z-30 max-w-[280px]"
+              >
+                <div className="flex items-center gap-5 mb-5">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                    <LayoutDashboard size={24} />
+                  </div>
+                  <div className="space-y-2.5 flex-1">
+                    <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div className="w-[85%] h-full bg-blue-600"></div>
+                    </div>
+                    <div className="h-2 w-1/2 bg-slate-100 rounded-full"></div>
                   </div>
                 </div>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-2 h-2 bg-[#7C32FF] rounded-full"></div>)}
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Progress</span>
+                  <span className="text-[10px] text-blue-600 font-black">85%</span>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Main Visual Core */}
-              <div className="w-full h-full bg-gradient-to-br from-[#161E3D] to-[#0C132B] border border-white/10 rounded-[5rem] relative overflow-hidden shadow-3xl transform -rotate-3 hover:rotate-0 transition-all duration-1000">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-64 h-64 bg-[#7C32FF] rounded-full blur-[100px] opacity-20 animate-pulse"></div>
-                </div>
-                {/* Internal UI Mockup Elements */}
-                <div className="absolute inset-0 p-12 flex flex-col justify-end space-y-6">
-                  <div className="h-4 w-1/2 bg-white/10 rounded-full"></div>
-                  <div className="h-4 w-3/4 bg-white/20 rounded-full"></div>
-                  <div className="h-4 w-2/3 bg-white/5 rounded-full"></div>
-                  <div className="pt-8 flex gap-4">
-                    <div className="h-12 w-12 bg-white/10 rounded-2xl"></div>
-                    <div className="h-12 w-12 bg-white/10 rounded-2xl"></div>
-                    <div className="h-12 w-12 bg-white/10 rounded-2xl"></div>
+              {/* Main Visual Core - The "Lab" */}
+              <div className="w-full h-full bg-white border border-slate-100 rounded-[5rem] relative overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.05)] transform hover:scale-[1.02] transition-transform duration-1000">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-white"></div>
+                
+                {/* Abstract UI Elements */}
+                <div className="absolute inset-0 p-16 flex flex-col justify-start space-y-10">
+                  <div className="space-y-4">
+                    <div className="h-10 w-full bg-slate-100 rounded-2xl"></div>
+                    <div className="h-10 w-4/5 bg-slate-50 rounded-2xl"></div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="aspect-square bg-blue-50 rounded-3xl border border-blue-100/50"></div>
+                    <div className="aspect-square bg-cyan-50 rounded-3xl border border-cyan-100/50"></div>
+                  </div>
+                  
+                  <div className="mt-auto flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-full bg-slate-100"></div>
+                    <div className="flex-1 space-y-3">
+                      <div className="h-3 w-1/2 bg-slate-200 rounded-full"></div>
+                      <div className="h-3 w-1/3 bg-slate-100 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Focus Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Marquee Navigation Tags */}
-      <div className="absolute bottom-0 left-0 w-full bg-[var(--surface)]/30 border-t border-white/5 py-8 overflow-hidden hidden md:block backdrop-blur-3xl">
-        <div className="flex items-center justify-center gap-16 whitespace-nowrap opacity-20">
-          {['Cybersecurity', 'Full-stack Development', 'AI Engineering', 'Digital Marketing', 'Data Science', 'UI/UX Design', 'Cloud Architecture'].map(cat => (
-            <span key={cat} className="text-xs font-black uppercase text-[var(--text-main)] tracking-[0.5em] hover:text-[#7C32FF] hover:opacity-100 transition-all cursor-crosshair">{cat}</span>
+      {/* Modern Footer Marquee */}
+      <div className="absolute bottom-0 left-0 w-full bg-white/50 border-t border-slate-100 py-10 overflow-hidden hidden md:block backdrop-blur-2xl">
+        <div className="flex items-center justify-around opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000">
+          {['Cybersecurity', 'Web Architecture', 'AI & Data', 'UX Philosophy', 'Cloud Strategy'].map(cat => (
+            <span key={cat} className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em] hover:text-blue-600 hover:opacity-100 transition-all cursor-crosshair">{cat}</span>
           ))}
         </div>
       </div>

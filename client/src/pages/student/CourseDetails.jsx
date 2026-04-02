@@ -203,7 +203,10 @@ const CourseDetails = () => {
                     <div className="lg:w-2/3">
                         {/* Premium Tabs */}
                         <div className="bg-[var(--surface)]/80 backdrop-blur-xl p-2 rounded-2xl shadow-2xl shadow-indigo-500/10 border border-[var(--border)] flex items-center gap-3 overflow-x-auto whitespace-nowrap sticky top-24 z-30 mb-12">
-                            {['overview', 'curriculum', 'reviews', 'discussions'].map(tab => (
+                            {['overview', 'curriculum', 'reviews', 'discussions'].filter(tab => {
+                                if (tab === 'reviews' && settings?.hide_review === 'Yes') return false;
+                                return true;
+                            }).map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}

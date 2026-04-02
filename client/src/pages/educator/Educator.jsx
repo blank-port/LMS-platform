@@ -26,11 +26,11 @@ const Educator = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--background)] instructor-theme animate-fade-in">
       <Navbar />
       <div className="flex pt-20">
         <SideBar />
-        <main className="flex-1 md:ml-72 p-8 sm:p-12 lg:p-16 animate-fade-in">
+        <main className="flex-1 md:ml-72 p-8 sm:p-12 lg:p-16 text-[var(--text-main)] overflow-x-hidden">
           <Outlet />
         </main>
       </div>
