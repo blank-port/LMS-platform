@@ -79,7 +79,13 @@ const InstructorMyPanel = () => {
                                 <span className="text-[9px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full">{item.paymentMethod}</span>
                             </td>
                             <td className="px-8 py-6">
-                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>{item.status}</span>
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${
+                                    item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                                    item.status === 'pending_approval' ? 'bg-amber-50 text-amber-600 animate-pulse' : 
+                                    'bg-gray-50 text-gray-400'
+                                }`}>
+                                    {item.status === 'pending_approval' ? 'Awaiting Approval' : item.status}
+                                </span>
                             </td>
                             <td className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(item.createdAt).toLocaleDateString()}</td>
                         </tr>

@@ -4,6 +4,7 @@ import Refund from "../models/Refund.js";
 import Badge from "../models/Badge.js";
 import User from "../models/User.js";
 import Setting from "../models/Setting.js";
+import Course from "../models/Course.js";
 
 // Certificate Templates
 export const createCertificateTemplate = async (req, res) => {
@@ -27,7 +28,6 @@ export const getCertificateTemplates = async (req, res) => {
 // Financials
 export const getAdminRevenue = async (req, res) => {
     try {
-        const Course = (await import('../models/Course.js')).default;
 
         const payments = await Payment.find({ status: 'completed' });
         console.log('DEBUG: Found completed payments count:', payments.length);
@@ -72,7 +72,6 @@ export const getInstructorRevenue = async (req, res) => {
     try {
         const { id } = req.params;
         const instructorId = id || req.user._id;
-        const Course = (await import('../models/Course.js')).default;
 
         const instructorCourses = await Course.find({ instructor: instructorId });
         const courseIds = instructorCourses.map(c => c._id);

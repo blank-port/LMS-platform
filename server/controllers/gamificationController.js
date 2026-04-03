@@ -4,6 +4,7 @@ import GamificationSetting from "../models/GamificationSetting.js";
 import PointHistory from "../models/PointHistory.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import { seedGamificationSettings } from "../services/gamificationService.js";
+import { createAdminNotification } from "../services/notificationService.js";
 
 // Admin: Get all gamification settings
 export const getSettings = async (req, res) => {
@@ -180,6 +181,13 @@ export const convertToWallet = async (req, res) => {
 
         await session.commitTransaction();
         session.endSession();
+
+        // Notify Admin of Reward Redemption
+        await createAdminNotification({
+            type: 'REWARD_REDEMPTION',
+            message: `${req.user.name} redeemed points for ₹${cashAmount} wallet balance`,
+            module: 'gamification'
+        });
 
         res.json({ 
             success: true, 

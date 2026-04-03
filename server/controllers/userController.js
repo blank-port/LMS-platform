@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { grantPoints } from "../services/gamificationService.js";
+import { createAdminNotification } from "../services/notificationService.js";
 import PointHistory from "../models/PointHistory.js";
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -85,6 +86,14 @@ export const register = async (req, res) => {
                 profilePicture: user.profilePicture,
                 isApproved: user.isApproved
             }
+        });
+
+        // Notify Admin of New User
+        await createAdminNotification({
+            type: 'NEW_USER',
+            message: `New ${userRole} registered: ${name} (${email})`,
+            module: 'users',
+            referenceId: user._id
         });
 
     } catch (error) {

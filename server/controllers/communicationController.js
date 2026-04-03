@@ -5,6 +5,8 @@ import CommunicationSetting from '../models/CommunicationSetting.js';
 import User from '../models/User.js';
 import Notice from '../models/Notice.js';
 import { broadcast } from '../services/pusherService.js';
+import { createAdminNotification } from '../services/notificationService.js';
+
 export const getMessages = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -54,6 +56,14 @@ export const sendMessage = async (req, res) => {
         await broadcast(`user-${receiverId}`, 'new-message', {
             sender: req.user.name,
             content: content.substring(0, 50) + '...'
+        });
+
+        // Trigger Admin Notification
+        await createAdminNotification({
+            type: 'NEW_MESSAGE',
+            message: `New message from ${req.user.name} to receiver ${receiverId}`,
+            module: 'communication',
+            referenceId: newMessage._id
         });
 
         res.json({ success: true, message: "Protocol Dispatched", data: newMessage });
@@ -150,6 +160,14 @@ export const addComment = async (req, res) => {
             status
         });
 
+        // Trigger Admin Notification
+        await createAdminNotification({
+            type: 'NEW_QUESTION', // Comments treated as questions for monitoring
+            message: `New comment from ${req.user.name} on ${targetType}`,
+            module: 'communication',
+            referenceId: comment._id
+        });
+
         res.json({ success: true, message: status === 'approved' ? 'Comment Published' : 'Comment Dispatched for Moderation', comment });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -244,6 +262,14 @@ export const addQuestion = async (req, res) => {
         if (parentId) {
             await Discussion.findByIdAndUpdate(parentId, { isReplied: true });
         }
+
+        // Trigger Admin Notification
+        await createAdminNotification({
+            type: 'NEW_QUESTION',
+            message: `New inquiry from ${req.user.name} in course`,
+            module: 'communication',
+            referenceId: question._id
+        });
 
         const populated = await Discussion.findById(question._id)
             .populate('userId', 'name avatar role');

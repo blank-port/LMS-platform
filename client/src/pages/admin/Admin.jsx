@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { AppContext } from '../../context/AppContextObject.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
+import NotificationBell from '../../components/admin/NotificationBell'
 
 const menuGroups = [
   {
@@ -82,6 +83,7 @@ const menuGroups = [
       { path: '/admin/payment-online', icon: '🌐', label: 'Online Payment' },
       { path: '/admin/payment-offline', icon: '🤝', label: 'Offline Payment' },
       { path: '/admin/payment-bank', icon: '🏦', label: 'Bank Payment' },
+      { path: '/admin/cod-approvals', icon: '✅', label: 'COD Approvals' },
       { path: '/admin/instructor-payouts', icon: '💸', label: 'Instructor Payout' },
       { path: '/admin/payout-settings', icon: '🏗️', label: 'Payout Settings' },
       { path: '/admin/coupons', icon: '🎟️', label: 'Coupons' },
@@ -249,6 +251,7 @@ const Admin = () => {
         </div>
 
         <div className="flex items-center gap-6">
+          <NotificationBell />
           <div className="md:flex hidden flex-col items-end">
             <span className="text-sm font-black text-[var(--text-main)] leading-none">{user?.name}</span>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Executive Administrator</span>

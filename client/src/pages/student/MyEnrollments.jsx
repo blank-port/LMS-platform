@@ -2,17 +2,39 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { Link } from 'react-router-dom';
 import { assets } from '../../assets/assets';
-import { BookOpen, GraduationCap, ChevronRight } from 'lucide-react';
+import { BookOpen, GraduationCap, ChevronRight, Clock, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const MyEnrollments = () => {
-    const { user, enrolledCourses, navigate, token, fetchUserEnrolledCourses } = useContext(AppContext);
+    const { user, enrolledCourses, navigate, token, fetchUserEnrolledCourses, backendUrl } = useContext(AppContext);
+    const [pendingPayments, setPendingPayments] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchPendingPayments = async () => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/api/payment/my-pending-cod`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                setPendingPayments(data.payments);
+            }
+        } catch (error) {
+            console.error('Error fetching pending payments:', error.message);
+        }
+    };
 
     useEffect(() => {
         if (token) {
-            fetchUserEnrolledCourses();
+            const loadData = async () => {
+                setLoading(true);
+                await Promise.all([fetchUserEnrolledCourses(), fetchPendingPayments()]);
+                setLoading(false);
+            };
+            loadData();
         }
         window.scrollTo(0, 0);
-    }, []);
+    }, [token]);
 
     if (!user) return null;
 
@@ -20,8 +42,8 @@ const MyEnrollments = () => {
         <div className="space-y-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Academic Parchments</h1>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Access your authorized learning trajectories</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight text-uppercase">Academic Ledger</h1>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Authorized access & pending synchronization</p>
                 </div>
                 <button 
                     onClick={() => navigate('/course-list')}
@@ -31,12 +53,57 @@ const MyEnrollments = () => {
                 </button>
             </div>
 
+            {/* Pending Approvals Section */}
+            {pendingPayments.length > 0 && (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 px-6">
+                        <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
+                            <Clock size={16} />
+                        </div>
+                        <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Pending Access Authorization</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {pendingPayments.map((payment) => (
+                            <div key={payment._id} className="bg-white rounded-[2.5rem] border border-amber-100 shadow-xl shadow-amber-500/5 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-6 opacity-[0.03] text-amber-500 group-hover:scale-110 transition-transform duration-700">
+                                    <Clock size={80} />
+                                </div>
+                                <div className="p-8 space-y-6 relative z-10">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-12 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0">
+                                            <img src={payment.course?.courseThumbnail || assets.placeholder} alt="" className="w-full h-full object-cover opacity-50 grayscale" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-gray-900 tracking-tight line-clamp-1 truncate-uppercase uppercase">{payment.course?.courseTitle}</h3>
+                                            <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest mt-1 italic">COD: ₹{payment.amount} (Pending)</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 flex items-center gap-3">
+                                        <AlertCircle size={14} className="text-amber-500 flex-shrink-0" />
+                                        <p className="text-[10px] font-bold text-amber-600 uppercase leading-tight italic">
+                                            Handover requested. Waiting for admin manual signal.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <main className="relative z-20 pb-12">
+                <div className="flex items-center gap-3 px-6 mb-6">
+                    <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
+                        <GraduationCap size={16} />
+                    </div>
+                    <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Active Intelligence Streams</h2>
+                </div>
+                
                 {enrolledCourses.length === 0 ? (
                     <div className="bg-white rounded-[3rem] shadow-2xl shadow-gray-200/50 p-24 text-center border border-gray-50 flex flex-col items-center">
                         <div className="text-7xl mb-10 opacity-20 grayscale">📚</div>
                         <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">Your bookshelf is empty</h3>
-                        <p className="text-gray-400 font-medium mb-12 max-w-sm mx-auto">Start your learning journey by enrolling in our world-class courses designed for future leaders.</p>
+                        <p className="text-gray-400 font-medium mb-12 max-w-sm mx-auto uppercase text-[10px] tracking-widest">Deploy protocols to initiate learning sequences</p>
                         <button onClick={() => navigate('/course-list')} className="bg-indigo-600 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-105 transition-all">
                             Browse Collection
                         </button>
@@ -47,11 +114,11 @@ const MyEnrollments = () => {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-gray-50/50 border-b border-gray-100">
-                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Protocol ID</th>
+                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Protocol</th>
                                         <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Knowledge Stream</th>
-                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Mastery Progress</th>
-                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell text-center">Status</th>
-                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Mastery</th>
+                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell text-center">Efficiency</th>
+                                        <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Access</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -71,7 +138,7 @@ const MyEnrollments = () => {
                                                             <img src={course.courseThumbnail || assets.placeholder} alt="" className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <p className="text-base font-black text-gray-900 tracking-tight leading-tight mb-2 group-hover:text-indigo-500 transition-colors line-clamp-1">{course.courseTitle}</p>
+                                                            <p className="text-base font-black text-gray-900 tracking-tight leading-tight mb-2 group-hover:text-indigo-500 transition-colors line-clamp-1 uppercase">{course.courseTitle}</p>
                                                             <div className="flex items-center gap-2">
                                                                 <span className="w-1 h-1 bg-indigo-200 rounded-full"></span>
                                                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{course.instructor?.name || 'Expert Analyst'}</p>
@@ -84,7 +151,7 @@ const MyEnrollments = () => {
                                                         <div className="w-full bg-gray-100 rounded-full h-1.5 p-0 border border-transparent overflow-hidden">
                                                             <div className="bg-indigo-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.3)]" style={{ width: `${enrollment.progress || 0}%` }}></div>
                                                         </div>
-                                                        <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tight">{enrollment.progress || 0}% SYNCHRONIZED</span>
+                                                        <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tight">{enrollment.progress || 0}% SYNCED</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-10 py-10 hidden md:table-cell text-center">
@@ -116,3 +183,4 @@ const MyEnrollments = () => {
 };
 
 export default MyEnrollments;
+

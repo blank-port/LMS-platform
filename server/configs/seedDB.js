@@ -474,7 +474,7 @@ const seedDatabase = async () => {
         console.log('Simulating Fiscal Ingestions...');
         await Payment.insertMany([
             { user: studentUser._id, course: firstCourse._id, amount: 1299, status: 'completed', paymentMethod: 'razorpay', razorpayOrderId: 'order_1' },
-            { user: studentUser._id, course: instructorDocs[0]._id, amount: 999, status: 'completed', paymentMethod: 'bank', razorpayOrderId: 'order_2' }
+            { user: studentUser._id, course: createdCourses[1]._id, amount: 999, status: 'completed', paymentMethod: 'bank', razorpayOrderId: 'order_2' }
         ]);
         
         // Synchronize Course Enrollment counts

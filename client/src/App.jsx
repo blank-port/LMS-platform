@@ -98,6 +98,8 @@ import CommunicationSettings from './pages/admin/settings/CommunicationSettings'
 import ManageCoupons from './pages/admin/ManageCoupons';
 import StudentDetails from './pages/admin/StudentDetails';
 import AdminProfile from './pages/admin/AdminProfile';
+import ManageCodOrders from './pages/admin/ManageCodOrders';
+
 
 
 // Administration Settings
@@ -305,6 +307,7 @@ const App = () => {
           <Route path='refund-settings' element={<RefundSettings />} />
 
           <Route path='referral' element={<ManageECommerce />} />
+          <Route path='cod-approvals' element={<ManageCodOrders />} />
           <Route path='payments' element={<ManagePayments title="Global Revenue Streams" method="all" />} />
           <Route path='payment-online' element={<ManagePayments title="Online Transaction Nexus" method="online" />} />
           <Route path='payment-offline' element={<ManagePayments title="Offline Fiscal Protocols" method="offline" />} />

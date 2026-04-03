@@ -5,8 +5,10 @@ import Course from "../models/Course.js";
 import User from "../models/User.js";
 import Setting from "../models/Setting.js";
 import WalletTransaction from "../models/WalletTransaction.js";
+import Notification from "../models/Notification.js";
 import { performEnrollment } from "../services/enrollmentService.js";
 import { grantPoints } from "../services/gamificationService.js";
+import { createAdminNotification } from "../services/notificationService.js";
 
 // Helper to get Razorpay Instance
 const getRazorpayInstance = async () => {
@@ -48,9 +50,6 @@ const processCommissionSplit = async (paymentId, courseId, amount) => {
         metadata: { courseId, paymentId }
     });
 
-    // Log Admin Commission (Using the payment ID as a reference, or a system account if one exists)
-    // For now, we log it against the admin user who processed it or just as a general entry
-    // Usually, there's a specific system user ID for platform earnings
     const adminUser = await User.findOne({ role: 'admin' });
     if (adminUser) {
         adminUser.walletBalance += adminShare;
@@ -66,7 +65,7 @@ const processCommissionSplit = async (paymentId, courseId, amount) => {
     }
 };
 
-// Create Order
+// Create Order (Razorpay)
 export const createOrder = async (req, res) => {
     try {
         const { courseId } = req.body;
@@ -133,8 +132,22 @@ export const verifyPayment = async (req, res) => {
             // Grant points for education investment
             await grantPoints(userId, 'course_purchase');
 
+            // Notify Admin of Payment Success
+            await createAdminNotification({
+                type: 'PAYMENT_SUCCESS',
+                message: `New enrollment success for ${req.user.name} in ${payment.course?.courseTitle || 'Course'}`,
+                module: 'ecommerce',
+                referenceId: payment._id
+            });
+
             res.json({ success: true, message: "Payment Verified & Enrolled" });
         } else {
+            // Log Payment Failure Notification
+            await createAdminNotification({
+                type: 'PAYMENT_FAILURE',
+                message: `Payment signature verification failed for ${req.user.name}`,
+                module: 'ecommerce'
+            });
             res.status(400).json({ success: false, message: "Invalid Signature" });
         }
     } catch (error) {
@@ -142,7 +155,7 @@ export const verifyPayment = async (req, res) => {
     }
 };
 
-// Request COD
+// Request COD (Pending Approval)
 export const requestCOD = async (req, res) => {
     try {
         const { courseId } = req.body;
@@ -151,33 +164,44 @@ export const requestCOD = async (req, res) => {
         const course = await Course.findById(courseId);
         const amount = course.coursePrice - (course.coursePrice * course.discount / 100);
 
-        await Payment.create({
+        const payment = await Payment.create({
             user: userId,
             course: courseId,
             amount,
             paymentMethod: 'cod',
-            status: 'cod_pending'
+            status: 'pending_approval'
         });
 
-        res.json({ success: true, message: "COD request submitted. Awaiting approval." });
+        // Trigger Admin Notification
+        await createAdminNotification({
+            type: 'COD_ORDER',
+            message: `New COD Order Request from ${req.user.name} for ₹${amount}`,
+            module: 'ecommerce',
+            referenceId: payment._id
+        });
+
+        res.json({ success: true, message: "COD request submitted. Awaiting Admin Approval." });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
 };
 
-// Approve COD (Admin/Instructor)
+// Approve COD (Admin only)
 export const approveCOD = async (req, res) => {
     try {
         const { paymentId } = req.body;
-        const payment = await Payment.findById(paymentId);
-        if (!payment || payment.status !== 'cod_pending') {
-            return res.status(400).json({ success: false, message: "Invalid payment request" });
+        const payment = await Payment.findById(paymentId).populate('course');
+        
+        if (!payment || payment.status !== 'pending_approval') {
+            return res.status(400).json({ success: false, message: "Invalid approval request" });
         }
 
         payment.status = 'completed';
+        payment.approvedBy = req.user._id;
+        payment.approvedAt = new Date();
         await payment.save();
 
-        // Enroll Student via Unified Service
+        // Enroll Student
         const { user: userId, course: courseId } = payment;
         await performEnrollment({
             userId,
@@ -187,7 +211,7 @@ export const approveCOD = async (req, res) => {
             paymentId: payment._id
         });
 
-        // Grant points for education investment
+        // Grant points
         await grantPoints(userId, 'course_purchase');
 
         res.json({ success: true, message: "COD Payment Approved & Student Enrolled" });
@@ -196,17 +220,31 @@ export const approveCOD = async (req, res) => {
     }
 };
 
-// Get Pending Payments (Admin/Instructor)
-export const getPendingPayments = async (req, res) => {
+// Reject COD (Admin only)
+export const rejectCOD = async (req, res) => {
     try {
-        const { method } = req.query;
-        let query = { status: 'cod_pending' };
+        const { paymentId } = req.body;
+        const payment = await Payment.findById(paymentId);
         
-        if (method && method !== 'all') {
-            query.paymentMethod = method;
+        if (!payment || payment.status !== 'pending_approval') {
+            return res.status(400).json({ success: false, message: "Invalid rejection request" });
         }
 
-        const payments = await Payment.find(query)
+        payment.status = 'rejected';
+        payment.approvedBy = req.user._id;
+        payment.approvedAt = new Date();
+        await payment.save();
+
+        res.json({ success: true, message: "COD Payment Rejected" });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Get Pending COD Orders (Admin only)
+export const getPendingCodOrders = async (req, res) => {
+    try {
+        const payments = await Payment.find({ status: 'pending_approval', paymentMethod: 'cod' })
             .populate('user', 'name email')
             .populate('course', 'courseTitle')
             .sort({ createdAt: -1 });
@@ -216,7 +254,58 @@ export const getPendingPayments = async (req, res) => {
     }
 };
 
-// Buy with Wallet
+// Get My Pending COD Orders (Student)
+export const getMyPendingCodOrders = async (req, res) => {
+    try {
+        const payments = await Payment.find({ 
+            user: req.user._id, 
+            status: 'pending_approval', 
+            paymentMethod: 'cod' 
+        })
+        .populate('course', 'courseTitle courseThumbnail')
+        .sort({ createdAt: -1 });
+        
+        res.json({ success: true, payments });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// --- Notifications ---
+
+// Get Admin Notifications
+export const getNotifications = async (req, res) => {
+    try {
+        const { limit = 20, skip = 0 } = req.query;
+        const notifications = await Notification.find({ user: req.user._id })
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .skip(parseInt(skip));
+        
+        const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
+
+        res.json({ success: true, notifications, unreadCount });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Mark Notification as Read
+export const markAsRead = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (id === 'all') {
+            await Notification.updateMany({ user: req.user._id, isRead: false }, { isRead: true });
+        } else {
+            await Notification.findByIdAndUpdate(id, { isRead: true });
+        }
+        res.json({ success: true, message: 'Institutional signal acknowledged' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// (Original buyWithWallet remains below, adapted for potential notifications)
 export const buyWithWallet = async (req, res) => {
     try {
         const { courseId } = req.body;
@@ -232,11 +321,9 @@ export const buyWithWallet = async (req, res) => {
             return res.status(400).json({ success: false, message: "Insufficient wallet balance" });
         }
 
-        // Debit Student Wallet
         user.walletBalance -= amount;
         await user.save();
 
-        // Create Payment Record
         const payment = await Payment.create({
             user: userId,
             course: courseId,
@@ -244,9 +331,7 @@ export const buyWithWallet = async (req, res) => {
             paymentMethod: 'wallet',
             status: 'completed'
         });
-        console.log('DEBUG: Payment Created Successfully:', payment._id, 'Status:', payment.status);
 
-        // Log Student Transaction
         await WalletTransaction.create({
             userId,
             amount,
@@ -256,7 +341,6 @@ export const buyWithWallet = async (req, res) => {
             metadata: { courseId, paymentId: payment._id }
         });
 
-        // Enroll Student via Unified Service
         await performEnrollment({
             userId,
             courseId,
@@ -265,8 +349,15 @@ export const buyWithWallet = async (req, res) => {
             paymentId: payment._id
         });
 
-        // Grant points for education investment
         await grantPoints(userId, 'course_purchase');
+
+        // Notify Admin
+        await createAdminNotification({
+            type: 'PAYMENT_SUCCESS',
+            message: `${req.user.name} bought ${course.courseTitle} using Wallet`,
+            module: 'ecommerce',
+            referenceId: payment._id
+        });
 
         res.json({ success: true, message: "Course purchased successfully via wallet" });
     } catch (error) {
