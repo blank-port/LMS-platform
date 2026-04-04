@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import BadgeIcon from '../common/BadgeIcon.jsx';
 
 const GamificationStats = () => {
     const { backendUrl, getHeaders, user } = useContext(AppContext);
@@ -92,8 +93,8 @@ const GamificationStats = () => {
                 <div className="flex flex-wrap gap-4">
                     {stats?.badges?.map((badge, i) => (
                         <div key={badge._id} className="group relative">
-                            <div className="w-14 h-14 bg-[var(--background)] rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-[var(--border)] group-hover:scale-110 group-hover:rotate-6 transition-all cursor-help hover:border-indigo-200 hover:bg-indigo-50/30">
-                                {badge.icon}
+                            <div className="w-14 h-14 bg-[var(--background)] rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-[var(--border)] group-hover:scale-110 group-hover:rotate-6 transition-all cursor-help hover:border-indigo-200 hover:bg-indigo-50/30 overflow-hidden p-2">
+                                <BadgeIcon icon={badge.icon} className="w-full h-full" />
                             </div>
                             {/* Tooltip */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 p-4 bg-gray-900 text-white rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-10 scale-95 group-hover:scale-100">

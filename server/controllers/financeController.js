@@ -5,6 +5,8 @@ import Badge from "../models/Badge.js";
 import User from "../models/User.js";
 import Setting from "../models/Setting.js";
 import Course from "../models/Course.js";
+import Enrollment from "../models/Enrollment.js";
+import { createStudentNotification } from "../services/notificationService.js";
 
 // Certificate Templates
 export const createCertificateTemplate = async (req, res) => {
@@ -134,13 +136,14 @@ export const getRefunds = async (req, res) => {
     try {
         const refunds = await Refund.find()
             .populate('user', 'name email')
+            .populate('course', 'courseTitle')
             .sort({ createdAt: -1 });
 
         const mappedData = refunds.map(r => ({
             id: r._id,
             user: r.user?.name || 'Anonymous',
-            course: 'Curriculum Unit', // Refund model might need course link if required
-            amount: r.amount,
+            course: r.course?.courseTitle || 'Curriculum Unit', 
+            amount: r.amount || 0,
             status: r.status,
             date: new Date(r.createdAt).toLocaleDateString()
         }));
@@ -151,13 +154,103 @@ export const getRefunds = async (req, res) => {
     }
 };
 
-export const requestRefund = async (req, res) => {
+// Admin: Approve Refund
+export const approveRefund = async (req, res) => {
     try {
-        const refund = await Refund.create({
-            ...req.body,
-            user: req.user._id
+        const { id } = req.params;
+        const refund = await Refund.findById(id).populate('course');
+        
+        if (!refund) return res.status(404).json({ success: false, message: 'Refund record not found.' });
+        if (refund.status !== 'requested') return res.status(400).json({ success: false, message: 'Refund is already processed.' });
+
+        refund.status = 'approved';
+        refund.processedBy = req.user._id;
+        refund.processedAt = new Date();
+        await refund.save();
+
+        // Invalidate enrollment
+        await Enrollment.findOneAndUpdate(
+            { userId: refund.user, courseId: refund.course },
+            { status: 'refunded' }
+        );
+
+        // Notify Student
+        await createStudentNotification({
+            userId: refund.user,
+            type: 'REFUND_REPLY',
+            message: `Your refund for "${refund.course.courseTitle}" has been APPROVED. The credits will be reversed shortly.`,
+            module: 'ecommerce',
+            referenceId: refund._id
         });
-        res.json({ success: true, refund });
+
+        res.json({ success: true, message: 'Refund approved. Institutional balance updated.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Admin: Reject Refund
+export const rejectRefund = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+        const refund = await Refund.findById(id).populate('course');
+
+        if (!refund) return res.status(404).json({ success: false, message: 'Refund record not found.' });
+
+        refund.status = 'rejected';
+        refund.adminMessage = reason;
+        refund.processedBy = req.user._id;
+        refund.processedAt = new Date();
+        await refund.save();
+
+        // Notify Student
+        await createStudentNotification({
+            userId: refund.user,
+            type: 'REFUND_REPLY',
+            message: `Your refund request for "${refund.course.courseTitle}" was REJECTED: ${reason || 'Does not meet criteria'}`,
+            module: 'ecommerce',
+            referenceId: refund._id
+        });
+
+        res.json({ success: true, message: 'Refund rejected. Student has been notified.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Student: Request Refund
+export const studentRequestRefund = async (req, res) => {
+    try {
+        const { courseId, paymentId, reason } = req.body;
+        
+        // Strategy: Verify active enrollment exists
+        const enrollment = await Enrollment.findOne({ userId: req.user._id, courseId, status: 'active' });
+        if (!enrollment) {
+            return res.status(400).json({ success: false, message: 'Institutional Record: No active enrollment found for this sector.' });
+        }
+
+        const refund = await Refund.create({
+            user: req.user._id,
+            course: courseId,
+            payment: paymentId,
+            reason,
+            status: 'requested'
+        });
+
+        res.json({ success: true, refund, message: 'Refund request protocols initiated.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Student: Get personal refund history
+export const getStudentRefunds = async (req, res) => {
+    try {
+        const refunds = await Refund.find({ user: req.user._id })
+            .populate('course', 'courseTitle')
+            .sort({ createdAt: -1 });
+        res.json({ success: true, refunds });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -234,6 +327,56 @@ export const updatePayoutSettings = async (req, res) => {
         }));
 
         res.json({ success: true, message: 'Remuneration protocols synchronized.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Refund Settings
+export const getRefundSettings = async (req, res) => {
+    try {
+        const keys = ['enableRefunds', 'refundWindowDays', 'cancellationFee', 'automaticRefundApproval', 'refundTerms'];
+        const settings = await Setting.find({ key: { $in: keys } });
+        
+        const settingsMap = {};
+        settings.forEach(s => {
+            if (s.key === 'enableRefunds' || s.key === 'automaticRefundApproval') {
+                settingsMap[s.key] = s.value === 'true';
+            } else if (s.key === 'refundWindowDays' || s.key === 'cancellationFee') {
+                settingsMap[s.key] = Number(s.value);
+            } else {
+                settingsMap[s.key] = s.value;
+            }
+        });
+
+        const finalSettings = {
+            enableRefunds: settingsMap.enableRefunds ?? true,
+            refundWindowDays: settingsMap.refundWindowDays ?? 7,
+            cancellationFee: settingsMap.cancellationFee ?? 0,
+            automaticRefundApproval: settingsMap.automaticRefundApproval ?? false,
+            refundTerms: settingsMap.refundTerms ?? 'Standard institutional refund protocols apply.'
+        };
+
+        res.json({ success: true, settings: finalSettings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const updateRefundSettings = async (req, res) => {
+    try {
+        const settings = req.body;
+        const keys = Object.keys(settings);
+
+        await Promise.all(keys.map(async (key) => {
+            await Setting.findOneAndUpdate(
+                { key },
+                { key, value: String(settings[key]), isSensitive: false },
+                { upsert: true, new: true }
+            );
+        }));
+
+        res.json({ success: true, message: 'Refund policies synchronized.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

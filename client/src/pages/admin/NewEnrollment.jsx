@@ -57,19 +57,19 @@ const NewEnrollment = () => {
 
             <div className="bg-[var(--surface)] rounded-[3rem] shadow-sm border border-[var(--border)] p-12 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-9xl font-black italic pointer-events-none">JOIN</div>
-                
+
                 <form onSubmit={handleEnroll} className="space-y-10 relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Scholar Identity</label>
-                            <select className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-[11px] uppercase tracking-widest" value={formData.userId} onChange={e => setFormData({...formData, userId: e.target.value})} required>
+                            <select className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-[11px] uppercase tracking-widest" value={formData.userId} onChange={e => setFormData({ ...formData, userId: e.target.value })} required>
                                 <option value="">Select Target Scholar</option>
                                 {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.email})</option>)}
                             </select>
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Curriculum Sector</label>
-                            <select className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-[11px] uppercase tracking-widest" value={formData.courseId} onChange={e => setFormData({...formData, courseId: e.target.value})} required>
+                            <select className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-[11px] uppercase tracking-widest" value={formData.courseId} onChange={e => setFormData({ ...formData, courseId: e.target.value })} required>
                                 <option value="">Select Curriculum Node</option>
                                 {courses.map(c => <option key={c._id} value={c._id}>{c.courseTitle}</option>)}
                             </select>
@@ -78,7 +78,7 @@ const NewEnrollment = () => {
 
                     <div className="space-y-3 max-w-sm">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Protocol Initialization Date</label>
-                        <input type="date" className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-sm" value={formData.enrollmentDate} onChange={e => setFormData({...formData, enrollmentDate: e.target.value})} required />
+                        <input type="date" className="w-full px-8 py-5 border border-[var(--border)] rounded-3xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-sm" value={formData.enrollmentDate} onChange={e => setFormData({ ...formData, enrollmentDate: e.target.value })} required />
                     </div>
 
                     <div className="pt-8">
@@ -88,7 +88,7 @@ const NewEnrollment = () => {
                     </div>
                 </form>
             </div>
-            
+
             <div className="bg-blue-50/50 rounded-[2.5rem] p-8 border border-blue-100/50">
                 <p className="text-[10px] font-bold text-blue-600/60 uppercase tracking-widest text-center leading-relaxed">
                     Warning: Manual induction bypasses standard fiscal protocols. All administrative overrides are logged in the systemic audit trail.

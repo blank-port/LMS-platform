@@ -3,6 +3,7 @@ import QuestionBank from "../models/QuestionBank.js";
 import QuestionGroup from "../models/QuestionGroup.js";
 import Quiz from "../models/Quiz.js";
 import Course from "../models/Course.js";
+import Subject from "../models/Subject.js";
 
 // Question Group Management
 export const createQuestionGroup = async (req, res) => {
@@ -190,6 +191,36 @@ export const getAllQuizzes = async (req, res) => {
             .populate('subCategoryId', 'name')
             .sort({ createdAt: -1 });
         res.json({ success: true, quizzes });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Subject Management
+export const getAllSubjects = async (req, res) => {
+    try {
+        const subjects = await Subject.find().sort({ name: 1 });
+        res.json({ success: true, subjects });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const createSubject = async (req, res) => {
+    try {
+        const { name, icon } = req.body;
+        const subject = await Subject.create({ name, icon });
+        res.json({ success: true, message: 'Domain stabilized.', subject });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteSubject = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Subject.findByIdAndDelete(id);
+        res.json({ success: true, message: 'Domain excised.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

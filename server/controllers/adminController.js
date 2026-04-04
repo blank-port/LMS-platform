@@ -41,7 +41,7 @@ export const getAllUsers = async (req, res) => {
         const { role, page = 1, limit = 10 } = req.query;
         let query = {};
         if (role) query.role = role;
-        
+
         const users = await User.find(query)
             .select('-password')
             .sort({ createdAt: -1 })
@@ -163,8 +163,8 @@ export const approveInstructor = async (req, res) => {
         }
 
         // Real-time Relay: Alert Educator of Authorization State
-        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
-        await PushNotificationService.broadcast(`user-${id}`, 'authorization-update', {
+        const pusherService = await import('../services/pusherService.js');
+        await pusherService.broadcast(`user-${id}`, 'authorization-update', {
             status: isApproved ? 'APPROVED' : 'REVOKED',
             message: isApproved ? 'Your scholarly credentials have been authorized.' : 'Your educator privileges have been suspended.',
             type: 'IDENTITY'
@@ -222,8 +222,8 @@ export const updateCourseStatus = async (req, res) => {
         }
 
         // Real-time Relay: Alert Instructor of Course Lifecycle State
-        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
-        await PushNotificationService.broadcast(`user-${course.instructor._id}`, 'course-status-update', {
+        const pusherService = await import('../services/pusherService.js');
+        await pusherService.broadcast(`user-${course.instructor._id}`, 'course-status-update', {
             courseTitle: course.courseTitle,
             status: status.toUpperCase(),
             message: `Your course "${course.courseTitle}" has been ${status}.`
@@ -321,7 +321,7 @@ export const deleteCategory = async (req, res) => {
 export const getScholarPerformance = async (req, res) => {
     try {
         const students = await User.find({ role: 'student' }).select('name email');
-        
+
         const performanceData = await Promise.all(students.map(async (student) => {
             const enrollments = await Enrollment.find({ userId: student._id });
             const attempts = await QuizAttempt.find({ userId: student._id });
@@ -330,8 +330,8 @@ export const getScholarPerformance = async (req, res) => {
             let totalProgress = 0;
             if (enrollments.length > 0) {
                 const totalSaturation = enrollments.reduce((acc, curr) => {
-                    const progress = curr.courseContent?.length > 0 
-                        ? (curr.completedLectures?.length / curr.courseContent.length) * 100 
+                    const progress = curr.courseContent?.length > 0
+                        ? (curr.completedLectures?.length / curr.courseContent.length) * 100
                         : 0;
                     return acc + progress;
                 }, 0);
@@ -353,9 +353,9 @@ export const getScholarPerformance = async (req, res) => {
             };
         }));
 
-        res.json({ 
-            success: true, 
-            performance: performanceData.sort((a, b) => b.avgScore - a.avgScore) 
+        res.json({
+            success: true,
+            performance: performanceData.sort((a, b) => b.avgScore - a.avgScore)
         });
     } catch (error) {
         res.json({ success: false, message: error.message });
@@ -403,14 +403,38 @@ export const updatePayoutStatus = async (req, res) => {
         }
 
         // Real-time Relay: Alert Instructor of Financial State Transition
-        const PushNotificationService = (await import('../services/PushNotificationService.js')).default;
-        await PushNotificationService.broadcast(`user-${payout.userId._id}`, 'payout-status-update', {
+        const pusherService = await import('../services/pusherService.js');
+        await pusherService.broadcast(`user-${payout.userId._id}`, 'payout-status-update', {
             amount: payout.amount,
             status: status.toUpperCase(),
             message: `Your payout request for ${payout.amount} has been ${status === 'success' ? 'authorized and processed.' : 'rejected by administration.'}`
         });
 
         res.json({ success: true, message: `Payout marked as ${status}`, payout });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Get All Enrollments (Admin Ledger)
+export const getAllEnrollmentsAdmin = async (req, res) => {
+    try {
+        const enrollments = await Enrollment.find({})
+            .populate('userId', 'name email')
+            .populate('courseId', 'courseTitle')
+            .sort({ createdAt: -1 });
+
+        const formattedEnrollments = enrollments.map(e => ({
+            id: e._id,
+            student: e.userId?.name || 'Unknown Scholar',
+            course: e.courseId?.courseTitle || 'Unknown Curriculum',
+            status: e.status || 'Enrolled',
+            date: new Date(e.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            }).toUpperCase()
+        }));
+
+        res.json({ success: true, enrollments: formattedEnrollments });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }

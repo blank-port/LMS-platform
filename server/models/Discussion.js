@@ -12,6 +12,8 @@ const discussionSchema = new mongoose.Schema({
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Discussion', default: null }, // Replies
     isReplied: { type: Boolean, default: false },
     isReserved: { type: Boolean, default: false },
+    isGoldenKnowledge: { type: Boolean, default: false },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     status: { type: String, enum: ['active', 'closed', 'hidden'], default: 'active' }
 }, { timestamps: true });
 

@@ -25,6 +25,12 @@ import Certificates from './pages/student/Certificates'
 import Profile from './pages/student/Profile'
 import AccountSettings from './pages/student/AccountSettings'
 import Leaderboard from './pages/student/Leaderboard'
+import PurchaseHistory from './pages/student/PurchaseHistory'
+import RefundHistory from './pages/student/RefundHistory'
+import Referral from './pages/student/Referral'
+import RewardPoints from './pages/student/RewardPoints'
+import DeviceSecurity from './pages/student/DeviceSecurity'
+import StudentMessages from './pages/student/StudentMessages'
 
 // Educator Imports
 // Educator Imports
@@ -133,34 +139,35 @@ import ManageCourses from './pages/admin/ManageCourses';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageCMS from './pages/admin/ManageCMS';
 import ManageBlogs from './pages/admin/ManageBlogs';
+import AIChatWidget from './components/common/AIChatWidget';
 
 
 const App = () => {
-    const context = useContext(AppContext);
-    const { settings, user } = context || {};
-    const navigate = useNavigate();
-    const isEducatorRoute = useMatch('/educator/*');
-    const isAdminRoute = useMatch('/admin/*');
+  const context = useContext(AppContext);
+  const { settings, user } = context || {};
+  const navigate = useNavigate();
+  const isEducatorRoute = useMatch('/educator/*');
+  const isAdminRoute = useMatch('/admin/*');
 
-    useEffect(() => {
-        if (settings?.site_title) {
-            document.title = settings.site_title;
-        }
-        if (settings?.site_favicon) {
-            let link = document.querySelector("link[rel~='icon']");
-            if (!link) {
-                link = document.createElement('link');
-                link.rel = 'icon';
-                document.getElementsByTagName('head')[0].appendChild(link);
-            }
-            link.href = settings.site_favicon;
-        }
-    }, [settings?.site_title, settings?.site_favicon]);
+  useEffect(() => {
+    if (settings?.site_title) {
+      document.title = settings.site_title;
+    }
+    if (settings?.site_favicon) {
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = settings.site_favicon;
+    }
+  }, [settings?.site_title, settings?.site_favicon]);
 
   // Strategic Real-time Relay (Module 5: Notifications)
   useEffect(() => {
     if (!settings.pusher_app_key || !settings.pusher_active) return;
-    
+
     const pusher = new Pusher(settings.pusher_app_key, {
       cluster: settings.pusher_cluster || 'ap2',
       forceTLS: true
@@ -168,19 +175,19 @@ const App = () => {
 
     // Strategy 1: Private Protocol (Direct Messages & Moderation)
     if (user && user._id) {
-       const channel = pusher.subscribe(`user-${user._id}`);
-       channel.bind('new-message', (data) => {
-         toast.info(`Strategic Message from ${data.sender}: ${data.content}`, { 
-           onClick: () => navigate('/student/messages'),
-           position: "bottom-right",
-           autoClose: 5000
-         });
-       });
-       channel.bind('comment-status-update', (data) => {
-         toast.success(`Discourse Protocol Calibrated: ${data.status.toUpperCase()}`, {
-           position: "bottom-right"
-         });
-       });
+      const channel = pusher.subscribe(`user-${user._id}`);
+      channel.bind('new-message', (data) => {
+        toast.info(`Strategic Message from ${data.sender}: ${data.content}`, {
+          onClick: () => navigate('/student/messages'),
+          position: "bottom-right",
+          autoClose: 5000
+        });
+      });
+      channel.bind('comment-status-update', (data) => {
+        toast.success(`Discourse Protocol Calibrated: ${data.status.toUpperCase()}`, {
+          position: "bottom-right"
+        });
+      });
     }
 
     // Strategy 2: Modular Protocol (Course Discussions)
@@ -188,11 +195,11 @@ const App = () => {
       user.enrolledCourses.forEach(id => {
         const courseChannel = pusher.subscribe(`course-${id}`);
         courseChannel.bind('new-discussion', (data) => {
-            if (data.author !== user.name) {
-                toast.info(`Scholar Interaction (${data.type}): ${data.author} posted in course node.`, {
-                    position: "bottom-right"
-                });
-            }
+          if (data.author !== user.name) {
+            toast.info(`Scholar Interaction (${data.type}): ${data.author} posted in course node.`, {
+              position: "bottom-right"
+            });
+          }
         });
       });
     }
@@ -213,6 +220,7 @@ const App = () => {
         <Route path="/course-list/:input" element={<CoursesList />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/signup" element={<Register />} />
         <Route path="/loading/:path" element={<Loading />} />
 
         {/* Unified Student Panel Routes */}
@@ -220,11 +228,16 @@ const App = () => {
           <Route index element={<StudentDashboard />} />
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="my-courses" element={<MyEnrollments />} />
-          <Route path="assignments" element={<Assignments />} />
           <Route path="quizzes" element={<QuizPage />} />
+          <Route path="purchase-history" element={<PurchaseHistory />} />
+          <Route path="refunds" element={<RefundHistory />} />
           <Route path="wallet" element={<Wallet />} />
+          <Route path="rewards" element={<RewardPoints />} />
+          <Route path="referral" element={<Referral />} />
           <Route path="certificates" element={<Certificates />} />
+          <Route path="messages" element={<StudentMessages />} />
           <Route path="support" element={<Support />} />
+          <Route path="security" element={<DeviceSecurity />} />
           <Route path="profile" element={<Profile />} />
           <Route path="account-settings" element={<AccountSettings />} />
           <Route path="leaderboard" element={<Leaderboard />} />
@@ -242,7 +255,7 @@ const App = () => {
           <Route path='add-course' element={<AddCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
           <Route path='course-settings' element={<InstructorCourseSettings />} />
-          
+
           <Route path='question-group' element={<InstructorQuestionGroup />} />
           <Route path='add-question' element={<InstructorAddQuestion />} />
           <Route path='question-bank' element={<InstructorQuestionBank />} />
@@ -361,6 +374,7 @@ const App = () => {
 
         </Route>
       </Routes>
+      <AIChatWidget />
     </div>
   )
 }

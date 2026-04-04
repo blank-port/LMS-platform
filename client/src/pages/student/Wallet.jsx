@@ -2,10 +2,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, CreditCard, Smartphone, Banknote, ShieldCheck, X } from 'lucide-react';
+import { Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, CreditCard, Smartphone, Banknote, ShieldCheck, X, Zap } from 'lucide-react';
 
 const Wallet = () => {
-    const { backendUrl, token, user, fetchUserData } = useContext(AppContext);
+    const { backendUrl, token, user, fetchUserData, enrolledCourses } = useContext(AppContext);
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -124,49 +124,54 @@ const Wallet = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Balance Card */}
-                <div className="lg:col-span-1 bg-gradient-to-br from-[#0C132B] to-[#16213e] rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-24 -mt-24"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Balance Card - Dark Mode PrismEd */}
+                <div className="bg-slate-900 rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                     <div className="relative z-10">
-                        <WalletIcon size={32} className="text-indigo-400 mb-8" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Total Credit Liquidity</p>
+                        <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-blue-600/30">
+                            <WalletIcon size={28} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-2">Institutional Credit</p>
                         <h2 className="text-5xl font-black tracking-tighter mb-4">₹{user?.walletBalance?.toLocaleString() || 0}</h2>
                         <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                            <ShieldCheck size={12} /> Secure Account
+                            <ShieldCheck size={14} /> Neural Protocol Secured
                         </div>
                     </div>
                 </div>
 
-                {/* Points Card */}
-                <div className="lg:col-span-1 bg-indigo-50 rounded-[3rem] p-12 border border-indigo-100 flex flex-col justify-between group transition-all hover:bg-white hover:shadow-2xl hover:shadow-indigo-100/50">
-                    <div>
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-indigo-100 group-hover:rotate-12 transition-transform">🏆</div>
-                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-100/50 px-4 py-1.5 rounded-full uppercase tracking-widest">Sync Active</span>
+                {/* Spent Card - High Contrast */}
+                <div className="bg-white rounded-[3.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mb-8">
+                            <ArrowUpRight size={28} />
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Intelligence Capital</p>
-                        <h2 className="text-4xl font-black text-indigo-900 tracking-tighter mb-4">{pointsData.currentPoints?.toLocaleString() || 0} <span className="text-sm font-bold text-indigo-300">PTS</span></h2>
-                        <p className="text-[10px] font-bold text-indigo-600/60 uppercase tracking-widest leading-relaxed">
-                            Currently indexing at 500 PTS per ₹1 liquidity
-                        </p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Sector Expenditure</p>
+                        <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-4">₹{(enrolledCourses.length * 499).toLocaleString()}</h2>
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Global Asset Acquisition</p>
                     </div>
-                    <button 
-                        onClick={handleRedeemPoints}
-                        disabled={processing || pointsData.currentPoints < 500}
-                        className="w-full mt-8 h-14 bg-indigo-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:bg-indigo-600 shadow-xl shadow-indigo-900/10 disabled:opacity-30"
-                    >
-                        {processing ? 'Processing...' : 'Redeem Intelligence'}
-                    </button>
                 </div>
 
-                {/* Conversion Logic Info */}
-                <div className="lg:col-span-1 bg-gray-50 rounded-[3rem] p-10 flex flex-col justify-center border border-gray-100 italic">
-                    <p className="text-[11px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest text-center">
-                        "Your knowledge is your greatest asset. Maintain a high engagement ratio to optimize your fiscal baseline through strategic participation."
-                    </p>
+                {/* Points Card - Gamified */}
+                <div className="bg-white rounded-[3.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-8">
+                            <Zap size={28} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Cognitive Capital</p>
+                        <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-4">{pointsData.currentPoints?.toLocaleString() || 0} <span className="text-sm font-bold text-slate-300">PTS</span></h2>
+                        <button 
+                            onClick={handleRedeemPoints}
+                            disabled={processing || pointsData.currentPoints < 500}
+                            className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all disabled:opacity-20"
+                        >
+                            Redeem
+                        </button>
+                    </div>
                 </div>
+            </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Transaction History */}
                 <div className="lg:col-span-2 bg-white rounded-[3rem] p-12 shadow-2xl shadow-gray-200/40 border border-gray-50 flex flex-col">
                     <h3 className="text-xl font-black text-gray-900 tracking-tight mb-8">Audited Transactions</h3>
@@ -207,11 +212,13 @@ const Wallet = () => {
                     <div className="space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
                         {pointHistory.map((log, i) => (
                             <div key={i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                                <div>
+                                <div className="space-y-1">
                                     <p className="text-[10px] font-black text-gray-700 capitalize">{log.event.replace('_', ' ')}</p>
                                     <p className="text-[8px] font-bold text-gray-400 uppercase">{new Date(log.createdAt).toLocaleDateString()}</p>
                                 </div>
-                                <span className="text-[10px] font-black text-indigo-600">+{log.points}</span>
+                                <span className={`text-[10px] font-black ${log.points >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                                    {log.points >= 0 ? '+' : ''}{log.points}
+                                </span>
                             </div>
                         ))}
                         {pointHistory.length === 0 && <p className="text-center py-10 text-[10px] font-bold text-gray-300 uppercase tracking-widest">No logs recorded</p>}
@@ -232,8 +239,8 @@ const Wallet = () => {
 
                         <div className="bg-[#0C132B] p-10 text-white flex items-center justify-between">
                             <div>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Checkout Simulation</h4>
-                                <h3 className="text-2xl font-black tracking-tighter">Prism<span className="text-indigo-400">Ed</span> Merchant</h3>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Checkout Simulation</h4>
+                                <h3 className="text-2xl font-black tracking-tighter">Prism<span className="text-blue-400">Ed</span> Merchant</h3>
                             </div>
                             <div className="text-right">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Total Due</p>
@@ -244,7 +251,7 @@ const Wallet = () => {
                         <div className="p-12 space-y-10">
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">Enter Supplement Amount</label>
-                                <div className="flex items-center gap-4 bg-gray-50 px-8 py-5 rounded-2xl border border-gray-100 focus-within:ring-4 ring-indigo-500/5 transition-all">
+                                <div className="flex items-center gap-4 bg-gray-50 px-8 py-5 rounded-2xl border border-slate-100 focus-within:ring-4 ring-blue-500/5 transition-all">
                                     <span className="text-2xl font-black text-gray-300 italic">₹</span>
                                     <input 
                                         type="number" 
@@ -269,15 +276,15 @@ const Wallet = () => {
                                             onClick={() => setPaymentMethod(method.id)}
                                             className={`flex items-center gap-6 p-6 rounded-2xl border-2 transition-all text-left ${
                                                 paymentMethod === method.id 
-                                                ? 'border-indigo-500 bg-indigo-50/50 ring-4 ring-indigo-500/5' 
-                                                : 'border-gray-50 bg-gray-50/30 hover:bg-gray-50 hover:border-gray-100'
+                                                ? 'border-blue-500 bg-blue-50/10 ring-4 ring-blue-500/5' 
+                                                : 'border-slate-50 bg-slate-50/30 hover:bg-slate-50 hover:border-slate-100'
                                             }`}
                                         >
-                                            <div className={`p-4 rounded-xl ${paymentMethod === method.id ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white text-gray-400'}`}>
+                                            <div className={`p-4 rounded-xl ${paymentMethod === method.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white text-gray-400'}`}>
                                                 {method.icon}
                                             </div>
                                             <div>
-                                                <p className={`text-xs font-black uppercase tracking-widest ${paymentMethod === method.id ? 'text-indigo-600' : 'text-gray-900'}`}>{method.name}</p>
+                                                <p className={`text-xs font-black uppercase tracking-widest ${paymentMethod === method.id ? 'text-blue-600' : 'text-gray-900'}`}>{method.name}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 mt-1">{method.desc}</p>
                                             </div>
                                         </button>
@@ -289,12 +296,12 @@ const Wallet = () => {
                                 onClick={handleAddBalance}
                                 disabled={processing || !amount || parseFloat(amount) <= 0}
                                 className={`w-full py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl relative overflow-hidden group ${
-                                    processing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#0C132B] text-white hover:bg-indigo-600 shadow-indigo-500/10'
+                                    processing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#0C132B] text-white hover:bg-blue-600 shadow-blue-500/10'
                                 }`}
                             >
                                 {processing ? (
                                     <span className="flex items-center justify-center gap-4">
-                                        <span className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span>
+                                        <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
                                         Synchronizing Nodes...
                                     </span>
                                 ) : (
@@ -303,7 +310,7 @@ const Wallet = () => {
                             </button>
 
                             <p className="text-center text-[9px] font-black text-gray-300 uppercase tracking-widest flex items-center justify-center gap-2">
-                                <ShieldCheck size={12} className="text-indigo-200" /> Powered by Standardized Fiscal Protocols
+                                <ShieldCheck size={12} className="text-blue-200" /> Powered by Standardized Fiscal Protocols
                             </p>
                         </div>
                     </div>

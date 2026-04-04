@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import BadgeIcon from '../../components/common/BadgeIcon.jsx';
 
 const ManageBadges = () => {
     const { backendUrl, getHeaders } = useContext(AppContext);
@@ -85,9 +86,11 @@ const ManageBadges = () => {
                             onClick={() => handleDelete(badge._id)}
                             className="absolute top-6 right-6 w-8 h-8 rounded-full bg-red-50 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
                         >✕</button>
-                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-8xl group-hover:scale-125 transition-transform pointer-events-none">{badge.icon}</div>
-                        <div className="w-24 h-24 bg-[var(--background)] rounded-[2rem] flex items-center justify-center text-5xl mx-auto mb-8 group-hover:bg-yellow-50 transition-colors shadow-sm">
-                            {badge.icon}
+                        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.07] group-hover:scale-110 transition-all pointer-events-none w-32 h-32 flex items-center justify-center">
+                            <BadgeIcon icon={badge.icon} className="w-full h-full grayscale" />
+                        </div>
+                        <div className="w-24 h-24 bg-[var(--background)] rounded-[2rem] flex items-center justify-center text-5xl mx-auto mb-8 group-hover:bg-yellow-50 transition-all shadow-sm overflow-hidden p-4">
+                            <BadgeIcon icon={badge.icon} className="w-full h-full" />
                         </div>
                         <h3 className="text-xl font-black text-[var(--text-main)] mb-2 uppercase tracking-tight">{badge.title}</h3>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 h-10 line-clamp-2">{badge.description}</p>
@@ -114,12 +117,28 @@ const ManageBadges = () => {
                             <button onClick={() => setShowModal(false)} className="w-10 h-10 flex items-center justify-center bg-[var(--background)] rounded-full text-gray-400 hover:text-red-500 transition-colors">✕</button>
                         </div>
                         <form onSubmit={handleSave} className="space-y-6">
-                            <div className="grid grid-cols-4 gap-4">
-                                {['🏅', '🏆', '🚀', '🧠', '⭐', '🔥', '🛡️', '💎', '🎯', '🔥', '🎓', '👑'].map(emoji => (
-                                    <button key={emoji} type="button" onClick={() => setFormData({...formData, icon: emoji})} className={`h-12 flex items-center justify-center rounded-2xl text-xl transition-all ${formData.icon === emoji ? 'bg-yellow-400 shadow-lg scale-110' : 'bg-[var(--background)] hover:bg-[var(--background)]'}`}>
-                                        {emoji}
-                                    </button>
-                                ))}
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-6 gap-2">
+                                    {['🏅', '🏆', '🚀', '🧠', '⭐', '🔥', '🛡️', '💎', '🎯', '🎓', '👑', '⚡'].map(emoji => (
+                                        <button key={emoji} type="button" onClick={() => setFormData({...formData, icon: emoji})} className={`h-12 flex items-center justify-center rounded-xl text-xl transition-all ${formData.icon === emoji ? 'bg-yellow-400 shadow-lg scale-110' : 'bg-[var(--background)] hover:bg-slate-100'}`}>
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Or Paste Icon URL (e.g. https://...)" 
+                                        className="w-full px-6 py-4 border border-[var(--border)] rounded-2xl bg-[var(--background)]/50 outline-none focus:ring-4 focus:ring-yellow-500/10 focus:bg-[var(--surface)] transition-all font-bold text-[var(--text-main)] text-[11px] uppercase tracking-widest"
+                                        value={formData.icon.startsWith('http') ? formData.icon : ''} 
+                                        onChange={e => setFormData({...formData, icon: e.target.value || '🏅'})} 
+                                    />
+                                    {formData.icon.startsWith('http') && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg overflow-hidden border border-[var(--border)] bg-white p-1">
+                                            <BadgeIcon icon={formData.icon} className="w-full h-full" />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Badge Title</label>

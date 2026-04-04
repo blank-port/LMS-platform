@@ -1,3 +1,4 @@
+import { v2 as cloudinary } from 'cloudinary';
 import Comment from '../models/Comment.js';
 import Discussion from '../models/Discussion.js';
 import Message from '../models/Message.js';
@@ -5,7 +6,8 @@ import CommunicationSetting from '../models/CommunicationSetting.js';
 import User from '../models/User.js';
 import Notice from '../models/Notice.js';
 import { broadcast } from '../services/pusherService.js';
-import { createAdminNotification } from '../services/notificationService.js';
+import { createAdminNotification, createStudentNotification } from '../services/notificationService.js';
+import Enrollment from '../models/Enrollment.js';
 
 export const getMessages = async (req, res) => {
     try {
@@ -38,7 +40,7 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-        const { receiverId, content } = req.body;
+        const { receiverId, targetType = 'private', targetId, content } = req.body;
         const senderId = req.user._id;
 
         // Validation: Magnitude Check
@@ -48,25 +50,75 @@ export const sendMessage = async (req, res) => {
 
         const newMessage = await Message.create({
             sender: senderId,
-            receiver: receiverId,
+            receiver: receiverId || senderId, // Fallback for broadcasts if needed
+            targetType,
+            targetId,
             content
         });
 
         // Real-time Relay: Pusher Trigger
-        await broadcast(`user-${receiverId}`, 'new-message', {
+        const broadcastData = {
             sender: req.user.name,
-            content: content.substring(0, 50) + '...'
-        });
+            senderId: senderId,
+            content: content.substring(0, 50) + '...',
+            targetType
+        };
 
-        // Trigger Admin Notification
-        await createAdminNotification({
-            type: 'NEW_MESSAGE',
-            message: `New message from ${req.user.name} to receiver ${receiverId}`,
-            module: 'communication',
-            referenceId: newMessage._id
-        });
+        if (targetType === 'private') {
+            await broadcast(`user-${receiverId}`, 'new-message', broadcastData);
+        } else if (targetType === 'course') {
+            await broadcast(`course-${targetId}`, 'new-group-message', broadcastData);
+            
+            // Notify all enrolled (Strategic Layer)
+            const enrolled = await Enrollment.find({ courseId: targetId });
+            for (const enrollment of enrolled) {
+                if (enrollment.userId.toString() !== senderId.toString()) {
+                    await createStudentNotification({
+                        userId: enrollment.userId,
+                        type: 'NEW_MESSAGE',
+                        message: `Broadcast from Instructor: ${content.substring(0, 30)}...`,
+                        module: 'communication'
+                    });
+                }
+            }
+        }
 
         res.json({ success: true, message: "Protocol Dispatched", data: newMessage });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getConversations = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Aggregate unique conversation partners
+        const messages = await Message.find({
+            $or: [{ sender: userId }, { receiver: userId }],
+            targetType: 'private'
+        }).sort({ createdAt: -1 });
+
+        const contactsMap = new Map();
+
+        for (const msg of messages) {
+            const partnerId = msg.sender.toString() === userId.toString() ? msg.receiver.toString() : msg.sender.toString();
+            if (!contactsMap.has(partnerId)) {
+                contactsMap.set(partnerId, msg);
+            }
+        }
+
+        const contactIds = Array.from(contactsMap.keys());
+        const contacts = await User.find({ _id: { $in: contactIds } })
+            .select('name email avatar role lastActive');
+
+        const result = contacts.map(contact => ({
+            contact,
+            lastMessage: contactsMap.get(contact._id.toString()),
+            isOnline: (new Date() - new Date(contact.lastActive)) < 5 * 60 * 1000 // Active in last 5 mins
+        }));
+
+        res.json({ success: true, conversations: result });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -260,7 +312,18 @@ export const addQuestion = async (req, res) => {
 
         // Mark as replied if parentId exists (Instructor reply)
         if (parentId) {
-            await Discussion.findByIdAndUpdate(parentId, { isReplied: true });
+            const parentDisc = await Discussion.findByIdAndUpdate(parentId, { isReplied: true });
+            
+            // Notify original author of the reply
+            if (parentDisc && parentDisc.userId.toString() !== userId.toString()) {
+                await createStudentNotification({
+                    userId: parentDisc.userId,
+                    type: 'NEW_MESSAGE',
+                    message: `Inter-Scholar Communication: Your inquiry has received a response from ${req.user.name}.`,
+                    module: 'communication',
+                    referenceId: question._id
+                });
+            }
         }
 
         // Trigger Admin Notification
@@ -368,6 +431,53 @@ export const toggleQAReserve = async (req, res) => {
     }
 };
 
+export const toggleGoldenKnowledge = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Authorization check: Admin or Instructor only
+        if (!['admin', 'instructor'].includes(req.user.role)) {
+            return res.status(403).json({ success: false, message: 'Administrative Credentials Required' });
+        }
+
+        const disc = await Discussion.findById(id);
+        if (!disc) return res.status(404).json({ success: false, message: 'Inquiry Node Not Found' });
+
+        disc.isGoldenKnowledge = !disc.isGoldenKnowledge;
+        disc.verifiedBy = req.user._id;
+        await disc.save();
+        
+        res.json({ 
+            success: true, 
+            message: disc.isGoldenKnowledge ? "Discourse Sealed as Golden Knowledge" : "Golden Status Revoked", 
+            isGoldenKnowledge: disc.isGoldenKnowledge 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteNotice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const notice = await Notice.findById(id);
+
+        if (!notice) return res.status(404).json({ success: false, message: 'Notice Protocol Not Found' });
+
+        // Authorization: Owner, Instructor, or Admin
+        if (notice.instructor.toString() !== req.user._id.toString() && 
+            !['admin', 'instructor'].includes(req.user.role)) {
+            return res.status(403).json({ success: false, message: 'Institutional Authorization Required' });
+        }
+
+        await Notice.findByIdAndDelete(id);
+
+        res.json({ success: true, message: 'Notice Protocol Decommissioned' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // --- Settings ---
 export const getSettings = async (req, res) => {
     try {
@@ -405,6 +515,19 @@ export const getNotices = async (req, res) => {
     }
 };
 
+export const getInstructorNotices = async (req, res) => {
+    try {
+        const instructorId = req.user._id;
+        const notices = await Notice.find({ instructor: instructorId })
+            .populate('instructor', 'name avatar role')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, notices });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const addNotice = async (req, res) => {
     try {
         const { title, content, courseId, recipients = 'all' } = req.body;
@@ -430,6 +553,28 @@ export const addNotice = async (req, res) => {
             instructor: req.user.name
         });
 
+        // Notify Enrolled Students
+        const alertType = recipients === 'all' ? 'INSTITUTIONAL_NOTICE' : 'INSTITUTIONAL_NOTICE';
+        const msg = recipients === 'all' 
+            ? `Global Broadcast: ${title}` 
+            : `Course Alert: New notice posted in your enrolled curriculum.`;
+
+        if (recipients === 'all') {
+            // For global notices, we might not want to create 10,000 DB records at once
+            // Real-time broadcast (Pusher) handles the immediate UI alert
+        } else if (courseId) {
+            const enrolled = await Enrollment.find({ courseId, status: 'active' });
+            for (const enrollment of enrolled) {
+                await createStudentNotification({
+                    userId: enrollment.userId,
+                    type: 'INSTITUTIONAL_NOTICE',
+                    message: `Curriculum Update: "${title}" has been posted in one of your courses.`,
+                    module: 'communication',
+                    referenceId: notice._id
+                });
+            }
+        }
+
         res.json({ success: true, message: "Institutional Alert Dispatched", notice });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -445,6 +590,41 @@ export const updateSettings = async (req, res) => {
 
         const settings = await CommunicationSetting.findOneAndUpdate({}, req.body, { new: true, upsert: true });
         res.json({ success: true, message: "Institutional Protocols Synchronized", settings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Asset Management: Cloudinary Signed Uploads ---
+export const getUploadSignature = async (req, res) => {
+    try {
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const signature = cloudinary.utils.api_sign_request(
+            { timestamp, folder: 'lms_videos', resource_type: 'video' },
+            process.env.CLOUDINARY_SECRET_KEY
+        );
+
+        res.json({
+            success: true,
+            signature,
+            timestamp,
+            cloud_name: process.env.CLOUDINARY_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            folder: 'lms_videos'
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Institutional Lookup: Admin Contact ---
+export const getAdminContact = async (req, res) => {
+    try {
+        const admin = await User.findOne({ role: 'admin' }).select('name email role avatar');
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Administrative node not found." });
+        }
+        res.json({ success: true, admin });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

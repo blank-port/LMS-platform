@@ -3,6 +3,7 @@ import { assets } from '../../assets/assets';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import SafeImage from '../common/SafeImage.jsx';
+import NotificationDropdown from './NotificationDropdown.jsx';
 
 const Navbar = () => {
   const location = useLocation();
@@ -77,6 +78,9 @@ const Navbar = () => {
                 )}
                 <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/dashboard'} className="hover:text-[#7C32FF] border-b-2 border-transparent hover:border-[#7C32FF] pb-1 transition-all">Dashboard</Link>
               </div>
+
+              {/* Notification Hub */}
+              <NotificationDropdown />
 
               <div className="relative group">
                 <button 

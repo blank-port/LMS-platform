@@ -11,21 +11,31 @@ import {
     MessageSquare,
     User,
     Settings,
-    LogOut
+    LogOut,
+    History,
+    ShieldCheck,
+    Users,
+    Gift,
+    RotateCcw
 } from 'lucide-react';
 
 const StudentSidebar = () => {
     const { user, isEducator, logout } = useContext(AppContext);
 
     const studentItems = [
-        { name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={20} /> },
-        { name: 'My Courses', path: '/student/my-courses', icon: <BookOpen size={20} /> },
-        { name: 'Assignments', path: '/student/assignments', icon: <FileText size={20} /> },
-        { name: 'Quizzes', path: '/student/quizzes', icon: <Gamepad2 size={20} /> },
-        { name: 'Wallet & Payments', path: '/student/wallet', icon: <Wallet size={20} /> },
-        { name: 'Certificates', path: '/student/certificates', icon: <Award size={20} /> },
-        { name: 'Support', path: '/student/support', icon: <MessageSquare size={20} /> },
-        { name: 'Profile', path: '/student/profile', icon: <User size={20} /> },
+        { name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={18} /> },
+        { name: 'My Courses', path: '/student/my-courses', icon: <BookOpen size={18} /> },
+        { name: 'Quizzes', path: '/student/quizzes', icon: <Gamepad2 size={18} /> },
+        { name: 'Purchase History', path: '/student/purchase-history', icon: <History size={18} /> },
+        { name: 'Refund & Cancellation', path: '/student/refunds', icon: <RotateCcw size={18} /> },
+        { name: 'Wallet & Deposits', path: '/student/wallet', icon: <Wallet size={18} /> },
+        { name: 'Reward Points', path: '/student/rewards', icon: <Gift size={18} /> },
+        { name: 'Referral', path: '/student/referral', icon: <Users size={18} /> },
+        { name: 'Certificates', path: '/student/certificates', icon: <Award size={18} /> },
+        { name: 'Messages', path: '/student/messages', icon: <MessageSquare size={18} /> },
+        { name: 'Support Tickets', path: '/student/support', icon: <Users size={18} /> },
+        { name: 'Device Security', path: '/student/security', icon: <ShieldCheck size={18} /> },
+        { name: 'Account Settings', path: '/student/profile', icon: <User size={18} /> },
     ];
 
     const instructorItems = [
@@ -38,9 +48,6 @@ const StudentSidebar = () => {
     return (
         <aside className="w-72 h-screen bg-[var(--surface)] flex flex-col sticky top-0 transition-all duration-300 border-r border-[var(--border)] shadow-xl shadow-slate-200/40 overflow-y-auto no-scrollbar shrink-0">
             <div className="p-8 flex flex-col items-center border-b border-slate-100 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-xl shadow-cyan-500/20 mb-4 transform rotate-3 hover:rotate-0 transition-all duration-500">
-                    <span className="text-white font-black text-2xl tracking-tighter">P</span>
-                </div>
                 <span className="text-lg font-black text-slate-900 tracking-tighter leading-none">PRISMED</span>
                 <span className="text-[10px] font-black text-cyan-600 tracking-[0.3em] uppercase leading-none mt-2">Learning Lab</span>
             </div>

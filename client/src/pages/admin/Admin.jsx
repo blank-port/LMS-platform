@@ -114,13 +114,13 @@ const menuGroups = [
       { path: '/admin/messages', icon: '✉️', label: 'Private Messages' },
       { path: '/admin/comments', icon: '🗨️', label: 'Comments' },
       { path: '/admin/qa', icon: '❓', label: 'Q&A Discussions' },
-      { path: '/admin/push-notifications', icon: '🔔', label: 'Push Notifications' },
     ]
   },
   {
     title: 'Administration',
     icon: '⚙️',
     items: [
+      { path: '/admin/push-notifications', icon: '🔔', label: 'Push Notifications' },
       {
         label: 'System Setting',
         icon: '⚙️',
@@ -191,11 +191,11 @@ const Admin = () => {
         if (item.isSubGroup) {
           const hasActiveSubChild = item.children.some(child => location.pathname === child.path);
           if (hasActiveSubChild) {
-            setExpandedGroups(prev => ({ 
-              ...prev, 
-              [group.title]: true, 
-              [`sub_${item.label}`]: true 
-              })
+            setExpandedGroups(prev => ({
+              ...prev,
+              [group.title]: true,
+              [`sub_${item.label}`]: true
+            })
             );
           }
         } else if (location.pathname === item.path) {
@@ -335,7 +335,7 @@ const Admin = () => {
                                   ▼
                                 </motion.span>
                               </button>
-                              
+
                               <AnimatePresence>
                                 {expandedGroups[`sub_${item.label}`] && (
                                   <motion.div

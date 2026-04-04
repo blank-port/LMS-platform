@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 const generateId = () => Math.random().toString(36).substring(2, 9);
 import Quill from 'quill';
+import { Line } from 'rc-progress';
 
 const AddCourse = () => {
     const { backendUrl, token, categories } = useContext(AppContext);
@@ -23,6 +24,8 @@ const AddCourse = () => {
     const [image, setImage] = useState(null);
     const [chapters, setChapters] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({}); // { lectureId: progress }
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (!quillRef.current && editorRef.current) {
@@ -66,6 +69,61 @@ const AddCourse = () => {
         const updated = [...chapters];
         updated[chIndex].chapterContent[lecIndex][field] = value;
         setChapters(updated);
+    };
+
+    const handleVideoUpload = async (chIndex, lecIndex, file) => {
+        if (!file) return;
+        if (file.type !== 'video/mp4') {
+            toast.error('Only MP4 format is authorized for manual uploads.');
+            return;
+        }
+
+        const lectureId = chapters[chIndex].chapterContent[lecIndex].lectureId;
+        setIsUploading(true);
+        setUploadProgress(prev => ({ ...prev, [lectureId]: 5 }));
+
+        try {
+            // 1. Get Signature
+            const { data: sigData } = await axios.get(`${backendUrl}/api/comm/upload-signature`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!sigData.success) throw new Error('Signature acquisition failed.');
+
+            // 2. Transmit to Cloudinary
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', sigData.api_key);
+            formData.append('timestamp', sigData.timestamp);
+            formData.append('signature', sigData.signature);
+            formData.append('folder', sigData.folder);
+
+            const { data: uploadData } = await axios.post(
+                `https://api.cloudinary.com/v1_1/${sigData.cloud_name}/video/upload`,
+                formData,
+                {
+                    onUploadProgress: (progressEvent) => {
+                        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(prev => ({ ...prev, [lectureId]: progress }));
+                    }
+                }
+            );
+
+            // 3. Update State
+            updateLecture(chIndex, lecIndex, 'lectureUrl', uploadData.secure_url);
+            updateLecture(chIndex, lecIndex, 'lectureDuration', Math.round(uploadData.duration / 60));
+            toast.success('Asset Transmitted Successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error('Asset Transmission Failed');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(prev => {
+                const newProgress = { ...prev };
+                delete newProgress[lectureId];
+                return newProgress;
+            });
+        }
     };
 
     const removeChapter = (index) => {
@@ -385,13 +443,63 @@ const AddCourse = () => {
                                                                 className="w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all"
                                                                 placeholder="Knowledge Nexus Title"
                                                             />
-                                                            <input
-                                                                type="text"
-                                                                value={lecture.lectureUrl}
-                                                                onChange={(e) => updateLecture(chIndex, lecIndex, 'lectureUrl', e.target.value)}
-                                                                className="w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
-                                                                placeholder="Streaming Repository (YouTube URL)"
-                                                            />
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center gap-4 bg-gray-50/50 p-2 rounded-xl">
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => updateLecture(chIndex, lecIndex, 'uploadMode', false)}
+                                                                        className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!lecture.uploadMode ? 'bg-[#0C132B] text-white shadow-lg' : 'text-gray-400 hover:text-indigo-500'}`}
+                                                                    >
+                                                                        External Link
+                                                                    </button>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => updateLecture(chIndex, lecIndex, 'uploadMode', true)}
+                                                                        className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${lecture.uploadMode ? 'bg-[#0C132B] text-white shadow-lg' : 'text-gray-400 hover:text-indigo-500'}`}
+                                                                    >
+                                                                        Local Asset
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {!lecture.uploadMode ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={lecture.lectureUrl}
+                                                                        onChange={(e) => updateLecture(chIndex, lecIndex, 'lectureUrl', e.target.value)}
+                                                                        className="w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                                                                        placeholder="Streaming Repository (YouTube URL)"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="relative group">
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="video/mp4"
+                                                                            onChange={(e) => handleVideoUpload(chIndex, lecIndex, e.target.files[0])}
+                                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                                            disabled={isUploading}
+                                                                        />
+                                                                        <div className="w-full bg-indigo-50/30 border-2 border-dashed border-indigo-100 p-4 rounded-xl text-center group-hover:border-indigo-300 transition-all">
+                                                                            {lecture.lectureUrl ? (
+                                                                                <div className="flex items-center justify-center gap-2">
+                                                                                    <span className="text-emerald-500">✓</span>
+                                                                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Asset Ready</span>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Inject .MP4 Asset</span>
+                                                                            )}
+                                                                        </div>
+                                                                        {uploadProgress[lecture.lectureId] && (
+                                                                            <div className="mt-4 px-2">
+                                                                                <div className="flex justify-between items-center mb-2">
+                                                                                    <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest animate-pulse">Transmitting Bytes...</span>
+                                                                                    <span className="text-[8px] font-black text-indigo-500">{uploadProgress[lecture.lectureId]}%</span>
+                                                                                </div>
+                                                                                <Line percent={uploadProgress[lecture.lectureId]} strokeWidth="1" strokeColor="#6366f1" trailColor="#f1f5f9" />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <div className="flex items-center gap-6 w-full lg:w-auto">
                                                             <div className="relative">
@@ -474,10 +582,10 @@ const AddCourse = () => {
                                 </div>
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || isUploading}
                                     className="bg-[#0C132B] text-white px-16 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-black/10 disabled:opacity-50 min-w-[280px]"
                                 >
-                                    {loading ? 'Transmitting Data...' : 'Deploy Global Module'}
+                                    {isUploading ? 'Transmitting Assets...' : loading ? 'Transmitting Data...' : 'Deploy Global Module'}
                                 </button>
                             </div>
 

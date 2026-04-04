@@ -1,0 +1,118 @@
+import nodemailer from 'nodemailer';
+import Setting from '../models/Setting.js';
+
+// Build transporter from DB settings (SMTP configured by admin)
+const getTransporter = async () => {
+  const keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
+  const docs = await Setting.find({ key: { $in: keys } });
+  const cfg = {};
+  docs.forEach(d => cfg[d.key] = d.value);
+
+  // If no SMTP configured, return a mock transporter to avoid network hangs
+  if (!cfg.smtp_host || !cfg.smtp_user) {
+    return {
+      transporter: {
+        sendMail: async (mailOptions) => {
+          console.log('\n[Development Mode] Email intercepted (No SMTP configured):');
+          console.log('To:', mailOptions.to);
+          console.log('Subject:', mailOptions.subject);
+          console.log('Content snippet:', mailOptions.html.substring(0, 100) + '...\n');
+          return { messageId: 'mock-id-' + Date.now() };
+        }
+      },
+      from: 'PrismEd (Test) <noreply@prismed.local>',
+      isTest: true
+    };
+  }
+
+  const t = nodemailer.createTransport({
+    host: cfg.smtp_host,
+    port: parseInt(cfg.smtp_port) || 587,
+    secure: parseInt(cfg.smtp_port) === 465,
+    auth: { user: cfg.smtp_user, pass: cfg.smtp_pass }
+  });
+  return { transporter: t, from: cfg.smtp_from || `PrismEd <${cfg.smtp_user}>`, isTest: false };
+};
+
+// Send welcome/credentials email to newly registered AI chat user
+export const sendWelcomeEmail = async ({ name, email, password, loginUrl = 'http://localhost:3000/login' }) => {
+  try {
+    const { transporter, from, isTest } = await getTransporter();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f1a; color: #e2e8f0; margin: 0; padding: 0; }
+    .container { max-width: 560px; margin: 40px auto; background: #1a1a2e; border-radius: 24px; overflow: hidden; border: 1px solid #2d2d4e; }
+    .header { background: linear-gradient(135deg, #7c3aed, #4f46e5); padding: 40px 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+    .header p { margin: 8px 0 0; color: rgba(255,255,255,0.7); font-size: 13px; }
+    .body { padding: 36px 40px; }
+    .greeting { font-size: 18px; font-weight: 700; color: #c4b5fd; margin-bottom: 16px; }
+    .text { font-size: 14px; color: #94a3b8; line-height: 1.7; margin-bottom: 24px; }
+    .cred-box { background: #0f0f1a; border: 1px solid #7c3aed44; border-radius: 16px; padding: 24px; margin: 24px 0; }
+    .cred-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #2d2d4e; }
+    .cred-row:last-child { border-bottom: none; }
+    .cred-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+    .cred-value { font-size: 14px; font-weight: 700; color: #e2e8f0; font-family: monospace; }
+    .btn { display: block; text-align: center; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff !important; 
+           text-decoration: none; padding: 16px 32px; border-radius: 14px; font-weight: 800; font-size: 15px; margin: 28px 0; }
+    .footer { background: #0f0f1a; padding: 24px 40px; text-align: center; font-size: 11px; color: #475569; border-top: 1px solid #2d2d4e; }
+    .security-note { background: #1e1e3a; border: 1px solid #334155; border-radius: 12px; padding: 14px 18px; font-size: 12px; color: #64748b; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎓 Welcome to PrismEd</h1>
+      <p>Your learning journey starts here</p>
+    </div>
+    <div class="body">
+      <div class="greeting">Hi ${name}! 👋</div>
+      <p class="text">Your account has been created successfully. Here are your login credentials — store them safely.</p>
+      
+      <div class="cred-box">
+        <div class="cred-row">
+          <span class="cred-label">Platform URL</span>
+          <span class="cred-value">${loginUrl}</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">Email</span>
+          <span class="cred-value">${email}</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">Password</span>
+          <span class="cred-value">${password}</span>
+        </div>
+      </div>
+
+      <a href="${loginUrl}" class="btn">Access Your Dashboard →</a>
+
+      <div class="security-note">
+        🔒 <strong>Security Tip:</strong> Please change your password after your first login from Account Settings.
+      </div>
+    </div>
+    <div class="footer">
+      © ${new Date().getFullYear()} PrismEd · Shaping Skills · You received this because you registered via our AI Assistant.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const info = await transporter.sendMail({
+      from,
+      to: email,
+      subject: `🎓 Welcome to PrismEd — Your Login Credentials`,
+      html
+    });
+
+    const previewUrl = isTest ? nodemailer.getTestMessageUrl(info) : null;
+    return { success: true, messageId: info.messageId, previewUrl };
+  } catch (error) {
+    console.error('[EmailService] Failed to send email:', error.message);
+    return { success: false, error: error.message };
+  }
+};

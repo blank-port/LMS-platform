@@ -5,7 +5,7 @@ import axios from 'axios';
 import { assets } from '../../assets/assets';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import GamificationStats from '../../components/student/GamificationStats.jsx';
-import { BookOpen, Award, Clock, Zap, Activity, MessageSquare, ChevronRight } from 'lucide-react';
+import { BookOpen, Award, Clock, Zap, Activity, MessageSquare, ChevronRight, Wallet, CreditCard } from 'lucide-react';
 import SafeImage from '../../components/student/SafeImage.jsx';
 
 const data = [
@@ -78,13 +78,13 @@ const StudentDashboard = () => {
                 </div>
             </div>
 
-            {/* Cognitive Stats Grid */}
+            {/* Cognitive Stats Grid - InfixLMS Parity */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[
-                    { label: 'Courses Enrolled', value: enrolledCourses.length, icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Completed Phases', value: completedCourses.length, icon: Award, color: 'text-cyan-600', bg: 'bg-cyan-50' },
-                    { label: 'Pending Workshops', value: enrolledCourses.length - completedCourses.length, icon: Clock, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                    { label: 'Core Efficacy', value: `${enrolledCourses.length > 0 ? Math.round(enrolledCourses.reduce((acc, e) => acc + (e.progress || 0), 0) / enrolledCourses.length) : 0}%`, icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+                    { label: 'Wallet Balance', value: `₹${user.walletBalance || 0}`, icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Institutional Spend', value: `₹${enrolledCourses.length * 499}`, icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Certified Assets', value: user.certificates?.length || 0, icon: Award, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                    { label: 'Active Knowledge', value: enrolledCourses.length, icon: BookOpen, color: 'text-cyan-600', bg: 'bg-cyan-50' }
                 ].map((stat, i) => {
                     const StatIcon = stat.icon;
                     return (
@@ -116,7 +116,7 @@ const StudentDashboard = () => {
                             <Activity size={24} className="text-blue-600 animate-pulse" />
                         </div>
                         <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">

@@ -31,12 +31,27 @@ export const grantPoints = async (userId, event, context = {}) => {
         user.gamification.totalPoints += pointsToGrant;
         user.gamification.currentPoints += pointsToGrant;
 
-        // Level Up Logic (Every 3000 pts OR custom rules)
-        // For simplicity: Level = Floor(TotalPoints / 3000) + 1
+        // Notify of points (for meaningful amounts)
+        const { createStudentNotification } = await import("./notificationService.js");
+        if (pointsToGrant >= 5) {
+            await createStudentNotification({
+                userId,
+                type: 'ACHIEVEMENT_UNLOCKED',
+                message: `Scholarly Progress: You earned ${pointsToGrant} points for ${event.replace('_', ' ')}! 📈`,
+                module: 'gamification'
+            });
+        }
+
+        // Level Up Logic
         const newLevel = Math.floor(user.gamification.totalPoints / 3000) + 1;
         if (newLevel > user.gamification.level) {
             user.gamification.level = newLevel;
-            // Level up trigger could be added here
+            await createStudentNotification({
+                userId,
+                type: 'ACHIEVEMENT_UNLOCKED',
+                message: `Strategic Promotion: You have ascended to Level ${newLevel}! 🛡️`,
+                module: 'gamification'
+            });
         }
 
         await user.save();

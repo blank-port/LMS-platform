@@ -5,7 +5,9 @@ import {
   KeyIcon, 
   LockClosedIcon,
   CheckCircleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CpuChipIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { AppContext } from '../../../context/AppContextObject.jsx';
 
@@ -53,7 +55,14 @@ const ApiSettings = () => {
     vimeo_client_secret: '',
     vimeo_access_token: '',
     gdrive_email: '',
-    gdrive_key: ''
+    gdrive_key: '',
+    gemini_api_key: '',
+    ai_chat_enabled: false,
+    smtp_host: '',
+    smtp_port: '587',
+    smtp_user: '',
+    smtp_pass: '',
+    smtp_from: ''
   });
 
   useEffect(() => {
@@ -157,6 +166,78 @@ const ApiSettings = () => {
             </div>
           </div>
         </div>
+      {/* AI Chat Intelligence */}
+      <div className="lg:col-span-2">
+        <Card title="AI Chat Assistant" icon={ChatBubbleLeftRightIcon}>
+          <div className="flex flex-col gap-8">
+            {/* Enable Toggle */}
+            <div className="flex items-center justify-between p-5 bg-[var(--background)] rounded-2xl border border-[var(--border)]">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-purple-900/20 rounded-xl flex items-center justify-center text-purple-400 text-lg">🤖</div>
+                <div>
+                  <h4 className="font-bold text-[var(--text-main)]">Enable AI Chat Widget</h4>
+                  <p className="text-xs text-gray-400 mt-0.5">Show floating PrismBot on all pages for visitor onboarding</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleChange('ai_chat_enabled', !settings.ai_chat_enabled)}
+                className={`relative w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none ${
+                  settings.ai_chat_enabled ? 'bg-purple-600' : 'bg-gray-700'
+                }`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${
+                  settings.ai_chat_enabled ? 'translate-x-7' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
+            {/* Gemini API Key */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Google Gemini AI</span>
+                <div className="flex-1 h-px bg-[var(--border)]"></div>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer"
+                   className="text-[10px] font-bold text-purple-400 hover:text-purple-300 transition-colors">
+                  Get API Key →
+                </a>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <FormField 
+                  label="Gemini API Key" 
+                  value={settings.gemini_api_key} 
+                  onChange={(v) => handleChange('gemini_api_key', v)} 
+                  type="password" 
+                  placeholder="AIzaSy••••••••••••••••••••••••••"
+                  tooltip="Get your free API key from Google AI Studio (aistudio.google.com)"
+                />
+              </div>
+              <div className="flex items-center gap-2 bg-purple-900/10 border border-purple-800/20 rounded-xl px-4 py-3">
+                <CpuChipIcon className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <p className="text-[11px] text-purple-300">Uses <strong>gemini-1.5-flash</strong> — free tier supports ~1M tokens/day. No cost for basic usage.</p>
+              </div>
+            </div>
+
+            {/* SMTP Settings */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">SMTP Email (for credentials delivery)</span>
+                <div className="flex-1 h-px bg-[var(--border)]"></div>
+                <span className="text-[10px] text-gray-500">Optional — auto-uses test SMTP if blank</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField label="SMTP Host" value={settings.smtp_host} onChange={(v) => handleChange('smtp_host', v)} placeholder="smtp.gmail.com" />
+                <FormField label="SMTP Port" value={settings.smtp_port} onChange={(v) => handleChange('smtp_port', v)} placeholder="587" />
+                <FormField label="SMTP User (Email)" value={settings.smtp_user} onChange={(v) => handleChange('smtp_user', v)} placeholder="you@gmail.com" />
+                <FormField label="SMTP Password / App Password" value={settings.smtp_pass} onChange={(v) => handleChange('smtp_pass', v)} type="password" placeholder="••••••••••••" />
+                <div className="md:col-span-2">
+                  <FormField label="From Address" value={settings.smtp_from} onChange={(v) => handleChange('smtp_from', v)} placeholder="PrismEd <noreply@yoursite.com>" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       </div>
     </div>
   );

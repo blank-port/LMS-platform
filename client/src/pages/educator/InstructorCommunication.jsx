@@ -3,6 +3,14 @@ import { useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { 
+    MessageSquare, Send, Search, Filter, 
+    MoreVertical, Bell, Megaphone, Trash2, 
+    Calendar, Clock, AlertTriangle, Info,
+    Plus, X, ShieldAlert, CheckCircle, ChevronRight
+} from 'lucide-react';
+import NexusChat from '../../components/common/NexusChat.jsx';
+import { format } from 'date-fns';
 
 const InstructorCommunication = () => {
     const { backendUrl, token } = useContext(AppContext);
@@ -10,61 +18,58 @@ const InstructorCommunication = () => {
     const [comments, setComments] = useState([]);
     const [notices, setNotices] = useState([]);
     const [instructorCourses, setInstructorCourses] = useState([]);
-    const [view, setView] = useState('messages'); // 'messages', 'discussions', or 'notices'
-    const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
-    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-    const [newNotice, setNewNotice] = useState({ title: '', content: '', recipients: 'all', course: '' });
-    const [newMessage, setNewMessage] = useState({ receiver: '', content: '' });
-    const [enrolledStudents, setEnrolledStudents] = useState([]);
+    const [activeTab, setActiveTab] = useState('messages');
+    const [showNoticeModal, setShowNoticeModal] = useState(false);
+    const [newNotice, setNewNotice] = useState({ 
+        title: '', 
+        content: '', 
+        course: '', 
+        recipients: 'course',
+        priority: 'normal',
+        expiryDate: '' 
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchCommunication = async () => {
         try {
-            const msgRes = await axios.get(`${backendUrl}/api/comm/messages`, { headers: { Authorization: `Bearer ${token}` } });
-            if (msgRes.data.success) setMessages(msgRes.data.messages);
-
-            const commRes = await axios.get(`${backendUrl}/api/comm/comments`);
-            if (commRes.data.success) setComments(commRes.data.comments);
-
             const noticeRes = await axios.get(`${backendUrl}/api/comm/instructor-notices`, { headers: { Authorization: `Bearer ${token}` } });
             if (noticeRes.data.success) setNotices(noticeRes.data.notices);
 
             const courseRes = await axios.get(`${backendUrl}/api/instructor/courses`, { headers: { Authorization: `Bearer ${token}` } });
             if (courseRes.data.success) setInstructorCourses(courseRes.data.courses);
 
-            const studentRes = await axios.get(`${backendUrl}/api/instructor/enrolled-students`, { headers: { Authorization: `Bearer ${token}` } });
-            if (studentRes.data.success) setEnrolledStudents(studentRes.data.enrolledStudents);
+            const commRes = await axios.get(`${backendUrl}/api/comm/comments`, { headers: { Authorization: `Bearer ${token}` } });
+            if (commRes.data.success) setComments(commRes.data.comments);
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
+    const handleDeleteNotice = async (id) => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/send`, newMessage, { headers: { Authorization: `Bearer ${token}` } });
-            if (data.success) {
-                toast.success('Signal transmitted');
-                setIsMessageModalOpen(false);
-                setNewMessage({ receiver: '', content: '' });
-                fetchCommunication();
-            }
+            await axios.delete(`${backendUrl}/api/comm/notices/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success('Notice removed');
+            fetchCommunication();
         } catch (error) {
-            toast.error(error.message);
+            toast.error('Failed to remove notice');
         }
     };
 
     const handlePostNotice = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/notice`, newNotice, { headers: { Authorization: `Bearer ${token}` } });
+            const { data } = await axios.post(`${backendUrl}/api/comm/notices`, newNotice, { headers: { Authorization: `Bearer ${token}` } });
             if (data.success) {
                 toast.success('Notice dispatched successfully');
-                setIsNoticeModalOpen(false);
-                setNewNotice({ title: '', content: '', recipients: 'all', course: '' });
+                setShowNoticeModal(false);
+                setNewNotice({ title: '', content: '', recipients: 'course', course: '', priority: 'normal', expiryDate: '' });
                 fetchCommunication();
             }
         } catch (error) {
             toast.error(error.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -72,13 +77,7 @@ const InstructorCommunication = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const viewParam = params.get('view');
-        const studentParam = params.get('student');
-
-        if (viewParam) setView(viewParam);
-        if (studentParam) {
-            setNewMessage(prev => ({ ...prev, receiver: studentParam }));
-            setIsMessageModalOpen(true);
-        }
+        if (viewParam) setActiveTab(viewParam);
     }, [location.search]);
 
     useEffect(() => { fetchCommunication(); }, []);
@@ -95,281 +94,227 @@ const InstructorCommunication = () => {
                 </div>
 
                 <div className="flex gap-2 bg-white p-2 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-gray-50">
-                    <button
-                        onClick={() => setView('messages')}
-                        className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${view === 'messages' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}
-                    >
-                        Direct Messages
-                    </button>
-                    <button
-                        onClick={() => setView('discussions')}
-                        className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${view === 'discussions' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}
-                    >
-                        Course Discussions
-                    </button>
-                    <button
-                        onClick={() => setView('notices')}
-                        className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${view === 'notices' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}
-                    >
-                        Official Notices
-                    </button>
+                    <button onClick={() => setActiveTab('messages')} className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'messages' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}>Nexus Chat</button>
+                    <button onClick={() => setActiveTab('notices')} className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'notices' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}>Notices</button>
+                    <button onClick={() => setActiveTab('discussions')} className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'discussions' ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'text-gray-400 hover:bg-gray-50'}`}>Discussions</button>
                 </div>
             </div>
 
-            <div className="bg-white rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 overflow-hidden min-h-[600px] animate-in fade-in slide-in-from-bottom-5">
-                {view === 'messages' ? (
-                    <div className="p-10 md:p-16">
-                        <div className="flex justify-between items-center mb-12">
-                            <div>
-                                <h3 className="text-2xl font-black text-[#0C132B] tracking-tight">Direct Signals</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Private synchronization threads with scholars</p>
-                            </div>
-                            <button
-                                onClick={() => setIsMessageModalOpen(true)}
-                                className="px-8 py-4 bg-[#0C132B] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-indigo-600 transition-all"
-                            >
-                                Compose New Signal
-                            </button>
-                        </div>
-                        {messages.length === 0 ? (
-                            <div className="text-center py-32">
-                                <div className="text-7xl mb-10 opacity-10 grayscale">📫</div>
-                                <h3 className="text-2xl font-black text-[#0C132B] mb-4 tracking-tight">Signals are Quiet</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No direct student signals detected in your synchronization layer yet.</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-6">
-                                {messages.map(m => (
-                                    <div key={m._id} className="p-8 rounded-[2rem] bg-gray-50/50 border border-gray-50 hover:bg-white hover:border-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all cursor-pointer group">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-[#0C132B] text-white rounded-xl flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                                                    {m.sender.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-[#0C132B] tracking-tight group-hover:text-indigo-500 transition-colors uppercase">{m.sender.name}</span>
-                                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active Signal</span>
-                                                </div>
-                                            </div>
-                                            <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest group-hover:text-[#0C132B] transition-colors">{new Date(m.createdAt).toLocaleDateString()}</span>
-                                        </div>
-                                        <p className="text-xs font-bold text-gray-500 leading-relaxed max-w-2xl">{m.content}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+            <div className="bg-white rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 overflow-hidden min-h-[600px] p-6 lg:p-10">
+                {activeTab === 'messages' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <NexusChat panel="educator" />
                     </div>
-                ) : view === 'discussions' ? (
-                    <div className="p-10 md:p-16">
-                        {comments.length === 0 ? (
-                            <div className="text-center py-32">
-                                <div className="text-7xl mb-10 opacity-10 grayscale">🗨️</div>
-                                <h3 className="text-2xl font-black text-[#0C132B] mb-4 tracking-tight">Zero Network Activity</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">The discussion clusters across your modules are currently inactive.</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-10 divide-y divide-gray-50">
-                                {comments.map(c => (
-                                    <div key={c._id} className="pt-10 first:pt-0 group animate-in slide-in-from-left-5">
-                                        <div className="flex items-center gap-5 mb-6">
-                                            <div className="w-12 h-12 rounded-[1.2rem] bg-indigo-500/10 flex items-center justify-center text-[10px] font-black text-indigo-500 uppercase tracking-widest">
-                                                {c.userName ? c.userName.charAt(0).toUpperCase() : 'AN'}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black text-[#0C132B] tracking-tight group-hover:text-indigo-500 transition-colors">{c.userName || 'Anonymous Scholar'}</span>
-                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Interacting on <span className="text-emerald-500">{c.type}</span></span>
-                                            </div>
-                                        </div>
-                                        <div className="pl-16">
-                                            <p className="text-sm font-bold text-gray-600 leading-relaxed mb-6 max-w-3xl">{c.commentBody}</p>
-                                            <div className="flex gap-8">
-                                                <button className="text-[9px] font-black uppercase text-indigo-500 tracking-[0.2em] hover:text-[#0C132B] transition-all flex items-center gap-2 group-hover:translate-x-1 duration-300">
-                                                    Initialize Response →
-                                                </button>
-                                                <button className="text-[9px] font-black uppercase text-gray-300 tracking-[0.2em] hover:text-rose-500 transition-all">Flag Conflict</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="p-10 md:p-16">
-                        <div className="flex justify-between items-center mb-12">
+                )}
+
+                {activeTab === 'notices' && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-2xl font-black text-[#0C132B] tracking-tight">Active Broadcasts</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Status of your intellectual transmissions</p>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Institutional Alerts</h2>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Broadcast mission-critical updates to scholar cohorts</p>
                             </div>
-                            <button
-                                onClick={() => setIsNoticeModalOpen(true)}
-                                className="px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 transition-all"
+                            <button 
+                                onClick={() => setShowNoticeModal(true)}
+                                className="px-8 py-4 bg-[#0C132B] text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-600/10 flex items-center gap-3"
                             >
-                                Dispatch New Notice
+                                <Plus size={16} /> Deploy New Notice
                             </button>
                         </div>
 
-                        {notices.length === 0 ? (
-                            <div className="text-center py-32">
-                                <div className="text-7xl mb-10 opacity-10 grayscale">📢</div>
-                                <h3 className="text-2xl font-black text-[#0C132B] mb-4 tracking-tight">Static on the Line</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">No administrative broadcasts have been issued across the platform spectrum yet.</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-6">
-                                {notices.map(n => (
-                                    <div key={n._id} className="p-8 rounded-[2rem] bg-gray-50/5 border border-gray-100/50 hover:bg-gray-50/10 transition-all">
-                                        <div className="flex justify-between items-start mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {notices.length === 0 ? (
+                                <div className="col-span-full py-40 bg-white rounded-[4rem] border border-dashed border-gray-100 flex flex-col items-center justify-center grayscale opacity-20">
+                                    <Bell size={64} className="mb-6" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">No active notices found in this sector.</p>
+                                </div>
+                            ) : (
+                                notices.map((notice) => (
+                                    <div key={notice._id} className={`group bg-white p-8 rounded-[3rem] border border-gray-50 shadow-2xl shadow-gray-200/40 hover:shadow-indigo-100/50 transition-all hover:scale-[1.02] relative overflow-hidden ${
+                                        notice.priority === 'critical' ? 'ring-2 ring-rose-500/20' : 
+                                        notice.priority === 'urgent' ? 'ring-2 ring-amber-500/20' : ''
+                                    }`}>
+                                        {/* Priority Indicator */}
+                                        <div className={`absolute top-0 right-0 px-6 py-2 rounded-bl-[1.5rem] text-[8px] font-black uppercase tracking-widest ${
+                                            notice.priority === 'critical' ? 'bg-rose-500 text-white animate-pulse' : 
+                                            notice.priority === 'urgent' ? 'bg-amber-500 text-white' : 'bg-indigo-50 text-indigo-400'
+                                        }`}>
+                                            {notice.priority}
+                                        </div>
+
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                                                notice.priority === 'critical' ? 'bg-rose-50 text-rose-500' : 'bg-gray-50 text-gray-400'
+                                            }`}>
+                                                <Bell size={24} />
+                                            </div>
                                             <div>
-                                                <h4 className="text-lg font-black text-[#0C132B] tracking-tight">{n.title}</h4>
-                                                <div className="flex items-center gap-3 mt-1.5">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${n.recipients === 'all' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                        {n.recipients === 'all' ? 'Global Broadcast' : `Module: ${n.course?.courseTitle || 'Specific'}`}
-                                                    </span>
-                                                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{new Date(n.createdAt).toLocaleString()}</span>
-                                                </div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{notice.recipients === 'all' ? 'Universal Broadcast' : 'Curriculum Node'}</p>
+                                                <h3 className="font-black text-lg text-gray-900 tracking-tight line-clamp-1">{notice.title}</h3>
                                             </div>
                                         </div>
-                                        <p className="text-xs font-bold text-gray-500 leading-relaxed">{n.content}</p>
+                                        <p className="text-gray-500 text-xs font-medium leading-relaxed line-clamp-3 mb-8">{notice.content}</p>
+                                        <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                                            <div className="flex items-center gap-3">
+                                                <Calendar size={14} className="text-gray-300" />
+                                                <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
+                                                    {format(new Date(notice.createdAt), 'MMM dd, yyyy')}
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {notice.expiryDate && (
+                                                    <div className="flex items-center gap-2 text-rose-400">
+                                                        <Clock size={12} />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest">Exp: {format(new Date(notice.expiryDate), 'MMM dd')}</span>
+                                                    </div>
+                                                )}
+                                                <button 
+                                                    onClick={() => handleDeleteNotice(notice._id)}
+                                                    className="w-10 h-10 bg-rose-50 text-rose-400 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'discussions' && (
+                    <div className="grid gap-10 divide-y divide-gray-50 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        {comments.length === 0 ? (
+                            <div className="text-center py-40 grayscale opacity-20 filter">
+                                <MessageSquare size={64} className="mx-auto mb-6" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">No Active Discourse Nodes</p>
                             </div>
+                        ) : (
+                            comments.map(c => (
+                                <div key={c._id} className="pt-10 first:pt-0 group hover:translate-x-2 transition-transform">
+                                    <div className="flex items-center gap-6 mb-6">
+                                        <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-xl font-black text-indigo-500 shadow-lg border border-white">
+                                            {c.userName ? c.userName.charAt(0).toUpperCase() : 'AN'}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-lg font-black text-[#0C132B] tracking-tight group-hover:text-indigo-600 transition-colors">{c.userName || 'Anonymous Scholar'}</span>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Module Segment: <span className="text-emerald-500">{c.type}</span></span>
+                                        </div>
+                                    </div>
+                                    <div className="pl-20">
+                                        <div className="bg-gray-50 p-8 rounded-[2.5rem] rounded-tl-none border border-gray-100">
+                                            <p className="text-sm font-bold text-gray-600 leading-relaxed max-w-4xl">{c.commentBody}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 )}
             </div>
 
-            {/* Notice Modal */}
-            {isNoticeModalOpen && (
+            {showNoticeModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-[#0C132B]/60 animate-in fade-in duration-500">
-                    <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden">
-                        <div className="p-10 md:p-12 border-b border-gray-100 bg-gray-50/30">
+                    <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl border border-white/20 overflow-hidden">
+                        <div className="p-10 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
                             <h2 className="text-3xl font-black text-[#0C132B] tracking-tighter">Issue Platform Signal</h2>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Broadcast directives to the scholar network</p>
+                            <button onClick={() => setShowNoticeModal(false)} className="w-12 h-12 bg-white text-gray-300 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all shadow-xl shadow-gray-200/20">
+                                <X size={20} />
+                            </button>
                         </div>
-                        <form onSubmit={handlePostNotice} className="p-10 md:p-12 space-y-8">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Notice Headline</label>
-                                <input
+                        <form onSubmit={handlePostNotice} className="p-10 space-y-8">
+                            <div>
+                                <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1 mb-3 block">Notice Headline</label>
+                                <input 
+                                    type="text" 
                                     required
-                                    type="text"
+                                    className="w-full bg-gray-50 px-8 py-5 rounded-2xl border border-gray-100 outline-none text-xs font-black text-gray-900 focus:ring-4 ring-indigo-500/5 transition-all"
+                                    placeholder="Brief summary of the directive..."
                                     value={newNotice.title}
                                     onChange={(e) => setNewNotice({ ...newNotice, title: e.target.value })}
-                                    className="w-full h-16 px-6 bg-gray-50 border-none rounded-2xl text-sm font-bold text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                    placeholder="e.g. Critical System Update"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Recipient Protocol</label>
-                                    <select
-                                        value={newNotice.recipients}
-                                        onChange={(e) => setNewNotice({ ...newNotice, recipients: e.target.value })}
-                                        className="w-full h-16 px-6 bg-gray-50 border-none rounded-2xl text-xs font-black uppercase tracking-widest text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                                    >
-                                        <option value="all">Global Broadcast</option>
-                                        <option value="course">Module Specific</option>
-                                    </select>
-                                </div>
-                                {newNotice.recipients === 'course' && (
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Module</label>
-                                        <select
-                                            required
-                                            value={newNotice.course}
-                                            onChange={(e) => setNewNotice({ ...newNotice, course: e.target.value })}
-                                            className="w-full h-16 px-6 bg-gray-50 border-none rounded-2xl text-xs font-black uppercase tracking-widest text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
-                                        >
-                                            <option value="">Select Module</option>
-                                            {instructorCourses.map(c => (
-                                                <option key={c._id} value={c._id}>{c.courseTitle}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Signal Content</label>
-                                <textarea
-                                    required
-                                    value={newNotice.content}
-                                    onChange={(e) => setNewNotice({ ...newNotice, content: e.target.value })}
-                                    className="w-full h-48 p-6 bg-gray-50 border-none rounded-2xl text-sm font-bold text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                                    placeholder="Enter directive details..."
-                                />
-                            </div>
-                            <div className="flex gap-4 pt-4">
-                                <button
-                                    type="submit"
-                                    className="flex-1 h-16 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/20 hover:bg-[#0C132B] transition-all"
-                                >
-                                    Authorize Broadcast
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsNoticeModalOpen(false)}
-                                    className="px-10 h-16 bg-gray-50 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 hover:text-rose-500 transition-all"
-                                >
-                                    Abort
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
-            {/* Message Modal */}
-            {isMessageModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-[#0C132B]/60 animate-in fade-in duration-500">
-                    <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden">
-                        <div className="p-10 md:p-12 border-b border-gray-100 bg-gray-50/30">
-                            <h2 className="text-3xl font-black text-[#0C132B] tracking-tighter">Initialize Private Sync</h2>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Establish a direct encrypted-style channel with a scholar</p>
-                        </div>
-                        <form onSubmit={handleSendMessage} className="p-10 md:p-12 space-y-8">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Scholar</label>
-                                <select
-                                    required
-                                    value={newMessage.receiver}
-                                    onChange={(e) => setNewMessage({ ...newMessage, receiver: e.target.value })}
-                                    className="w-full h-16 px-6 bg-gray-50 border-none rounded-2xl text-xs font-black uppercase tracking-widest text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                            <div className="grid grid-cols-2 gap-8">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Criticality Level</label>
+                                    <div className="flex gap-2">
+                                        {['normal', 'urgent', 'critical'].map(p => (
+                                            <button 
+                                                key={p}
+                                                type="button"
+                                                onClick={() => setNewNotice({...newNotice, priority: p})}
+                                                className={`flex-1 py-4 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                                                    newNotice.priority === p 
+                                                    ? 'bg-[#0C132B] text-white border-transparent shadow-lg' 
+                                                    : 'bg-white text-gray-400 border-gray-50 hover:border-indigo-100'
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Protocol Expiry</label>
+                                    <input 
+                                        type="date" 
+                                        className="w-full bg-gray-50 px-8 py-4 rounded-xl border border-gray-100 outline-none text-[10px] font-black text-gray-900 focus:ring-4 ring-indigo-500/5 transition-all"
+                                        value={newNotice.expiryDate}
+                                        onChange={(e) => setNewNotice({...newNotice, expiryDate: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Target Cluster</label>
+                                <select 
+                                    className="w-full bg-gray-50 px-8 py-5 rounded-2xl border border-gray-100 outline-none text-xs font-black text-gray-900 focus:ring-4 ring-indigo-500/5 transition-all"
+                                    value={newNotice.recipients}
+                                    onChange={(e) => setNewNotice({ ...newNotice, recipients: e.target.value })}
                                 >
-                                    <option value="">Select Target</option>
-                                    {/* Deduplicate students if they are in multiple courses */}
-                                    {Array.from(new Set(enrolledStudents.map(s => s.student?._id)))
-                                        .map(studentId => {
-                                            const s = enrolledStudents.find(st => st.student?._id === studentId);
-                                            return <option key={studentId} value={studentId}>{s.student?.name} ({s.student?.email})</option>
-                                        })
-                                    }
+                                    <option value="course">Curriculum Cohort</option>
+                                    <option value="all">Universal Broadcast</option>
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Transmission Content</label>
-                                <textarea
+
+                            {newNotice.recipients === 'course' && (
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Select Curriculum Node</label>
+                                    <select 
+                                        required
+                                        className="w-full bg-gray-50 px-8 py-5 rounded-2xl border border-gray-100 outline-none text-xs font-black text-gray-900 focus:ring-4 ring-indigo-500/5 transition-all"
+                                        value={newNotice.course}
+                                        onChange={(e) => setNewNotice({ ...newNotice, course: e.target.value })}
+                                    >
+                                        <option value="">Destinations...</option>
+                                        {instructorCourses.map(c => (
+                                            <option key={c._id} value={c._id}>{c.courseTitle}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Transmission Payload</label>
+                                <textarea 
+                                    rows="5"
                                     required
-                                    value={newMessage.content}
-                                    onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                                    className="w-full h-48 p-6 bg-gray-50 border-none rounded-2xl text-sm font-bold text-[#0C132B] focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                                    placeholder="Enter private directive..."
-                                />
+                                    className="w-full bg-gray-50 px-8 py-6 rounded-[2rem] border border-gray-100 outline-none text-sm font-bold text-gray-900 focus:ring-4 ring-indigo-500/5 transition-all resize-none shadow-inner"
+                                    placeholder="Enter full directive details..."
+                                    value={newNotice.content}
+                                    onChange={(e) => setNewNotice({ ...newNotice, content: e.target.value })}
+                                ></textarea>
                             </div>
-                            <div className="flex gap-4 pt-4">
-                                <button
-                                    type="submit"
-                                    className="flex-1 h-16 bg-[#0C132B] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:bg-indigo-600 transition-all"
-                                >
-                                    Transmit Signal
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsMessageModalOpen(false)}
-                                    className="px-10 h-16 bg-gray-50 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 hover:text-rose-500 transition-all"
-                                >
-                                    Abort
-                                </button>
-                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/20 hover:bg-[#0C132B] transition-all disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'Transmitting Data...' : 'Authorize Broadcast'}
+                            </button>
                         </form>
                     </div>
                 </div>

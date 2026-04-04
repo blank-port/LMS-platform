@@ -25,7 +25,7 @@ export const performEnrollment = async ({ userId, courseId, amount, paymentMetho
         const course = await Course.findById(courseId);
         const globalCommSetting = await Setting.findOne({ key: 'global_commission_percentage' });
         const commissionPercent = course.commissionRate > 0 ? course.commissionRate : (globalCommSetting ? globalCommSetting.value : 20);
-        
+
         const adminShare = (amount * commissionPercent) / 100;
         const instructorShare = amount - adminShare;
 

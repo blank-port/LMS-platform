@@ -10,9 +10,12 @@ import {
     setupQuiz, 
     updateCourseEducationFields,
     importQuestions,
-    getAllQuizzes
+    getAllQuizzes,
+    getAllSubjects,
+    createSubject,
+    deleteSubject
 } from '../controllers/educationController.js';
-import { instructorAuth } from '../middlewares/authMiddleware.js';
+import { instructorAuth, adminAuth } from '../middlewares/authMiddleware.js';
 import upload from '../configs/multer.js';
 
 const educationRouter = express.Router();
@@ -28,5 +31,10 @@ educationRouter.post('/question-import', instructorAuth, upload.single('file'), 
 educationRouter.post('/quiz-setup', instructorAuth, setupQuiz);
 educationRouter.get('/quiz-setup/all', instructorAuth, getAllQuizzes);
 educationRouter.put('/course-fields', instructorAuth, updateCourseEducationFields);
+
+// Subject Management Routes
+educationRouter.get('/subject/all', getAllSubjects); // Public for course filtering
+educationRouter.post('/subject', adminAuth, createSubject);
+educationRouter.delete('/subject/:id', adminAuth, deleteSubject);
 
 export default educationRouter;

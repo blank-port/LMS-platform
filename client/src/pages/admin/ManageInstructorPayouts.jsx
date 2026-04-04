@@ -9,7 +9,7 @@ import {
 import { toast } from 'react-toastify';
 
 const ManageInstructorPayouts = () => {
-    const { backendUrl, adminToken, currency } = useContext(AppContext);
+    const { backendUrl, token, currency } = useContext(AppContext);
     const [payouts, setPayouts] = useState([]);
     const [instructors, setInstructors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ const ManageInstructorPayouts = () => {
             setLoading(true);
             const { data } = await axios.get(`${backendUrl}/api/admin/instructor-payouts`, {
                 params: filters,
-                headers: { Authorization: `Bearer ${adminToken}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             if (data.success) {
                 setPayouts(data.payouts);
@@ -41,7 +41,7 @@ const ManageInstructorPayouts = () => {
     const fetchInstructors = async () => {
         try {
             const { data } = await axios.get(`${backendUrl}/api/admin/instructors`, {
-                headers: { Authorization: `Bearer ${adminToken}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             if (data.success) {
                 setInstructors(data.instructors);

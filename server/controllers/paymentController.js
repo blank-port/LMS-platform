@@ -8,7 +8,28 @@ import WalletTransaction from "../models/WalletTransaction.js";
 import Notification from "../models/Notification.js";
 import { performEnrollment } from "../services/enrollmentService.js";
 import { grantPoints } from "../services/gamificationService.js";
-import { createAdminNotification } from "../services/notificationService.js";
+import { createAdminNotification, createStudentNotification } from "../services/notificationService.js";
+
+// Get Pending Payments (Centralized Fiscal Oversight)
+export const getPendingPayments = async (req, res) => {
+    try {
+        const { method = 'all' } = req.query;
+        let query = { status: { $in: ['pending', 'pending_approval'] } };
+
+        if (method !== 'all') {
+            query.paymentMethod = method;
+        }
+
+        const payments = await Payment.find(query)
+            .populate('user', 'name email avatar')
+            .populate('course', 'courseTitle courseThumbnail')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, payments });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
 
 // Helper to get Razorpay Instance
 const getRazorpayInstance = async () => {
@@ -132,12 +153,20 @@ export const verifyPayment = async (req, res) => {
             // Grant points for education investment
             await grantPoints(userId, 'course_purchase');
 
-            // Notify Admin of Payment Success
             await createAdminNotification({
                 type: 'PAYMENT_SUCCESS',
                 message: `New enrollment success for ${req.user.name} in ${payment.course?.courseTitle || 'Course'}`,
                 module: 'ecommerce',
                 referenceId: payment._id
+            });
+
+            // Notify Student
+            await createStudentNotification({
+                userId,
+                type: 'ENROLLMENT_CONFIRMED',
+                message: `Welcome to the academy! Your enrollment in "${payment.course?.courseTitle || 'your new course'}" is now active. ✨`,
+                module: 'ecommerce',
+                referenceId: payment.course?._id
             });
 
             res.json({ success: true, message: "Payment Verified & Enrolled" });
@@ -213,6 +242,15 @@ export const approveCOD = async (req, res) => {
 
         // Grant points
         await grantPoints(userId, 'course_purchase');
+
+        // Notify Student
+        await createStudentNotification({
+            userId,
+            type: 'ENROLLMENT_CONFIRMED',
+            message: `Strategic Update: Your COD order for "${payment.course?.courseTitle}" has been APPROVED. Access granted! 🔓`,
+            module: 'ecommerce',
+            referenceId: payment.course?._id
+        });
 
         res.json({ success: true, message: "COD Payment Approved & Student Enrolled" });
     } catch (error) {
@@ -357,6 +395,15 @@ export const buyWithWallet = async (req, res) => {
             message: `${req.user.name} bought ${course.courseTitle} using Wallet`,
             module: 'ecommerce',
             referenceId: payment._id
+        });
+
+        // Notify Student
+        await createStudentNotification({
+            userId,
+            type: 'ENROLLMENT_CONFIRMED',
+            message: `Vault Transaction: You have successfully enrolled in "${course.courseTitle}" using your wallet balance. 💎`,
+            module: 'ecommerce',
+            referenceId: course._id
         });
 
         res.json({ success: true, message: "Course purchased successfully via wallet" });

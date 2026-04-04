@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { Trophy, Medal, Crown, Star, Shield, Award, Search, TrendingUp } from 'lucide-react';
+import BadgeIcon from '../../components/common/BadgeIcon.jsx';
 
 const Leaderboard = () => {
     const { backendUrl, token, user } = useContext(AppContext);
@@ -142,8 +143,8 @@ const Leaderboard = () => {
 
                             <div className="col-span-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                                 {scholar.gamification?.badges?.slice(0, 3).map((badge, j) => (
-                                    <div key={j} className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-sm shadow-sm border border-indigo-100/50 group-hover:scale-110 transition-transform cursor-help" title={badge.title}>
-                                        🏆
+                                    <div key={j} className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-sm shadow-sm border border-indigo-100/50 group-hover:scale-110 transition-transform cursor-help overflow-hidden p-1" title={badge.title}>
+                                        <BadgeIcon icon={badge.icon} className="w-full h-full" />
                                     </div>
                                 ))}
                                 {scholar.gamification?.badges?.length > 3 && (

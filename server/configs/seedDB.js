@@ -457,7 +457,10 @@ const seedDatabase = async () => {
             // Notification Trigger Matrix
             { key: 'notify_course_published', value: 'Yes', isSensitive: false },
             { key: 'notify_new_enrollment', value: 'Yes', isSensitive: false },
-            { key: 'notify_assignment_submitted', value: 'No', isSensitive: false }
+            { key: 'notify_assignment_submitted', value: 'No', isSensitive: false },
+
+            // AI Chat Assistant
+            { key: 'ai_chat_enabled', value: true, isSensitive: false }
         ];
         await Setting.insertMany(initialSettings);
         console.log('  → 16 Global Platform Settings initialized.');

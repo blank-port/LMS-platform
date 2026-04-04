@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
     createOrder, verifyPayment, requestCOD, approveCOD, rejectCOD, getPendingCodOrders, 
-    getMyPendingCodOrders, getNotifications, markAsRead, buyWithWallet 
+    getMyPendingCodOrders, getNotifications, markAsRead, buyWithWallet, getPendingPayments 
 } from '../controllers/paymentController.js';
 import { adminAuth, studentAuth } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +16,7 @@ paymentRouter.get('/my-pending-cod', studentAuth, getMyPendingCodOrders);
 
 
 // Admin / Executive Routes
+paymentRouter.get('/pending', adminAuth, getPendingPayments);
 paymentRouter.post('/approve-cod', adminAuth, approveCOD); 
 paymentRouter.post('/reject-cod', adminAuth, rejectCOD); 
 paymentRouter.get('/pending-cod', adminAuth, getPendingCodOrders);

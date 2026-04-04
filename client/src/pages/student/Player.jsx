@@ -5,6 +5,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import Footer from '../../components/student/Footer';
 import { assets } from '../../assets/assets';
+import { Award, Star, MessageCircle, Clock, CheckCircle, ShieldCheck } from 'lucide-react';
 
 const Player = () => {
     const { courseId } = useParams();
@@ -58,7 +59,11 @@ const Player = () => {
             const { data } = await axios.get(`${backendUrl}/api/comm/qa?courseId=${courseId}&lessonId=${currentLecture?._id || ''}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (data.success) setDiscussions(data.discussions);
+            if (data.success) {
+                // Sort Golden Knowledge nodes to the top
+                const sorted = data.discussions.sort((a, b) => (b.isGoldenKnowledge ? 1 : 0) - (a.isGoldenKnowledge ? 1 : 0));
+                setDiscussions(sorted);
+            }
         } catch (error) { console.error('Discourse Retrieval Failure'); }
     };
 
@@ -248,20 +253,41 @@ const Player = () => {
                                                 <p className="text-[10px] font-black uppercase tracking-widest">Inquiry Void</p>
                                             </div>
                                         ) : discussions.map(q => (
-                                            <div key={q._id} className="p-8 rounded-[2rem] border border-white/5 bg-white/2 group hover:bg-white/5 transition-all">
-                                                <div className="flex items-center gap-4 mb-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-xs font-black">
+                                            <div key={q._id} className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group/qa ${
+                                                q.isGoldenKnowledge 
+                                                ? 'bg-amber-500/5 border-amber-500/20 shadow-[0_20px_50px_rgba(245,158,11,0.05)]' 
+                                                : 'bg-white/2 border-white/5 hover:bg-white/5'
+                                            }`}>
+                                                {q.isGoldenKnowledge && (
+                                                    <div className="absolute top-0 right-0 px-6 py-2 bg-amber-500 text-white rounded-bl-2xl text-[8px] font-black uppercase tracking-widest flex items-center gap-2 animate-pulse">
+                                                        <Award size={12} />
+                                                        Golden Knowledge
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-4 mb-6">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black border-2 transition-all ${
+                                                        q.isGoldenKnowledge ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                                                    }`}>
                                                         {q.userId?.name?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-black text-white/80 tracking-tight">{q.userId?.name}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <p className="text-sm font-black text-white/90 tracking-tight">{q.userId?.name}</p>
+                                                            {q.isGoldenKnowledge && <ShieldCheck size={14} className="text-amber-500" />}
+                                                        </div>
                                                         <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{new Date(q.createdAt).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm text-white/60 leading-relaxed italic border-l-2 border-indigo-500/20 pl-4 py-1">"{q.message}"</p>
+                                                <p className={`text-base leading-relaxed pl-6 border-l-4 py-1 transition-all ${
+                                                    q.isGoldenKnowledge ? 'text-white font-medium border-amber-500 shadow-amber-500/20 text-shadow-sm' : 'text-white/60 border-indigo-500/20 italic'
+                                                }`}>
+                                                    {q.message}
+                                                </p>
                                                 {q.isReplied && (
-                                                    <div className="mt-6 flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
-                                                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                                    <div className={`mt-8 py-3 px-6 rounded-xl inline-flex items-center gap-3 text-[9px] font-black uppercase tracking-widest ${
+                                                        q.isGoldenKnowledge ? 'bg-amber-500 text-white' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    }`}>
+                                                        <CheckCircle size={14} />
                                                         Institutional Resolution Captured
                                                     </div>
                                                 )}

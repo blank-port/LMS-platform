@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import { 
     Mail, Lock, ArrowRight, Loader2, GraduationCap, 
-    User as UserIcon, ShieldCheck, ChevronRight, Star
+    User as UserIcon, ShieldCheck, ChevronRight, Star,
+    Eye, EyeOff
 } from 'lucide-react';
 
 const Login = () => {
@@ -22,6 +23,8 @@ const Login = () => {
     const [role, setRole] = useState('student');
     const [referralCode, setReferralCode] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const isMounted = React.useRef(true);
 
     useEffect(() => {
@@ -166,10 +169,19 @@ const Login = () => {
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                 <input 
-                                    type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                    type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Password" required
-                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-14 placeholder:text-gray-600"
+                                    className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-14 placeholder:text-gray-600"
                                 />
+                                {password && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                                    </button>
+                                )}
                             </div>
                             
                             <div className="text-right">
@@ -233,18 +245,36 @@ const Login = () => {
                                     <div className="relative group">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                         <input 
-                                            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                            type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                                             placeholder="Password" required
-                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
                                         />
+                                        {password && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="relative group">
                                         <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                                         <input 
-                                            type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                            type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                                             placeholder="Confirm Password" required
-                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
+                                            className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
                                         />
+                                        {confirmPassword && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                            </button>
+                                        )}
                                     </div>
 
                                     <div className="relative group">
@@ -300,17 +330,39 @@ const Login = () => {
                             placeholder="Email" required
                             className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                         />
-                        <input 
-                            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Password" required
-                            className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
-                        />
-                        {isRegisterMode && (
+                        <div className="relative group">
                             <input 
-                                type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm Password" required
-                                className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
+                                type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password" required
+                                className="w-full bg-white/[0.03] border border-white/5 text-white pl-6 pr-14 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                             />
+                            {password && (
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"
+                                >
+                                    {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                                </button>
+                            )}
+                        </div>
+                        {isRegisterMode && (
+                            <div className="relative group">
+                                <input 
+                                    type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Confirm Password" required
+                                    className="w-full bg-white/[0.03] border border-white/5 text-white pl-6 pr-14 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
+                                />
+                                {confirmPassword && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                                    </button>
+                                )}
+                            </div>
                         )}
                         
                         {isRegisterMode && (

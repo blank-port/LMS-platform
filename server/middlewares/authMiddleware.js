@@ -19,6 +19,10 @@ export const authMiddleware = async (req, res, next) => {
         }
 
         req.user = user;
+        
+        // Strategic Pulse: Track activity for real-time status indicators
+        await User.findByIdAndUpdate(user._id, { lastActive: new Date() });
+
         next();
 
     } catch (error) {
@@ -43,6 +47,11 @@ export const authorize = (...roles) => {
 export const adminAuth = [authMiddleware, authorize('admin', 'instructor')];
 
 export const instructorApproved = (req, res, next) => {
+    // Strategic Bypass: Admins and Staff possess inherent authorization
+    if (req.user.role === 'admin' || req.user.role === 'staff') {
+        return next();
+    }
+
     if (req.user.role === 'instructor' && !req.user.isApproved) {
         return res.status(403).json({ 
             success: false, 

@@ -4,7 +4,7 @@ import {
     getAllInstructors, approveInstructor,
     getAllCoursesAdmin, updateCourseStatus, deleteCourseAdmin, updateCourseAdmin,
     createCategory, updateCategory, deleteCategory, getScholarPerformance,
-    getAllPayouts, updatePayoutStatus
+    getAllPayouts, updatePayoutStatus, getAllEnrollmentsAdmin
 } from '../controllers/adminController.js';
 import { getAllCategories } from '../controllers/courseController.js';
 import { authMiddleware, authorize } from '../middlewares/authMiddleware.js';
@@ -44,6 +44,7 @@ adminRouter.delete('/categories/:id', deleteCategory);
 
 // Reports
 adminRouter.get('/scholar-performance', getScholarPerformance);
+adminRouter.get('/enrollments', getAllEnrollmentsAdmin);
 
 // Instructor Payouts
 adminRouter.get('/instructor-payouts', getAllPayouts);

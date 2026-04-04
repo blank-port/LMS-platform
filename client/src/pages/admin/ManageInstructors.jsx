@@ -34,6 +34,8 @@ const ManageInstructors = () => {
             if (data.success) {
                 toast.update(actionToast, { render: isApproved ? 'Educator authorized.' : 'Credentials revoked.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchInstructors();
+            } else {
+                toast.update(actionToast, { render: data.message || 'Authorization failed.', type: "error", isLoading: false, autoClose: 3000 });
             }
         } catch (error) {
             toast.update(actionToast, { render: 'Authorization protocol failure.', type: "error", isLoading: false, autoClose: 3000 });

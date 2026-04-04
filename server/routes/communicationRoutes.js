@@ -1,10 +1,11 @@
 import express from 'express';
 import { 
-    getMessages, sendMessage, 
+    getMessages, sendMessage, getConversations,
     getAdminComments, updateCommentStatus, addComment, deleteComment,
-    getQA, addQuestion, deleteQuestion, toggleQAReserve, 
+    getQA, addQuestion, deleteQuestion, toggleQAReserve, toggleGoldenKnowledge,
     getSettings, updateSettings,
-    getNotices, addNotice
+    getNotices, addNotice, deleteNotice, getInstructorNotices,
+    getUploadSignature, getAdminContact
 } from '../controllers/communicationController.js';
 import { adminAuth, instructorAuth, authMiddleware } from '../middlewares/authMiddleware.js';
 
@@ -13,6 +14,7 @@ const router = express.Router();
 // Direct Messaging
 router.get('/messages', authMiddleware, getMessages);
 router.post('/messages', authMiddleware, sendMessage);
+router.get('/conversations', authMiddleware, getConversations);
 
 // Interaction & Moderation (Comments)
 router.get('/comments', authMiddleware, getAdminComments);
@@ -24,14 +26,19 @@ router.patch('/comments/:id/status', authMiddleware, adminAuth, updateCommentSta
 router.get('/qa', authMiddleware, getQA);
 router.post('/qa', authMiddleware, addQuestion);
 router.delete('/qa/:id', authMiddleware, deleteQuestion);
-router.post('/qa/:id/reserve', authMiddleware, instructorAuth, toggleQAReserve); // Instructor/Admin Only
+router.post('/qa/:id/reserve', authMiddleware, instructorAuth, toggleQAReserve); 
+router.post('/qa/:id/golden', authMiddleware, instructorAuth, toggleGoldenKnowledge); 
 
 // Institutional Alerts: Notices
 router.get('/notices', authMiddleware, getNotices);
+router.get('/instructor-notices', authMiddleware, instructorAuth, getInstructorNotices);
 router.post('/notices', authMiddleware, instructorAuth, addNotice);
+router.delete('/notices/:id', authMiddleware, instructorAuth, deleteNotice);
 
-// Settings
-router.get('/settings', authMiddleware, adminAuth, getSettings);
-router.put('/settings', authMiddleware, adminAuth, updateSettings);
+// Assets
+router.get('/upload-signature', authMiddleware, getUploadSignature);
+
+// Institutional Metadata
+router.get('/admin-contact', authMiddleware, getAdminContact);
 
 export default router;

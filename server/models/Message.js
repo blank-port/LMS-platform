@@ -5,7 +5,9 @@ const messageSchema = new mongoose.Schema({
     receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
     attachments: [{ type: String }],
-    isRead: { type: Boolean, default: false }
+    isRead: { type: Boolean, default: false },
+    targetType: { type: String, enum: ['private', 'course', 'global'], default: 'private' },
+    targetId: { type: mongoose.Schema.Types.ObjectId }
 }, { timestamps: true });
 
 // Institutional Integrity: Strategic Indexing for High-Performance Relays

@@ -7,11 +7,36 @@ import { grantPoints } from "../services/gamificationService.js";
 import { createAdminNotification } from "../services/notificationService.js";
 import PointHistory from "../models/PointHistory.js";
 import { v2 as cloudinary } from 'cloudinary';
+import DeviceSession from "../models/DeviceSession.js";
+import Referral from "../models/Referral.js";
+import Enrollment from "../models/Enrollment.js";
+import Payment from "../models/Payment.js";
+import { UAParser } from 'ua-parser-js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
+// Helper: Synchronize Device Session (Module: Security)
+const syncDeviceSession = async (userId, req) => {
+    try {
+        const parser = new UAParser(req.headers['user-agent'] || '');
+        const ua = parser.getResult();
+        const device = `${ua.os.name || 'Unknown'} ${ua.device.model || ''}`.trim();
+        const browser = `${ua.browser.name || 'Unknown'} ${ua.browser.version || ''}`.trim();
+        const ip = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
+
+        // Upsert session (Fingerprint: User + Device + Browser + IP)
+        await DeviceSession.findOneAndUpdate(
+            { userId, device, browser, ip },
+            { lastActive: new Date() },
+            { upsert: true, new: true }
+        );
+    } catch (error) {
+        console.error('Session Sync Error:', error);
+    }
 };
 
 // Register
@@ -43,7 +68,6 @@ export const register = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
 
         // Generate Unique Referral Code (8 characters)
         const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -122,6 +146,9 @@ export const login = async (req, res) => {
 
         const token = generateToken(user._id);
 
+        // Session Tracking & Sync
+        await syncDeviceSession(user._id, req);
+
         // Grant login points
         await grantPoints(user._id, 'login');
 
@@ -178,6 +205,12 @@ export const googleLogin = async (req, res) => {
 
         const token = generateToken(user._id);
 
+        // Session Tracking & Sync
+        await syncDeviceSession(user._id, req);
+
+        // Grant login points
+        await grantPoints(user._id, 'login');
+
         res.json({
             success: true,
             message: 'Google Login successful',
@@ -201,6 +234,10 @@ export const googleLogin = async (req, res) => {
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password').populate('enrolledCourses');
+        
+        // Ensure current device session is recorded
+        await syncDeviceSession(user._id, req);
+
         res.json({ success: true, user });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -358,6 +395,81 @@ export const deleteAccount = async (req, res) => {
 
         await User.findByIdAndDelete(req.user._id);
         res.json({ success: true, message: 'Account permanently removed from registry' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Security: Device Sessions ---
+
+export const getLoggedDevices = async (req, res) => {
+    try {
+        const sessions = await DeviceSession.find({ userId: req.user._id }).sort({ lastActive: -1 });
+        
+        // Identify "isCurrent" dynamically based on request fingerprint
+        const parser = new UAParser(req.headers['user-agent'] || '');
+        const ua = parser.getResult();
+        const currentDevice = `${ua.os.name || 'Unknown'} ${ua.device.model || ''}`.trim();
+        const currentBrowser = `${ua.browser.name || 'Unknown'} ${ua.browser.version || ''}`.trim();
+        const currentIp = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
+
+        const enhancedSessions = sessions.map(s => ({
+            ...s._doc,
+            isCurrent: s.device === currentDevice && s.browser === currentBrowser && s.ip === currentIp
+        }));
+
+        res.json({ success: true, sessions: enhancedSessions });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const revokeDeviceSession = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        await DeviceSession.findOneAndDelete({ _id: sessionId, userId: req.user._id });
+        res.json({ success: true, message: 'Session terminated' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Referrals ---
+
+export const getReferralStats = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('referralCode');
+        const referrals = await User.find({ referredBy: req.user._id }).select('name email createdAt');
+        
+        res.json({ 
+            success: true, 
+            referralCode: user.referralCode,
+            referralCount: referrals.length,
+            referrals 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Purchase History ---
+
+export const getPurchaseHistory = async (req, res) => {
+    try {
+        const enrollments = await Enrollment.find({ userId: req.user._id })
+            .populate('courseId', 'courseTitle courseThumbnail coursePrice')
+            .sort({ createdAt: -1 });
+
+        const history = enrollments.map(e => ({
+            id: e._id,
+            item: e.courseId?.courseTitle || 'Quantum Curriculum',
+            thumbnail: e.courseId?.courseThumbnail,
+            date: e.createdAt,
+            status: 'Confirmed',
+            price: e.courseId?.coursePrice > 0 ? `₹${e.courseId.coursePrice}` : 'Scholarship'
+        }));
+
+        res.json({ success: true, history });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

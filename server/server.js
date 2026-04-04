@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit'
 import 'dotenv/config'
 import connectDB from './configs/mongodb.js'
 import seedDatabase from './configs/seedDB.js'
+import User from './models/User.js'
 import connectCloudinary from './configs/cloudinary.js'
 import userRouter from './routes/userRoutes.js'
 import instructorRouter from './routes/educatorRoutes.js'
@@ -29,6 +30,7 @@ import blogRouter from './routes/blogRoutes.js'
 import subCategoryRouter from './routes/subCategoryRoutes.js'
 import gamificationRouter from './routes/gamificationRoutes.js'
 import notificationRouter from './routes/notificationRoutes.js'
+import chatRouter from './routes/chatRoutes.js'
 
 
 import path from 'path'
@@ -42,7 +44,15 @@ const app = express()
 
 // Connect to database
 await connectDB()
-await seedDatabase()
+
+// Conditional Seeding: Only seed if the database is empty
+const userCount = await User.countDocuments();
+if (userCount === 0) {
+    await seedDatabase();
+} else {
+    console.log('Institutional Database: Verified. Skipping seed logic.');
+}
+
 await connectCloudinary()
 
 // Middlewares
@@ -88,6 +98,7 @@ app.use('/api/blog', blogRouter)
 app.use('/api/sub-category', subCategoryRouter)
 app.use('/api/gamification', gamificationRouter)
 app.use('/api/notification', notificationRouter)
+app.use('/api/chat', chatRouter)
 
 
 
