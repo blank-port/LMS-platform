@@ -18,7 +18,11 @@ const connectDB = async () => {
             });
             return;
         } else {
-            console.warn('MONGODB_URI is missing from environment variables.');
+            console.error('CRITICAL: MONGODB_URI is missing from environment variables.');
+            if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+                console.error('Deployment Failure: Terminating process. Production environments require a valid MONGODB_URI.');
+                process.exit(1);
+            }
         }
     } catch (err) {
         console.error('CRITICAL: Atlas connection failed:', err.message);
