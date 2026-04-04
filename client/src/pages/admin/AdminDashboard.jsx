@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, PieChart, Pie
 } from 'recharts';
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
   const MetricsCard = ({ label, value, icon: Icon, trend, colorClass, isPending }) => (
     <div className={`p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-2 transition-all duration-500 relative overflow-hidden ${isPending ? 'bg-indigo-900 !border-indigo-800' : ''}`}>
       <div className={`absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity ${isPending ? 'text-white' : 'text-indigo-600'}`}>
-         <Icon size={120} />
+        <Icon size={120} />
       </div>
       <div className="relative z-10">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 duration-500 ${isPending ? 'bg-white/10 text-white' : 'bg-slate-50 text-indigo-600 border border-slate-100'}`}>
@@ -92,7 +92,7 @@ const AdminDashboard = () => {
 
       {/* Intelligence Surfaces */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        
+
         {/* Performance Area Chart */}
         <div className="lg:col-span-2 bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-xl shadow-slate-200/30 overflow-hidden group">
           <div className="flex justify-between items-start mb-12">
@@ -105,24 +105,24 @@ const AdminDashboard = () => {
               <span className="px-4 py-2 bg-cyan-50 text-cyan-600 text-[10px] font-black rounded-lg uppercase tracking-widest">Users</span>
             </div>
           </div>
-          
+
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94A3B8'}} dy={15} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94A3B8'}} />
-                <Tooltip 
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94A3B8' }} dy={15} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94A3B8' }} />
+                <Tooltip
                   contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', padding: '15px' }}
                   itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 />
@@ -153,8 +153,8 @@ const AdminDashboard = () => {
                         <TaskIcon size={20} />
                       </div>
                       <div>
-                      <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-0.5 opacity-60">Task Matrix</p>
-                      <p className="text-[13px] font-black text-white tracking-tight">{task.count} {task.label}</p>
+                        <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-0.5 opacity-60">Task Matrix</p>
+                        <p className="text-[13px] font-black text-white tracking-tight">{task.count} {task.label}</p>
                       </div>
                     </div>
                     <Clock size={16} className="text-indigo-400 group-hover:text-white transition-colors" />
@@ -164,7 +164,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => navigate('/admin/settings')}
             className="w-full h-18 bg-white text-indigo-900 rounded-[1.8rem] font-black text-[12px] uppercase tracking-[0.4em] hover:scale-[1.02] transform transition-all duration-500 shadow-2xl active:scale-95"
           >

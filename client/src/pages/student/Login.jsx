@@ -4,8 +4,8 @@ import { toast } from 'react-toastify';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
-import { 
-    Mail, Lock, ArrowRight, Loader2, GraduationCap, 
+import {
+    Mail, Lock, ArrowRight, Loader2, GraduationCap,
     User as UserIcon, ShieldCheck, ChevronRight, Star,
     Eye, EyeOff
 } from 'lucide-react';
@@ -14,7 +14,7 @@ const Login = () => {
     const { login, register, googleLogin, navigate, user, settings } = useContext(AppContext);
     const location = useLocation();
     const [isRegisterMode, setIsRegisterMode] = useState(false);
-    
+
     // Auth States
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -96,15 +96,15 @@ const Login = () => {
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03]" 
-                     style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03]"
+                    style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
             </div>
 
             {/* Container for the sliding UI */}
             <div className="w-full max-w-[900px] h-[640px] relative z-10 bg-[#121214] rounded-[2.5rem] shadow-2xl shadow-black/80 border border-white/5 overflow-hidden hidden md:flex">
-                
+
                 {/* Overlay (Sliding Part) */}
-                <motion.div 
+                <motion.div
                     initial={false}
                     animate={{ x: isRegisterMode ? '0%' : '100%' }}
                     transition={{ type: "spring", stiffness: 100, damping: 20 }}
@@ -122,14 +122,14 @@ const Login = () => {
                             {isRegisterMode ? "Welcome Back!" : "New Here?"}
                         </h2>
                         <p className="text-white/80 text-lg mb-10 font-medium leading-relaxed">
-                            {isRegisterMode 
-                                ? "To keep connected with us please login with your personal info" 
-                                : settings.public_registration === false && settings.instructor_registration === false 
+                            {isRegisterMode
+                                ? "To keep connected with us please login with your personal info"
+                                : settings.public_registration === false && settings.instructor_registration === false
                                     ? "Registration is currently restricted to invited scholars only."
                                     : "Enter your personal details and start your journey with us"}
                         </p>
                         {(!isRegisterMode || (settings.public_registration !== false || settings.instructor_registration !== false)) && (
-                            <button 
+                            <button
                                 onClick={() => setIsRegisterMode(!isRegisterMode)}
                                 className="px-10 py-3.5 border-2 border-white rounded-full font-bold text-lg hover:bg-white hover:text-blue-600 transition-all active:scale-[0.97] shadow-lg shadow-white/10"
                             >
@@ -160,7 +160,7 @@ const Login = () => {
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div className="relative group">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
+                                <input
                                     type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Email Address" required
                                     className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-14 placeholder:text-gray-600"
@@ -168,13 +168,13 @@ const Login = () => {
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input 
+                                <input
                                     type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Password" required
                                     className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-14 placeholder:text-gray-600"
                                 />
                                 {password && (
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
@@ -183,7 +183,7 @@ const Login = () => {
                                     </button>
                                 )}
                             </div>
-                            
+
                             <div className="text-right">
                                 <Link to="/forgot-password" placeholder="Forgot password?" className="text-xs font-bold text-blue-500/80 hover:text-blue-400 transition-colors uppercase tracking-widest">Forgot password?</Link>
                             </div>
@@ -215,7 +215,7 @@ const Login = () => {
                                     <h2 className="text-3xl font-extrabold text-white mb-2">Create Account</h2>
                                     <p className="text-gray-400 text-sm font-medium">Join thousands of students learning online</p>
                                 </div>
-                                
+
                                 <div className="flex justify-center gap-4 mb-6">
                                     <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="100%" text="signup_with" />
                                 </div>
@@ -228,7 +228,7 @@ const Login = () => {
                                 <form onSubmit={handleRegister} className="space-y-4">
                                     <div className="relative group">
                                         <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type="text" value={name} onChange={(e) => setName(e.target.value)}
                                             placeholder="Full Name" required
                                             className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
@@ -236,7 +236,7 @@ const Login = () => {
                                     </div>
                                     <div className="relative group">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                                             placeholder="Email Address" required
                                             className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
@@ -244,13 +244,13 @@ const Login = () => {
                                     </div>
                                     <div className="relative group">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                                             placeholder="Password" required
                                             className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
                                         />
                                         {password && (
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
@@ -261,13 +261,13 @@ const Login = () => {
                                     </div>
                                     <div className="relative group">
                                         <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                                             placeholder="Confirm Password" required
                                             className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
                                         />
                                         {confirmPassword && (
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
@@ -279,13 +279,13 @@ const Login = () => {
 
                                     <div className="relative group">
                                         <Star className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input 
+                                        <input
                                             type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)}
                                             placeholder="Referral Code (Optional)"
                                             className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium h-12 placeholder:text-gray-600"
                                         />
                                     </div>
-                                    
+
                                     <div className="flex gap-2 p-1.5 bg-white/[0.03] rounded-xl border border-white/10">
                                         {settings.public_registration !== false && (
                                             <button type="button" onClick={() => setRole('student')} className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${role === 'student' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-500 hover:text-gray-300'}`}>STUDENT</button>
@@ -316,28 +316,28 @@ const Login = () => {
                         <GraduationCap className="w-14 h-14 text-blue-500 mx-auto mb-4" />
                         <h2 className="text-3xl font-black text-white italic">{isRegisterMode ? "Sign Up" : "Sign In"}</h2>
                     </div>
-                    
+
                     <form onSubmit={isRegisterMode ? handleRegister : handleLogin} className="space-y-4">
                         {isRegisterMode && (
-                            <input 
+                            <input
                                 type="text" value={name} onChange={(e) => setName(e.target.value)}
                                 placeholder="Full Name" required
                                 className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                             />
                         )}
-                        <input 
+                        <input
                             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email" required
                             className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                         />
                         <div className="relative group">
-                            <input 
+                            <input
                                 type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password" required
                                 className="w-full bg-white/[0.03] border border-white/5 text-white pl-6 pr-14 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                             />
                             {password && (
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"
@@ -348,13 +348,13 @@ const Login = () => {
                         </div>
                         {isRegisterMode && (
                             <div className="relative group">
-                                <input 
+                                <input
                                     type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder="Confirm Password" required
                                     className="w-full bg-white/[0.03] border border-white/5 text-white pl-6 pr-14 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                                 />
                                 {confirmPassword && (
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                         className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500"
@@ -364,15 +364,15 @@ const Login = () => {
                                 )}
                             </div>
                         )}
-                        
+
                         {isRegisterMode && (
-                            <input 
+                            <input
                                 type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)}
                                 placeholder="Referral Code (Optional)"
                                 className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl outline-none focus:ring-1 focus:ring-blue-500/50 transition-all font-medium"
                             />
                         )}
-                        
+
                         {isRegisterMode && (
                             <div className="flex gap-2 p-1.5 bg-white/[0.02] rounded-xl border border-white/5">
                                 <button type="button" onClick={() => setRole('student')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${role === 'student' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>STUDENT</button>
@@ -392,9 +392,9 @@ const Login = () => {
                         </button>
                     </div>
                 </div>
-                
+
                 <div className="flex justify-center text-center">
-                   <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="300" />
+                    <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="300" />
                 </div>
             </div>
         </div>

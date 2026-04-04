@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
-import { 
-  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell 
+import {
+    BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { 
-  BookOpen, Users, Wallet, TrendingUp, Calendar, CreditCard, 
-  ChevronRight, ArrowUpRight, ArrowDownRight, Activity 
+import {
+    BookOpen, Users, Wallet, TrendingUp, Calendar, CreditCard,
+    ChevronRight, ArrowUpRight, ArrowDownRight, Activity
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -74,8 +74,8 @@ const Dashboard = () => {
                     <p className="text-[11px] font-black text-blue-600 uppercase tracking-[0.4em] opacity-80">Real-Time Performance Matrix & Academic Intelligence Terminal</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button 
-                        onClick={handleSeedData} 
+                    <button
+                        onClick={handleSeedData}
                         className="px-6 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:scale-105 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
                     >
                         Seed Intel
@@ -94,7 +94,7 @@ const Dashboard = () => {
                     return (
                         <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
                             <div className={`absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity ${stat.color}`}>
-                               <StatIcon size={100} />
+                                <StatIcon size={100} />
                             </div>
                             <div className="relative z-10">
                                 <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 duration-500 border border-current opacity-60`}>
@@ -119,7 +119,7 @@ const Dashboard = () => {
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-80">Cross-Monthly Fiscal Performance Comparison</p>
                         </div>
                         <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 transition-transform group-hover:rotate-12 duration-500">
-                           <TrendingUp size={22} />
+                            <TrendingUp size={22} />
                         </div>
                     </div>
                     <div className="h-96 w-full">
@@ -134,8 +134,8 @@ const Dashboard = () => {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} dy={15} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
-                                <Tooltip 
-                                    cursor={{ fill: '#F8FAFC' }} 
+                                <Tooltip
+                                    cursor={{ fill: '#F8FAFC' }}
                                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 60px rgba(0,0,0,0.12)', padding: '20px' }}
                                     itemStyle={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: '#1E293B' }}
                                 />
@@ -158,7 +158,7 @@ const Dashboard = () => {
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest opacity-80">Current Billing Cycle Intensity</p>
                         </div>
                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 transition-transform group-hover:scale-110 duration-500">
-                           <Activity size={22} />
+                            <Activity size={22} />
                         </div>
                     </div>
                     <div className="h-96 w-full relative z-10">
@@ -166,12 +166,12 @@ const Dashboard = () => {
                             <AreaChart data={dashboardData?.paymentStatistics || []}>
                                 <defs>
                                     <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <XAxis dataKey="day" hide />
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '20px', color: '#fff', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', padding: '16px' }}
                                     itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
                                 />

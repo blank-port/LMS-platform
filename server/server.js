@@ -62,7 +62,8 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "https://accounts.google.com"],
       "frame-src": ["'self'", "https://accounts.google.com"],
-      "connect-src": ["'self'", "https://accounts.google.com", "https://lms-platform-production-2e4e.up.railway.app"]
+      "connect-src": ["'self'", "https://accounts.google.com", "https://lms-platform-production-2e4e.up.railway.app"],
+      "img-src": ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"]
     },
   },
 }))

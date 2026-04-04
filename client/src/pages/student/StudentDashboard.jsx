@@ -58,13 +58,13 @@ const StudentDashboard = () => {
                             Neural Sync: <span className="text-blue-600">Level {user?.gamification?.level || 1}</span> • Total XP: {user?.gamification?.totalPoints || 0}
                         </p>
                         <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                            <button 
+                            <button
                                 onClick={() => navigate('/student/my-courses')}
                                 className="px-10 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:scale-105 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
                             >
                                 Resume Matrix
                             </button>
-                            <button 
+                            <button
                                 onClick={() => navigate('/course-list')}
                                 className="px-10 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-slate-50 transition-all active:scale-95"
                             >
@@ -73,7 +73,7 @@ const StudentDashboard = () => {
                         </div>
                     </div>
                     <div className="hidden lg:block w-72 h-72 bg-gradient-to-br from-blue-50 to-white rounded-[4rem] border border-slate-100 shadow-inner flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-1000">
-                         <div className="text-7xl font-black text-blue-600 opacity-20">L.{user?.gamification?.level || 1}</div>
+                        <div className="text-7xl font-black text-blue-600 opacity-20">L.{user?.gamification?.level || 1}</div>
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@ const StudentDashboard = () => {
                     return (
                         <div key={i} className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/40 group hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
                             <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity ${stat.color}`}>
-                               <StatIcon size={100} />
+                                <StatIcon size={100} />
                             </div>
                             <div className="relative z-10">
                                 <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 duration-500`}>
@@ -120,15 +120,15 @@ const StudentDashboard = () => {
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94A3B8'}} dy={15} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94A3B8'}} />
-                                    <Tooltip 
-                                        contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 60px rgba(0,0,0,0.1)', padding: '20px'}}
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94A3B8' }} dy={15} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94A3B8' }} />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 60px rgba(0,0,0,0.1)', padding: '20px' }}
                                         itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', color: '#1E293B' }}
                                     />
                                     <Area type="monotone" dataKey="xp" stroke="#3B82F6" strokeWidth={5} fillOpacity={1} fill="url(#colorXp)" />
@@ -187,7 +187,7 @@ const StudentDashboard = () => {
                         <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none text-uppercase">Continue Matrix</h2>
                         <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-3 opacity-60">Your Active Intelligence Streams</p>
                     </div>
-                    <button 
+                    <button
                         onClick={() => navigate('/student/my-courses')}
                         className="flex items-center gap-3 group px-8 py-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-500 transition-all active:scale-95"
                     >
@@ -203,8 +203,8 @@ const StudentDashboard = () => {
                         return (
                             <div key={index} className="bg-white rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-2xl shadow-slate-200/40 transition-all duration-700 hover:-translate-y-4 group">
                                 <div className="aspect-video relative overflow-hidden">
-                                    <SafeImage 
-                                        src={course.courseThumbnail} 
+                                    <SafeImage
+                                        src={course.courseThumbnail}
                                         alt={course.courseTitle}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                                         fallback="https://placehold.co/1280x720?text=Curriculum+Asset+Standby"
@@ -223,7 +223,7 @@ const StudentDashboard = () => {
                                     <div className="w-full bg-slate-50 h-3 rounded-full overflow-hidden relative border border-slate-100">
                                         <div className="bg-gradient-to-r from-blue-600 to-cyan-400 h-full transition-all duration-1000 shadow-lg" style={{ width: `${enrollment.progress || 0}%` }}></div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => navigate(`/player/${course._id}`)}
                                         className="w-full h-16 bg-slate-900 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] hover:bg-blue-600 transition-all duration-500 shadow-2xl"
                                     >
