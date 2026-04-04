@@ -14,7 +14,7 @@ const CourseDetails = () => {
     const { id } = useParams();
     const {
         currency, allCourses, calculateRating, calculateNoOfLectures, calculateCourseDuration,
-        backendUrl, getHeaders, token, user, settings
+        backendUrl, getHeaders, token, user, settings, navigate
     } = useContext(AppContext);
 
     const [courseData, setCourseData] = useState(null);
