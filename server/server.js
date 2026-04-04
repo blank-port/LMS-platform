@@ -71,11 +71,13 @@ const limiter = rateLimit({
 })
 app.use('/api/', limiter)
 
+// Serve static files from the React app build folder
+app.use(express.static(path.join(__dirname, '../client/dist')))
+
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// Routes
-app.get('/', (req, res) => res.send("LMS API Working"))
+// API Routes
 app.use('/api/user', userRouter)
 app.use('/api/course', courseRouter)
 app.use('/api/instructor', instructorRouter)
@@ -99,8 +101,10 @@ app.use('/api/sub-category', subCategoryRouter)
 app.use('/api/gamification', gamificationRouter)
 app.use('/api/notification', notificationRouter)
 app.use('/api/chat', chatRouter)
-
-
+// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'))
+})
 
 // Port
 const PORT = process.env.PORT || 5000
