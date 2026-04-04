@@ -7,8 +7,8 @@ import { AppContext } from "./AppContextObject";
 
 export const AppContextProvider = (props) => {
 
-    const rawBackendUrl = import.meta.env.VITE_BACKEND_URL
-    const backendUrl = (rawBackendUrl && !rawBackendUrl.includes('localhost')) ? rawBackendUrl : (window.location.origin.includes('localhost') ? 'http://localhost:5001' : '')
+    // Dynamic Backend URL for Full-Stack unified hosting
+    const backendUrl = import.meta.env.PROD ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001')
     const currency = import.meta.env.VITE_CURRENCY
 
     const navigate = useNavigate()
