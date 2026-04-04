@@ -1,5 +1,10 @@
 {
   "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "build": "npm install --prefix server",
+    "postinstall": "npm install --prefix server"
+  },
   "dependencies": {
     "axios": "^1.14.0",
     "dotenv": "^17.3.1",
