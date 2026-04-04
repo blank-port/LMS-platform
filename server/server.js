@@ -56,7 +56,16 @@ if (userCount === 0) {
 await connectCloudinary()
 
 // Middlewares
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "https://accounts.google.com"],
+      "frame-src": ["'self'", "https://accounts.google.com"],
+      "connect-src": ["'self'", "https://accounts.google.com", "https://lms-platform-production-2e4e.up.railway.app"]
+    },
+  },
+}))
 app.use(compression())
 app.use(cors())
 app.use(express.json())
