@@ -17,6 +17,18 @@ const Player = () => {
     const [discussions, setDiscussions] = useState([]);
     const [newQuestion, setNewQuestion] = useState('');
     const [loading, setLoading] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [volume, setVolume] = useState(1);
+    const [isMuted, setIsMuted] = useState(false);
+    const [playbackRate, setPlaybackRate] = useState(1);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showControls, setShowControls] = useState(true);
+    
+    const videoRef = React.useRef(null);
+    const playerRef = React.useRef(null);
+    const controlsTimeoutRef = React.useRef(null);
 
     const getYoutubeUrl = (url) => {
         let base = url.replace('watch?v=', 'embed/').split('&')[0];
@@ -104,6 +116,120 @@ const Player = () => {
         }
     };
 
+    const togglePlay = () => {
+        if (!videoRef.current) return;
+        if (videoRef.current.paused) {
+            videoRef.current.play();
+            setIsPlaying(true);
+        } else {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        }
+    };
+
+    const handleSeek = (time) => {
+        if (!videoRef.current) return;
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+    };
+
+    const toggleMute = () => {
+        if (!videoRef.current) return;
+        videoRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
+    };
+
+    const handleVolumeChange = (v) => {
+        if (!videoRef.current) return;
+        videoRef.current.volume = v;
+        setVolume(v);
+        setIsMuted(v === 0);
+    };
+
+    const toggleFullscreen = () => {
+        if (!playerRef.current) return;
+        if (!document.fullscreenElement) {
+            playerRef.current.requestFullscreen().catch(err => {
+                toast.error('Fullscreen activation failed.');
+            });
+            setIsFullscreen(true);
+        } else {
+            document.exitFullscreen();
+            setIsFullscreen(false);
+        }
+    };
+
+    const handleSpeedChange = (speed) => {
+        if (!videoRef.current) return;
+        videoRef.current.playbackRate = speed;
+        setPlaybackRate(speed);
+    };
+
+    const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    // Auto-hide Controls Logic
+    const handleMouseMove = () => {
+        setShowControls(true);
+        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+        controlsTimeoutRef.current = setTimeout(() => {
+            if (isPlaying) setShowControls(false);
+        }, 3000);
+    };
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName)) return;
+            
+            switch (e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'f':
+                    toggleFullscreen();
+                    break;
+                case 'arrowleft':
+                    handleSeek(Math.max(0, videoRef.current.currentTime - 10));
+                    break;
+                case 'arrowright':
+                    handleSeek(Math.min(duration, videoRef.current.currentTime + 10));
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isPlaying, duration]);
+
+    // Progress Saving Mechanism
+    useEffect(() => {
+        if (!isPlaying || !currentLecture) return;
+
+        const saverInstance = setInterval(async () => {
+            try {
+                await axios.post(`${backendUrl}/api/course/progress/update`, {
+                    courseId,
+                    lessonId: currentLecture._id,
+                    lastWatchedTime: videoRef.current.currentTime
+                }, { headers: { Authorization: `Bearer ${token}` } });
+            } catch (err) { console.error('Progress sync failed'); }
+        }, 10000);
+
+        return () => clearInterval(saverInstance);
+    }, [isPlaying, currentLecture, courseId]);
+
+    useEffect(() => {
+        if (!token) { navigate('/login'); return; }
+        fetchCourseData();
+    }, [courseId]);
+
     const isLectureCompleted = (lectureId) => {
         return enrollment?.completedLessons?.includes(lectureId.toString());
     };
@@ -161,31 +287,173 @@ const Player = () => {
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
                 {/* Main Experience Area */}
                 <div className="flex-1 overflow-y-auto bg-black relative">
-                    <div className="aspect-video bg-[#060B1A] relative group">
+                    <div 
+                        ref={playerRef}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={() => isPlaying && setShowControls(false)}
+                        className={`relative group bg-black flex items-center justify-center overflow-hidden transition-all duration-500 ${isFullscreen ? 'h-screen w-screen' : 'h-[70vh]'}`}
+                    >
                         {currentLecture?.lectureUrl ? (
-                            currentLecture.lectureUrl.includes('youtube.com') || currentLecture.lectureUrl.includes('youtu.be') ? (
-                                <iframe
-                                    className="w-full h-full"
-                                    src={getYoutubeUrl(currentLecture.lectureUrl)}
-                                    allowFullScreen
-                                    title={currentLecture.lectureTitle}
-                                />
-                            ) : (
-                                <video 
-                                    className="w-full h-full" 
-                                    controls={settings?.show_seekbar === 'Yes'} 
-                                    controlsList={settings?.show_seekbar === 'No' ? 'noplaybackrate' : ''}
-                                    src={currentLecture.lectureUrl} 
-                                />
-                            )
+                            <div className="relative w-full h-full">
+                                {currentLecture.lectureUrl.includes('youtube.com') || currentLecture.lectureUrl.includes('youtu.be') ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={getYoutubeUrl(currentLecture.lectureUrl)}
+                                        allowFullScreen
+                                        title={currentLecture.lectureTitle}
+                                    />
+                                ) : currentLecture.lectureUrl.includes('vimeo.com') ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={`https://player.vimeo.com/video/${currentLecture.lectureUrl.split('/').pop()}`}
+                                        allowFullScreen
+                                        title={currentLecture.lectureTitle}
+                                    />
+                                ) : (
+                                    <video 
+                                        ref={videoRef}
+                                        key={currentLecture.lectureUrl}
+                                        onPlay={() => setIsPlaying(true)}
+                                        onPause={() => setIsPlaying(false)}
+                                        onTimeUpdate={() => setCurrentTime(videoRef.current.currentTime)}
+                                        onLoadedMetadata={() => {
+                                            setDuration(videoRef.current.duration);
+                                            // Resume from last watched position
+                                            if (enrollment && enrollment.lastWatchedLessonId === currentLecture._id && enrollment.lastWatchedTime > 0) {
+                                                videoRef.current.currentTime = enrollment.lastWatchedTime;
+                                                toast.success(`Resuming from ${formatTime(enrollment.lastWatchedTime)}`);
+                                            }
+                                        }}
+                                        onEnded={() => {
+                                            // Auto-Advance Logic
+                                            let foundCurrent = false;
+                                            for (let chapter of courseData.courseContent) {
+                                                for (let lecture of chapter.chapterContent) {
+                                                    if (foundCurrent) {
+                                                        setCurrentLecture(lecture);
+                                                        return;
+                                                    }
+                                                    if (lecture._id === currentLecture._id) foundCurrent = true;
+                                                }
+                                            }
+                                            toast.success('Course Completed!');
+                                        }}
+                                        className="w-full h-full object-contain" 
+                                        src={currentLecture.lectureUrl} 
+                                        autoPlay
+                                    />
+                                )}
+
+                                {/* Premium Control Overlays (Native Video Only) */}
+                                {!(currentLecture.lectureUrl.includes('youtube') || currentLecture.lectureUrl.includes('vimeo')) && (
+                                    <>
+                                        {/* Large Centered Play/Pause Button */}
+                                        {!isPlaying && (
+                                            <button 
+                                                onClick={togglePlay}
+                                                className="absolute inset-0 m-auto w-24 h-24 bg-indigo-600/80 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-all z-20 shadow-[0_0_50px_rgba(79,70,229,0.5)] animate-in zoom-in duration-300"
+                                            >
+                                                <div className="text-white text-4xl ml-2">▶</div>
+                                            </button>
+                                        )}
+
+                                        {/* Bottom Control Bar */}
+                                        <div className={`absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-transform duration-500 z-30 ${showControls ? 'translate-y-0' : 'translate-y-full'}`}>
+                                            {/* Progress Slider */}
+                                            <div className="group/progress relative h-1.5 mb-6 cursor-pointer flex items-center">
+                                                <div className="absolute w-full h-full bg-white/10 rounded-full"></div>
+                                                <div 
+                                                    className="absolute h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.8)]"
+                                                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                                                ></div>
+                                                <input 
+                                                    type="range"
+                                                    min="0"
+                                                    max={duration}
+                                                    value={currentTime}
+                                                    onChange={(e) => handleSeek(parseFloat(e.target.value))}
+                                                    className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <div 
+                                                    className="absolute w-4 h-4 bg-white rounded-full shadow-xl opacity-0 group-hover/progress:opacity-100 transition-opacity pointer-events-none"
+                                                    style={{ left: `calc(${(currentTime / duration) * 100}% - 8px)` }}
+                                                ></div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between gap-6">
+                                                <div className="flex items-center gap-6">
+                                                    <button onClick={togglePlay} className="text-white hover:text-indigo-400 transition-colors">
+                                                        {isPlaying ? <div className="text-2xl">⏸</div> : <div className="text-2xl">▶</div>}
+                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        <button 
+                                                            onClick={() => handleSeek(Math.max(0, currentTime - 10))}
+                                                            className="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest"
+                                                        >
+                                                            -10s
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleSeek(Math.min(duration, currentTime + 10))}
+                                                            className="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest"
+                                                        >
+                                                            +10s
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-[11px] font-black tracking-widest text-white/50 uppercase">
+                                                        <span className="text-white font-black">{formatTime(currentTime)}</span>
+                                                        <span className="mx-2">/</span>
+                                                        <span>{formatTime(duration)}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-8">
+                                                    {/* Speed Selector */}
+                                                    <select 
+                                                        value={playbackRate}
+                                                        onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
+                                                        className="bg-transparent text-[10px] font-black text-white/60 uppercase tracking-widest outline-none cursor-pointer hover:text-white transition-colors"
+                                                    >
+                                                        {[0.5, 1, 1.25, 1.5, 2].map(rate => (
+                                                            <option key={rate} value={rate} className="bg-[#0C132B]">{rate}x</option>
+                                                        ))}
+                                                    </select>
+
+                                                    {/* Volume Control */}
+                                                    <div className="flex items-center gap-3 group/volume">
+                                                        <button onClick={toggleMute} className="text-white/60 hover:text-white transition-colors">
+                                                            {isMuted ? <div className="text-lg">🔇</div> : <div className="text-lg">🔊</div>}
+                                                        </button>
+                                                        <div className="w-0 group-hover/volume:w-20 overflow-hidden transition-all duration-300 flex items-center">
+                                                            <input 
+                                                                type="range"
+                                                                min="0"
+                                                                max="1"
+                                                                step="0.01"
+                                                                value={volume}
+                                                                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                                                                className="w-20 h-1 bg-white/10 rounded-full accent-indigo-500 cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <button onClick={toggleFullscreen} className="text-white/60 hover:text-white transition-colors">
+                                                        {isFullscreen ? <div className="text-lg">🗗</div> : <div className="text-lg">🗖</div>}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         ) : (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-10">
                                 <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center text-3xl mb-6">📽️</div>
-                                <h3 className="text-xl font-black tracking-tight">Select a Chapter</h3>
-                                <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2 max-w-xs">Your journey begins when you choose a path from the curriculum.</p>
+                                <h3 className="text-xl font-black tracking-tight uppercase">Select Your Learning Path</h3>
+                                <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mt-4 max-w-xs">Initialization sequence complete. Standby for curriculum selection.</p>
                             </div>
                         )}
                     </div>
+
 
                     {/* Content Intelligence Tabs */}
                     <div className="bg-[#0C132B] border-t border-white/5">

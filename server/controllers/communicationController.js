@@ -600,7 +600,7 @@ export const getUploadSignature = async (req, res) => {
     try {
         const timestamp = Math.round(new Date().getTime() / 1000);
         const signature = cloudinary.utils.api_sign_request(
-            { timestamp, folder: 'lms_videos', resource_type: 'video' },
+            { timestamp, folder: 'lms_videos' },
             process.env.CLOUDINARY_SECRET_KEY
         );
 

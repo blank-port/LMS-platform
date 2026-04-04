@@ -1,6 +1,6 @@
 import express from 'express';
 import { 
-    register, login, googleLogin, getProfile, updateProfile, getUserData, 
+    register, login, googleLogin, verifyEmail, resendOtp, getProfile, updateProfile, getUserData, 
     updateAccountProfile, changePassword, updateSecondaryDetails, deleteAccount,
     getLoggedDevices, revokeDeviceSession, getReferralStats, getPurchaseHistory
 } from '../controllers/userController.js';
@@ -13,6 +13,8 @@ const userRouter = express.Router();
 userRouter.post('/register', register);
 userRouter.post('/login', login);
 userRouter.post('/google-login', googleLogin);
+userRouter.post('/verify-otp', verifyEmail);
+userRouter.post('/resend-otp', resendOtp);
 
 // Protected routes
 userRouter.get('/profile', authMiddleware, getProfile);

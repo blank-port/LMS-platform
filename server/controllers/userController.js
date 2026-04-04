@@ -13,6 +13,8 @@ import Enrollment from "../models/Enrollment.js";
 import Payment from "../models/Payment.js";
 import { UAParser } from 'ua-parser-js';
 
+import { sendOTP } from "../services/mailService.js";
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (id) => {
@@ -63,13 +65,12 @@ export const register = async (req, res) => {
         }
 
         const existingUser = await User.findOne({ email });
-        if (existingUser) {
+        
+        if (existingUser && existingUser.isVerified) {
             return res.status(400).json({ success: false, message: 'Email already registered' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Generate Unique Referral Code (8 characters)
         const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
         // Check for Referring Scholar
@@ -78,47 +79,126 @@ export const register = async (req, res) => {
             referrer = await User.findOne({ referralCode: req.body.referralCode.toUpperCase() });
         }
 
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            role: userRole,
-            isApproved: userRole === 'student' ? true : false,
-            referralCode,
-            referredBy: referrer ? referrer._id : null
+        // OTP Intelligence
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
+
+        if (existingUser && !existingUser.isVerified) {
+            existingUser.name = name;
+            existingUser.password = hashedPassword;
+            existingUser.role = userRole;
+            existingUser.verifyOtp = otp;
+            existingUser.verifyOtpExpire = otpExpire;
+            await existingUser.save();
+        } else {
+            await User.create({
+                name,
+                email,
+                password: hashedPassword,
+                role: userRole,
+                isApproved: userRole === 'student' ? true : false,
+                referralCode,
+                referredBy: referrer ? referrer._id : null,
+                verifyOtp: otp,
+                verifyOtpExpire: otpExpire,
+                isVerified: false
+            });
+        }
+
+        // Dispatch OTP via Digital Post
+        await sendOTP(email, otp);
+
+        res.status(201).json({
+            success: true,
+            message: 'OTP sent to your email. Please verify to continue.',
+            verifyEmail: email
         });
 
-        // Grant registration points to new scholar
-        await grantPoints(user._id, 'registration');
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
-        // Grant referral points to referring scholar
-        if (referrer) {
-            await grantPoints(referrer._id, 'referral_success');
+// Verify OTP
+export const verifyEmail = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ success: false, message: 'Account already verified' });
+        }
+
+        if (user.verifyOtp !== otp || user.verifyOtpExpire < Date.now()) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        // Activate Identity
+        user.isVerified = true;
+        user.verifyOtp = '';
+        user.verifyOtpExpire = 0;
+        await user.save();
+
+        // Finalize Scholar On-boarding
+        await grantPoints(user._id, 'registration');
+        if (user.referredBy) {
+            await grantPoints(user.referredBy, 'referral_success');
         }
 
         const token = generateToken(user._id);
 
-        res.status(201).json({
+        res.json({
             success: true,
-            message: 'Registration successful',
+            message: 'Email verified successfully',
             token,
             user: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                profilePicture: user.profilePicture,
                 isApproved: user.isApproved
             }
         });
 
-        // Notify Admin of New User
+        // Notify Admin
         await createAdminNotification({
             type: 'NEW_USER',
-            message: `New ${userRole} registered: ${name} (${email})`,
+            message: `Verified scholar registered: ${user.name} (${email})`,
             module: 'users',
             referenceId: user._id
         });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Resend OTP
+export const resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ success: false, message: 'Account already verified' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verifyOtp = otp;
+        user.verifyOtpExpire = Date.now() + 24 * 60 * 60 * 1000;
+        await user.save();
+
+        await sendOTP(email, otp);
+
+        res.json({ success: true, message: 'New OTP dispatched to your inbox' });
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -137,6 +217,10 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        if (!user.isVerified) {
+            return res.status(401).json({ success: false, message: 'Account not verified. Please verify your email.', verifyEmail: email });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);

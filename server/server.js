@@ -61,9 +61,10 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "script-src": ["'self'", "https://accounts.google.com"],
-      "frame-src": ["'self'", "https://accounts.google.com"],
+      "frame-src": ["'self'", "https://accounts.google.com", "https://www.youtube.com", "https://youtube.com", "https://player.vimeo.com"],
       "connect-src": ["'self'", "https://accounts.google.com", "https://lms-platform-production-2e4e.up.railway.app"],
-      "img-src": ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"]
+      "img-src": ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"],
+      "media-src": ["'self'", "https://res.cloudinary.com"]
     },
   },
 }))

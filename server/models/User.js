@@ -65,7 +65,10 @@ const userSchema = new mongoose.Schema({
         level: { type: Number, default: 1 },
         badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }]
     },
-    lastActive: { type: Date, default: Date.now }
+    lastActive: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    verifyOtp: { type: String, default: '' },
+    verifyOtpExpire: { type: Number, default: 0 },
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

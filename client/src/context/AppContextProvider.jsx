@@ -36,6 +36,9 @@ export const AppContextProvider = (props) => {
                 toast.success('Login successful');
                 return data;
             } else {
+                if (data.verifyEmail) {
+                    return data; // Return to component to handle OTP verification
+                }
                 toast.error(data.message);
                 return null;
             }
@@ -71,6 +74,9 @@ export const AppContextProvider = (props) => {
                 name, email, password, role, referralCode
             });
             if (data.success) {
+                if (data.verifyEmail) {
+                    return data; // Return to component to handle OTP verification
+                }
                 setToken(data.token);
                 setUser(data.user);
                 setIsEducator(data.user.role === 'instructor' || data.user.role === 'admin');
@@ -84,6 +90,42 @@ export const AppContextProvider = (props) => {
         } catch (error) {
             toast.error(error.response?.data?.message || error.message);
             return null;
+        }
+    };
+
+    const verifyOtp = async (email, otp) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/user/verify-otp', { email, otp });
+            if (data.success) {
+                setToken(data.token);
+                setUser(data.user);
+                setIsEducator(data.user.role === 'instructor' || data.user.role === 'admin');
+                localStorage.setItem('token', data.token);
+                toast.success('Email verified successfully');
+                return data;
+            } else {
+                toast.error(data.message);
+                return null;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return null;
+        }
+    };
+
+    const resendOtp = async (email) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/user/resend-otp', { email });
+            if (data.success) {
+                toast.success('New OTP sent to your email');
+                return true;
+            } else {
+                toast.error(data.message);
+                return false;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return false;
         }
     };
 
@@ -250,6 +292,7 @@ export const AppContextProvider = (props) => {
         calculateChapterTime, calculateCourseDuration,
         calculateRating, calculateNoOfLectures,
         login, googleLogin, register, logout, getHeaders,
+        verifyOtp, resendOtp,
         fetchAllSettings, updateBatchSettings
     }
 
