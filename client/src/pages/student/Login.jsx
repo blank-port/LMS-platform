@@ -148,8 +148,16 @@ const Login = () => {
                             <p className="text-gray-400 text-sm font-medium">Continue your learning progress</p>
                         </div>
 
-                        <div className="flex justify-center gap-4 mb-6">
-                            <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="320" text="signin_with" />
+                        <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
+                            {!isRegisterMode && (
+                                <GoogleLogin 
+                                    onSuccess={handleGoogleSuccess} 
+                                    theme="filled_black" 
+                                    shape="pill" 
+                                    width="320" 
+                                    text="signin_with" 
+                                />
+                            )}
                         </div>
 
                         <div className="relative my-4">
@@ -216,8 +224,16 @@ const Login = () => {
                                     <p className="text-gray-400 text-sm font-medium">Join thousands of students learning online</p>
                                 </div>
 
-                                <div className="flex justify-center gap-4 mb-6">
-                                    <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="100%" text="signup_with" />
+                                <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
+                                    {isRegisterMode && (
+                                        <GoogleLogin 
+                                            onSuccess={handleGoogleSuccess} 
+                                            theme="filled_black" 
+                                            shape="pill" 
+                                            width="320" 
+                                            text="signup_with" 
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="relative my-4">
@@ -393,8 +409,14 @@ const Login = () => {
                     </div>
                 </div>
 
-                <div className="flex justify-center text-center">
-                    <GoogleLogin onSuccess={handleGoogleSuccess} theme="filled_black" shape="pill" width="300" />
+                <div className="flex justify-center text-center min-h-[50px]">
+                    <GoogleLogin 
+                        onSuccess={handleGoogleSuccess} 
+                        theme="filled_black" 
+                        shape="pill" 
+                        width="300" 
+                        text={isRegisterMode ? "signup_with" : "signin_with"}
+                    />
                 </div>
             </div>
         </div>
