@@ -2,7 +2,8 @@ import express from 'express';
 import { 
     register, login, googleLogin, verifyEmail, resendOtp, getProfile, updateProfile, getUserData, 
     updateAccountProfile, changePassword, updateSecondaryDetails, deleteAccount,
-    getLoggedDevices, revokeDeviceSession, getReferralStats, getPurchaseHistory
+    getLoggedDevices, revokeDeviceSession, getReferralStats, getPurchaseHistory,
+    toggleWishlist, getWishlist
 } from '../controllers/userController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import upload from '../configs/multer.js';
@@ -30,5 +31,9 @@ userRouter.get('/sessions', authMiddleware, getLoggedDevices);
 userRouter.delete('/sessions/:sessionId', authMiddleware, revokeDeviceSession);
 userRouter.get('/referrals', authMiddleware, getReferralStats);
 userRouter.get('/purchase-history', authMiddleware, getPurchaseHistory);
+
+// Wishlist
+userRouter.get('/wishlist', authMiddleware, getWishlist);
+userRouter.post('/wishlist/:courseId', authMiddleware, toggleWishlist);
 
 export default userRouter;

@@ -25,6 +25,7 @@ const Player = () => {
     const [playbackRate, setPlaybackRate] = useState(1);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showControls, setShowControls] = useState(true);
+    const [isVideoLoading, setIsVideoLoading] = useState(false);
     
     const videoRef = React.useRef(null);
     const playerRef = React.useRef(null);
@@ -104,15 +105,39 @@ const Player = () => {
     const markComplete = async (lectureId) => {
         try {
             const { data } = await axios.post(`${backendUrl}/api/course/progress/update`, {
-                courseId, lessonId: lectureId
+                courseId, lessonId: lectureId, markAsComplete: true
             }, { headers: { Authorization: `Bearer ${token}` } });
 
             if (data.success) {
                 setEnrollment(data.enrollment);
-                toast.success('Progress updated!');
+                return true;
             }
         } catch (error) {
-            toast.error('Failed to update progress');
+            console.error('Mastery Sync Failure');
+        }
+        return false;
+    };
+
+    const getFlattenedLectures = () => {
+        if (!courseData || !courseData.courseContent) return [];
+        return courseData.courseContent.flatMap(ch => ch.chapterContent);
+    };
+
+    const navigateModule = (direction) => {
+        const flat = getFlattenedLectures();
+        const index = flat.findIndex(l => l._id === currentLecture?._id);
+        if (index === -1) return;
+
+        if (direction === 'next') {
+            if (index < flat.length - 1) {
+                setCurrentLecture(flat[index + 1]);
+            } else {
+                toast.success('🎉 Final Module Reached. Complete it to achieve course mastery!');
+            }
+        } else if (direction === 'prev') {
+            if (index > 0) {
+                setCurrentLecture(flat[index - 1]);
+            }
         }
     };
 
@@ -225,10 +250,6 @@ const Player = () => {
         return () => clearInterval(saverInstance);
     }, [isPlaying, currentLecture, courseId]);
 
-    useEffect(() => {
-        if (!token) { navigate('/login'); return; }
-        fetchCourseData();
-    }, [courseId]);
 
     const isLectureCompleted = (lectureId) => {
         return enrollment?.completedLessons?.includes(lectureId.toString());
@@ -310,38 +331,60 @@ const Player = () => {
                                         title={currentLecture.lectureTitle}
                                     />
                                 ) : (
-                                    <video 
-                                        ref={videoRef}
-                                        key={currentLecture.lectureUrl}
-                                        onPlay={() => setIsPlaying(true)}
-                                        onPause={() => setIsPlaying(false)}
-                                        onTimeUpdate={() => setCurrentTime(videoRef.current.currentTime)}
-                                        onLoadedMetadata={() => {
-                                            setDuration(videoRef.current.duration);
-                                            // Resume from last watched position
-                                            if (enrollment && enrollment.lastWatchedLessonId === currentLecture._id && enrollment.lastWatchedTime > 0) {
-                                                videoRef.current.currentTime = enrollment.lastWatchedTime;
-                                                toast.success(`Resuming from ${formatTime(enrollment.lastWatchedTime)}`);
-                                            }
-                                        }}
-                                        onEnded={() => {
-                                            // Auto-Advance Logic
-                                            let foundCurrent = false;
-                                            for (let chapter of courseData.courseContent) {
-                                                for (let lecture of chapter.chapterContent) {
-                                                    if (foundCurrent) {
-                                                        setCurrentLecture(lecture);
-                                                        return;
-                                                    }
-                                                    if (lecture._id === currentLecture._id) foundCurrent = true;
+                                    <div className="relative w-full h-full group/player">
+                                        <video 
+                                            ref={videoRef}
+                                            key={currentLecture.lectureUrl}
+                                            onPlay={() => {
+                                                setIsPlaying(true);
+                                                setIsVideoLoading(false);
+                                            }}
+                                            onPlaying={() => setIsVideoLoading(false)}
+                                            onWaiting={() => setIsVideoLoading(true)}
+                                            onPause={() => setIsPlaying(false)}
+                                            onTimeUpdate={() => setCurrentTime(videoRef.current.currentTime)}
+                                            onLoadedMetadata={() => {
+                                                setDuration(videoRef.current.duration);
+                                                setIsVideoLoading(false);
+                                                // Resume from last watched position
+                                                if (enrollment && enrollment.lastWatchedLessonId === currentLecture._id && enrollment.lastWatchedTime > 0) {
+                                                    videoRef.current.currentTime = enrollment.lastWatchedTime;
+                                                    toast.success(`Resuming from ${formatTime(enrollment.lastWatchedTime)}`);
                                                 }
-                                            }
-                                            toast.success('Course Completed!');
-                                        }}
-                                        className="w-full h-full object-contain" 
-                                        src={currentLecture.lectureUrl} 
-                                        autoPlay
-                                    />
+                                            }}
+                                            onEnded={async () => {
+                                                setIsVideoLoading(false);
+                                                await markComplete(currentLecture._id);
+                                                
+                                                const flat = getFlattenedLectures();
+                                                const index = flat.findIndex(l => l._id === currentLecture._id);
+                                                
+                                                if (index < flat.length - 1) {
+                                                    setCurrentLecture(flat[index + 1]);
+                                                    toast.info('Moving to Next Module...');
+                                                } else {
+                                                    toast.success('🎉 Course Fully Mastered! Certification Protocol Initialized.');
+                                                    // Optionally trigger course completion modal/confetti here
+                                                }
+                                            }}
+                                            className="w-full h-full object-contain" 
+                                            src={currentLecture.lectureUrl} 
+                                            poster={courseData.courseThumbnail}
+                                            preload="auto"
+                                            playsInline
+                                            autoPlay
+                                        />
+
+                                        {/* Premium Loading Spinner */}
+                                        {isVideoLoading && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-40 transition-all">
+                                                <div className="relative w-24 h-24">
+                                                    <div className="absolute inset-0 border-[6px] border-indigo-500/10 rounded-full"></div>
+                                                    <div className="absolute inset-0 border-[6px] border-t-indigo-500 rounded-full animate-spin shadow-lg"></div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
 
                                 {/* Premium Control Overlays (Native Video Only) */}
@@ -381,22 +424,22 @@ const Player = () => {
                                             </div>
 
                                             <div className="flex items-center justify-between gap-6">
-                                                <div className="flex items-center gap-6">
-                                                    <button onClick={togglePlay} className="text-white hover:text-indigo-400 transition-colors">
-                                                        {isPlaying ? <div className="text-2xl">⏸</div> : <div className="text-2xl">▶</div>}
-                                                    </button>
-                                                    <div className="flex items-center gap-2">
-                                                        <button 
-                                                            onClick={() => handleSeek(Math.max(0, currentTime - 10))}
-                                                            className="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest"
-                                                        >
-                                                            -10s
+                                                <div className="flex items-center gap-8">
+                                                    <div className="flex items-center gap-6">
+                                                        <button onClick={togglePlay} className="text-white hover:text-indigo-400 transition-colors">
+                                                            {isPlaying ? <div className="text-2xl">⏸</div> : <div className="text-2xl">▶</div>}
                                                         </button>
                                                         <button 
-                                                            onClick={() => handleSeek(Math.min(duration, currentTime + 10))}
-                                                            className="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest"
+                                                            onClick={() => navigateModule('prev')}
+                                                            className="text-white/60 hover:text-white text-[10px] font-black uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-lg border border-white/5"
                                                         >
-                                                            +10s
+                                                            Previous
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => navigateModule('next')}
+                                                            className="text-white/60 hover:text-white text-[10px] font-black uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-lg border border-white/5"
+                                                        >
+                                                            Next
                                                         </button>
                                                     </div>
                                                     <div className="text-[11px] font-black tracking-widest text-white/50 uppercase">
@@ -453,7 +496,6 @@ const Player = () => {
                             </div>
                         )}
                     </div>
-
 
                     {/* Content Intelligence Tabs */}
                     <div className="bg-[#0C132B] border-t border-white/5">

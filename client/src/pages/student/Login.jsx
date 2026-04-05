@@ -345,10 +345,24 @@ const Login = () => {
                                             <div className="relative group">
                                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                                 <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl h-12" />
+                                                {password && (
+                                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                                                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                                    </button>
+                                                )}
                                             </div>
                                             <div className="relative group">
                                                 <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                                                 <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm" required className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-12 py-2.5 rounded-xl h-12" />
+                                                {confirmPassword && (
+                                                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                                                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="relative group">
+                                                <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 group-focus-within:text-blue-500" />
+                                                <input type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} placeholder="Referral Code (Optional)" className="w-full bg-white/[0.05] border border-white/10 text-white pl-11 pr-4 py-2.5 rounded-xl h-12 placeholder:text-gray-600" />
                                             </div>
                                             {(settings.public_registration !== false || settings.instructor_registration !== false) && (
                                                 <div className="flex gap-2 p-1.5 bg-white/[0.03] rounded-xl border border-white/10">
@@ -394,8 +408,19 @@ const Login = () => {
                             >
                                 {isRegisterMode && <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl" />}
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl" />
-                                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl" />
-                                {isRegisterMode && <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl" />}
+                                <div className="relative">
+                                    <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl pr-14" />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500">
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl pr-14" />
+                                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500">
+                                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                                {isRegisterMode && <input type="text" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} placeholder="Referral Code (Optional)" className="w-full bg-white/[0.03] border border-white/5 text-white px-6 py-4 rounded-2xl" />}
                                 <button type="submit" disabled={loading} className="w-full h-14 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest">{loading ? <Loader2 className="animate-spin size-6 mx-auto" /> : (isRegisterMode ? "CREATE ACCOUNT" : "SIGN IN")}</button>
                             </motion.form>
                         )}

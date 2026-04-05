@@ -15,6 +15,7 @@ export const AppContextProvider = (props) => {
 
     const [token, setToken] = useState(localStorage.getItem('token') || '')
     const [user, setUser] = useState(null)
+    const [wishlist, setWishlist] = useState([])
     const [isEducator, setIsEducator] = useState(false)
     const [allCourses, setAllCourses] = useState([])
     const [enrolledCourses, setEnrolledCourses] = useState([])
@@ -157,6 +158,7 @@ export const AppContextProvider = (props) => {
             const { data } = await axios.get(backendUrl + '/api/user/data', getHeaders());
             if (data.success) {
                 setUser(data.user);
+                setWishlist(data.user.wishlist || []);
                 setIsEducator(data.user.role === 'instructor' || data.user.role === 'admin');
             }
         } catch (error) {
@@ -207,6 +209,7 @@ export const AppContextProvider = (props) => {
 
     const calculateCourseDuration = (course) => {
         let time = 0;
+        if (!course || !course.courseContent) return '0h 0m';
         course.courseContent.map(
             (chapter) => chapter.chapterContent.map(
                 (lecture) => time += lecture.lectureDuration
@@ -280,6 +283,38 @@ export const AppContextProvider = (props) => {
         return false;
     };
 
+    const toggleWishlist = async (courseId) => {
+        try {
+            const { data } = await axios.post(backendUrl + `/api/user/wishlist/${courseId}`, {}, getHeaders());
+            if (data.success) {
+                toast.success(data.message);
+                if (data.action === 'added') {
+                    setWishlist(prev => [...prev, courseId]);
+                } else {
+                    setWishlist(prev => prev.filter(id => id !== courseId));
+                }
+                return true;
+            }
+            return false;
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return false;
+        }
+    };
+
+    const getWishlist = async () => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/user/wishlist', getHeaders());
+            if (data.success) {
+                return data.wishlist;
+            }
+            return [];
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return [];
+        }
+    };
+
     const value = {
         backendUrl, currency, navigate,
         token, setToken,
@@ -293,7 +328,8 @@ export const AppContextProvider = (props) => {
         calculateRating, calculateNoOfLectures,
         login, googleLogin, register, logout, getHeaders,
         verifyOtp, resendOtp,
-        fetchAllSettings, updateBatchSettings
+        fetchAllSettings, updateBatchSettings,
+        wishlist, setWishlist, toggleWishlist, getWishlist
     }
 
     return (

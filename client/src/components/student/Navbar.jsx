@@ -79,6 +79,16 @@ const Navbar = () => {
                 <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/dashboard'} className="hover:text-[#7C32FF] border-b-2 border-transparent hover:border-[#7C32FF] pb-1 transition-all">Dashboard</Link>
               </div>
 
+              {/* Wishlist Access */}
+              <Link to="/student/wishlist" className="relative group/wishlist p-2 hover:bg-rose-500/10 rounded-xl transition-all" title="View Wishlist">
+                <span className="text-rose-500 group-hover/wishlist:scale-110 transition-transform">❤️</span>
+                {user.wishlist?.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--surface)]">
+                    {user.wishlist.length}
+                  </span>
+                )}
+              </Link>
+
               {/* Notification Hub */}
               <NotificationDropdown />
 

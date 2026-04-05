@@ -83,15 +83,18 @@ export const register = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
 
+        let user;
         if (existingUser && !existingUser.isVerified) {
             existingUser.name = name;
             existingUser.password = hashedPassword;
             existingUser.role = userRole;
             existingUser.verifyOtp = otp;
             existingUser.verifyOtpExpire = otpExpire;
+            existingUser.isVerified = true; // Temporarily auto-verifying
             await existingUser.save();
+            user = existingUser;
         } else {
-            await User.create({
+            user = await User.create({
                 name,
                 email,
                 password: hashedPassword,
@@ -101,17 +104,26 @@ export const register = async (req, res) => {
                 referredBy: referrer ? referrer._id : null,
                 verifyOtp: otp,
                 verifyOtpExpire: otpExpire,
-                isVerified: false
+                isVerified: true // Temporarily auto-verifying for immediate access
             });
         }
-
-        // Dispatch OTP via Digital Post
-        await sendOTP(email, otp);
-
+ 
+        // Dispatch OTP via Digital Post (Keeping it in the background)
+        sendOTP(email, otp); 
+ 
+        const token = generateToken(user._id);
+ 
         res.status(201).json({
             success: true,
-            message: 'OTP sent to your email. Please verify to continue.',
-            verifyEmail: email
+            message: 'Registration successful! Access granted.',
+            token,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isApproved: user.isApproved
+            }
         });
 
     } catch (error) {
@@ -195,9 +207,12 @@ export const resendOtp = async (req, res) => {
         user.verifyOtp = otp;
         user.verifyOtpExpire = Date.now() + 24 * 60 * 60 * 1000;
         await user.save();
-
-        await sendOTP(email, otp);
-
+ 
+        const emailSent = await sendOTP(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ success: false, message: 'Failed to dispatch verification email. Please check your SMTP configuration.' });
+        }
+ 
         res.json({ success: true, message: 'New OTP dispatched to your inbox' });
 
     } catch (error) {
@@ -553,6 +568,42 @@ export const getPurchaseHistory = async (req, res) => {
         }));
 
         res.json({ success: true, history });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// --- Wishlist Management ---
+
+export const toggleWishlist = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const user = await User.findById(req.user._id);
+
+        const index = user.wishlist.indexOf(courseId);
+        if (index > -1) {
+            user.wishlist.splice(index, 1);
+            await user.save();
+            return res.json({ success: true, message: 'Removed from wishlist', action: 'removed' });
+        } else {
+            user.wishlist.push(courseId);
+            await user.save();
+            return res.json({ success: true, message: 'Added to wishlist', action: 'added' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getWishlist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .populate({
+                path: 'wishlist',
+                select: 'courseTitle courseThumbnail coursePrice discount level courseContent',
+                populate: { path: 'instructor', select: 'name' }
+            });
+        res.json({ success: true, wishlist: user.wishlist });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

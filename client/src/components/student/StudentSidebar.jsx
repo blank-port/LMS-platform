@@ -16,7 +16,8 @@ import {
     ShieldCheck,
     Users,
     Gift,
-    RotateCcw
+    RotateCcw,
+    Heart
 } from 'lucide-react';
 
 const StudentSidebar = () => {
@@ -24,6 +25,7 @@ const StudentSidebar = () => {
 
     const studentItems = [
         { name: 'Dashboard', path: '/student/dashboard', icon: <LayoutDashboard size={18} /> },
+        { name: 'Wishlist', path: '/student/wishlist', icon: <Heart size={18} /> },
         { name: 'My Courses', path: '/student/my-courses', icon: <BookOpen size={18} /> },
         { name: 'Quizzes', path: '/student/quizzes', icon: <Gamepad2 size={18} /> },
         { name: 'Purchase History', path: '/student/purchase-history', icon: <History size={18} /> },

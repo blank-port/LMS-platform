@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendOTP = async (email, otp) => {
     const mailOptions = {
-        from: '"PrismEd LMS" <noreply@prismed.com>',
+        from: `"PrismEd LMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: '🔐 Verify Your PrismEd Scholar Identity',
         html: `

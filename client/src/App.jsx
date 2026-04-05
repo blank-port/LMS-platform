@@ -31,6 +31,7 @@ import Referral from './pages/student/Referral'
 import RewardPoints from './pages/student/RewardPoints'
 import DeviceSecurity from './pages/student/DeviceSecurity'
 import StudentMessages from './pages/student/StudentMessages'
+import Wishlist from './pages/student/Wishlist'
 
 // Educator Imports
 // Educator Imports
@@ -227,6 +228,7 @@ const App = () => {
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<StudentDashboard />} />
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="wishlist" element={<Wishlist />} />
           <Route path="my-courses" element={<MyEnrollments />} />
           <Route path="quizzes" element={<QuizPage />} />
           <Route path="purchase-history" element={<PurchaseHistory />} />

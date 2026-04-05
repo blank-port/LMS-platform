@@ -3,15 +3,27 @@ import { assets } from '../../assets/assets';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { Link } from 'react-router-dom';
 import SafeImage from '../common/SafeImage.jsx';
+import { Heart } from 'lucide-react';
 
 const CourseCard = ({ course }) => {
-  const { currency, calculateRating, settings } = useContext(AppContext);
+  const { currency, calculateRating, settings, wishlist, toggleWishlist, token, navigate } = useContext(AppContext);
+
+  const handleWishlist = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) {
+        navigate('/login');
+        return;
+    }
+    toggleWishlist(course._id);
+  };
 
   return (
-    <Link to={`/course/${course._id}`}
-      onClick={() => window.scrollTo(0, 0)}
-      className="group premium-card overflow-hidden !p-0 flex flex-col h-full bg-[var(--surface)] transition-all duration-500 hover:shadow-[0_20px_50px_rgba(79,70,229,0.1)] border border-[var(--border)]"
-    >
+    <div className="relative h-full flex flex-col group">
+      <Link to={`/course/${course._id}`}
+        onClick={() => window.scrollTo(0, 0)}
+        className="premium-card overflow-hidden !p-0 flex flex-col h-full bg-[var(--surface)] transition-all duration-500 hover:shadow-[0_20px_50px_rgba(79,70,229,0.1)] border border-[var(--border)]"
+      >
       {/* Thumbnail & Badges */}
       <div className="relative aspect-video overflow-hidden">
         <SafeImage 
@@ -22,10 +34,17 @@ const CourseCard = ({ course }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-        {/* Level Badge */}
         <div className="absolute top-4 left-4 bg-[#7C32FF] text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow-lg uppercase tracking-wider scale-90 group-hover:scale-100 transition-transform">
           {course.level || 'Beginner'}
         </div>
+
+        {/* Wishlist Button */}
+        <button 
+            onClick={handleWishlist}
+            className={`absolute top-4 right-4 p-2.5 rounded-xl shadow-xl transition-all duration-300 transform z-20 ${wishlist.includes(course._id) ? 'bg-rose-500 text-white scale-110 opacity-100' : 'bg-white/80 backdrop-blur-md text-slate-400 hover:text-rose-500 hover:scale-110 opacity-40 hover:opacity-100 translate-y-0'}`}
+        >
+            <Heart size={16} fill={wishlist.includes(course._id) ? "currentColor" : "none"} />
+        </button>
 
         {/* Action Overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -88,7 +107,8 @@ const CourseCard = ({ course }) => {
           </div>
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 };
 

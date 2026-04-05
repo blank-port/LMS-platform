@@ -14,7 +14,7 @@ const CourseDetails = () => {
     const { id } = useParams();
     const {
         currency, allCourses, calculateRating, calculateNoOfLectures, calculateCourseDuration,
-        backendUrl, getHeaders, token, user, settings, navigate
+        backendUrl, getHeaders, token, user, settings, navigate, wishlist, toggleWishlist
     } = useContext(AppContext);
 
     const [courseData, setCourseData] = useState(null);
@@ -512,8 +512,14 @@ const CourseDetails = () => {
                                                 >
                                                     Enroll In Course
                                                 </button>
-                                                <button className="w-full bg-transparent text-[var(--text-main)] border-2 border-[var(--border)] py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[var(--background)] transition-all">
-                                                    Save to Wishlist
+                                                <button
+                                                    onClick={() => !token ? navigate('/login') : toggleWishlist(courseData._id)}
+                                                    className={`w-full flex items-center justify-center gap-3 border-2 py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${wishlist.includes(courseData._id) ? 'bg-rose-50 border-rose-200 text-rose-500' : 'bg-transparent text-[var(--text-main)] border-[var(--border)] hover:bg-[var(--background)]'}`}
+                                                >
+                                                    <span className={`text-xl ${wishlist.includes(courseData._id) ? 'animate-bounce' : ''}`}>
+                                                        {wishlist.includes(courseData._id) ? '❤️' : '🤍'}
+                                                    </span>
+                                                    {wishlist.includes(courseData._id) ? 'Wishlisted' : 'Save to Wishlist'}
                                                 </button>
                                             </div>
                                         )}

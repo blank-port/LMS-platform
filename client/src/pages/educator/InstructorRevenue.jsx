@@ -61,7 +61,7 @@ const InstructorRevenue = () => {
                 </div>
                 <div className="h-80 w-full">
                     {hasMounted && (
-                        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                        <ResponsiveContainer width="100%" height="100%" minHeight={320} minWidth={0}>
                         <BarChart data={data?.monthlyBreakdown || []}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
