@@ -219,9 +219,8 @@ export const login = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid credentials' });
         }
 
-        if (!user.isVerified) {
-            return res.status(401).json({ success: false, message: 'Account not verified. Please verify your email.', verifyEmail: email });
-        }
+        // Account verification check removed to allow existing users access.
+        // OTP verification is only mandatory during signup.
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
