@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, lazy, Suspense } from 'react'
 import { Route, Routes, useMatch, useNavigate } from 'react-router-dom'
 import { AppContext } from './context/AppContextObject.jsx';
 import { ToastContainer, toast } from 'react-toastify';
@@ -6,141 +6,141 @@ import 'react-toastify/dist/ReactToastify.css';
 import Pusher from 'pusher-js';
 
 // Student Imports
-import Navbar from './components/student/Navbar'
-import Home from './pages/student/Home'
-import CourseDetails from './pages/student/CourseDetails'
-import CoursesList from './pages/student/CoursesList'
-import Login from './pages/student/Login'
-import Register from './pages/student/Register'
-import MyEnrollments from './pages/student/MyEnrollments'
-import Player from './pages/student/Player'
+const Navbar = lazy(() => import('./components/student/Navbar'));
+const Home = lazy(() => import('./pages/student/Home'));
+const CourseDetails = lazy(() => import('./pages/student/CourseDetails'));
+const CoursesList = lazy(() => import('./pages/student/CoursesList'));
+const Login = lazy(() => import('./pages/student/Login'));
+const Register = lazy(() => import('./pages/student/Register'));
+const MyEnrollments = lazy(() => import('./pages/student/MyEnrollments'));
+const Player = lazy(() => import('./pages/student/Player'));
 import Loading from './components/student/Loading'
-import StudentDashboard from './pages/student/StudentDashboard'
-import QuizPage from './pages/student/QuizPage'
-import StudentLayout from './components/student/StudentLayout'
-import Assignments from './pages/student/Assignments'
-import Wallet from './pages/student/Wallet'
-import Support from './pages/student/Support'
-import Certificates from './pages/student/Certificates'
-import Profile from './pages/student/Profile'
-import AccountSettings from './pages/student/AccountSettings'
-import Leaderboard from './pages/student/Leaderboard'
-import PurchaseHistory from './pages/student/PurchaseHistory'
-import RefundHistory from './pages/student/RefundHistory'
-import Referral from './pages/student/Referral'
-import RewardPoints from './pages/student/RewardPoints'
-import DeviceSecurity from './pages/student/DeviceSecurity'
-import StudentMessages from './pages/student/StudentMessages'
-import Wishlist from './pages/student/Wishlist'
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const QuizPage = lazy(() => import('./pages/student/QuizPage'));
+const StudentLayout = lazy(() => import('./components/student/StudentLayout'));
+const Assignments = lazy(() => import('./pages/student/Assignments'));
+const Wallet = lazy(() => import('./pages/student/Wallet'));
+const Support = lazy(() => import('./pages/student/Support'));
+const Certificates = lazy(() => import('./pages/student/Certificates'));
+const Profile = lazy(() => import('./pages/student/Profile'));
+const AccountSettings = lazy(() => import('./pages/student/AccountSettings'));
+const Leaderboard = lazy(() => import('./pages/student/Leaderboard'));
+const PurchaseHistory = lazy(() => import('./pages/student/PurchaseHistory'));
+const RefundHistory = lazy(() => import('./pages/student/RefundHistory'));
+const Referral = lazy(() => import('./pages/student/Referral'));
+const RewardPoints = lazy(() => import('./pages/student/RewardPoints'));
+const DeviceSecurity = lazy(() => import('./pages/student/DeviceSecurity'));
+const StudentMessages = lazy(() => import('./pages/student/StudentMessages'));
+const Wishlist = lazy(() => import('./pages/student/Wishlist'));
 
 // Educator Imports
 // Educator Imports
-import Educator from './pages/educator/Educator';
-import Dashboard from './pages/educator/Dashboard';
-import AddCourse from './pages/educator/AddCourse';
-import MyCourses from './pages/educator/MyCourses';
-import EnrolledStudents from './pages/educator/StudentsEnrolled';
-import InstructorCommunication from './pages/educator/InstructorCommunication';
-import InstructorQuestionBank from './pages/educator/InstructorQuestionBank';
-import InstructorQuizReports from './pages/educator/InstructorQuizReports';
-import CreateQuiz from './pages/educator/CreateQuiz';
-import InstructorSettings from './pages/educator/InstructorSettings';
-import InstructorMyPanel from './pages/educator/InstructorMyPanel';
-import InstructorPayouts from './pages/educator/InstructorPayouts';
-import InstructorRevenue from './pages/educator/InstructorRevenue';
-import InstructorCourseStats from './pages/educator/InstructorCourseStats';
-import InstructorQA from './pages/educator/InstructorQA';
-import InstructorCourseSettings from './pages/educator/InstructorCourseSettings';
-import InstructorQuestionGroup from './pages/educator/InstructorQuestionGroup';
-import InstructorAddQuestion from './pages/educator/InstructorAddQuestion';
-import InstructorQuestionImport from './pages/educator/InstructorQuestionImport';
+const Educator = lazy(() => import('./pages/educator/Educator'));;
+const Dashboard = lazy(() => import('./pages/educator/Dashboard'));;
+const AddCourse = lazy(() => import('./pages/educator/AddCourse'));;
+const MyCourses = lazy(() => import('./pages/educator/MyCourses'));;
+const EnrolledStudents = lazy(() => import('./pages/educator/StudentsEnrolled'));;
+const InstructorCommunication = lazy(() => import('./pages/educator/InstructorCommunication'));;
+const InstructorQuestionBank = lazy(() => import('./pages/educator/InstructorQuestionBank'));;
+const InstructorQuizReports = lazy(() => import('./pages/educator/InstructorQuizReports'));;
+const CreateQuiz = lazy(() => import('./pages/educator/CreateQuiz'));;
+const InstructorSettings = lazy(() => import('./pages/educator/InstructorSettings'));;
+const InstructorMyPanel = lazy(() => import('./pages/educator/InstructorMyPanel'));;
+const InstructorPayouts = lazy(() => import('./pages/educator/InstructorPayouts'));;
+const InstructorRevenue = lazy(() => import('./pages/educator/InstructorRevenue'));;
+const InstructorCourseStats = lazy(() => import('./pages/educator/InstructorCourseStats'));;
+const InstructorQA = lazy(() => import('./pages/educator/InstructorQA'));;
+const InstructorCourseSettings = lazy(() => import('./pages/educator/InstructorCourseSettings'));;
+const InstructorQuestionGroup = lazy(() => import('./pages/educator/InstructorQuestionGroup'));;
+const InstructorAddQuestion = lazy(() => import('./pages/educator/InstructorAddQuestion'));;
+const InstructorQuestionImport = lazy(() => import('./pages/educator/InstructorQuestionImport'));;
 
 // Admin Imports
-import Admin from './pages/admin/Admin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ManageUsers from './pages/admin/ManageUsers';
-import ManageInstructors from './pages/admin/ManageInstructors';
-import ManageStaff from './pages/admin/ManageStaff';
-import ManageInstitutes from './pages/admin/ManageInstitutes';
-import ManageDepartments from './pages/admin/ManageDepartments';
-import ManageRoles from './pages/admin/ManageRoles';
-import ManageDeleteRequests from './pages/admin/ManageDeleteRequests';
-import ManageLevels from './pages/admin/ManageLevels';
-import ManageSubjects from './pages/admin/ManageSubjects';
-import AdminSettings from './pages/admin/AdminSettings';
-import ManageCourseSettings from './pages/admin/ManageCourseSettings';
-import ManageQuestionGroups from './pages/admin/ManageQuestionGroups';
-import QuestionBank from './pages/admin/QuestionBank';
-import AddQuestion from './pages/admin/AddQuestion';
-import QuestionImport from './pages/admin/QuestionImport';
-import ManageQuizSetup from './pages/admin/ManageQuizSetup';
-import ManageQuizList from './pages/admin/ManageQuizList';
-import ManageSubCategories from './pages/admin/ManageSubCategories';
-import ManageQuizReports from './pages/admin/ManageQuizReports';
-import ManageCertificates from './pages/admin/ManageCertificates';
-import ManageCertificateFonts from './pages/admin/ManageCertificateFonts';
-import ManageCertificateSettings from './pages/admin/ManageCertificateSettings';
-import ManageFinancials from './pages/admin/ManageFinancials';
-import InstructorRevenueReport from './pages/admin/InstructorRevenueReport';
-import CourseStatsReport from './pages/admin/CourseStatsReport';
-import ManageReviews from './pages/admin/ManageReviews';
-import InstitutionReport from './pages/admin/InstitutionReport';
-import UserPerformanceReport from './pages/admin/UserPerformanceReport';
-import NewEnrollment from './pages/admin/NewEnrollment';
-import ManageEnrollments from './pages/admin/ManageEnrollments';
-import RefundSettings from './pages/admin/RefundSettings';
-import ManageInstructorPayouts from './pages/admin/ManageInstructorPayouts';
-import ManageECommerce from './pages/admin/ManageECommerce';
-import ManagePayments from './pages/admin/ManagePayments';
-import PayoutSettings from './pages/admin/PayoutSettings';
-import ManageGamification from './pages/admin/ManageGamification';
-import ManageBadges from './pages/admin/ManageBadges';
-import GamificationHistory from './pages/admin/GamificationHistory';
-import ManageCommunication from './pages/admin/ManageCommunication';
-import ManageMessages from './pages/admin/ManageMessages';
-import ManageQA from './pages/admin/ManageQA';
-import ManageComments from './pages/admin/ManageComments';
-import ManagePushNotifications from './pages/admin/ManagePushNotifications';
-import CommunicationSettings from './pages/admin/settings/CommunicationSettings';
-import ManageCoupons from './pages/admin/ManageCoupons';
-import StudentDetails from './pages/admin/StudentDetails';
-import AdminProfile from './pages/admin/AdminProfile';
-import ManageCodOrders from './pages/admin/ManageCodOrders';
+const Admin = lazy(() => import('./pages/admin/Admin'));;
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));;
+const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));;
+const ManageInstructors = lazy(() => import('./pages/admin/ManageInstructors'));;
+const ManageStaff = lazy(() => import('./pages/admin/ManageStaff'));;
+const ManageInstitutes = lazy(() => import('./pages/admin/ManageInstitutes'));;
+const ManageDepartments = lazy(() => import('./pages/admin/ManageDepartments'));;
+const ManageRoles = lazy(() => import('./pages/admin/ManageRoles'));;
+const ManageDeleteRequests = lazy(() => import('./pages/admin/ManageDeleteRequests'));;
+const ManageLevels = lazy(() => import('./pages/admin/ManageLevels'));;
+const ManageSubjects = lazy(() => import('./pages/admin/ManageSubjects'));;
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));;
+const ManageCourseSettings = lazy(() => import('./pages/admin/ManageCourseSettings'));;
+const ManageQuestionGroups = lazy(() => import('./pages/admin/ManageQuestionGroups'));;
+const QuestionBank = lazy(() => import('./pages/admin/QuestionBank'));;
+const AddQuestion = lazy(() => import('./pages/admin/AddQuestion'));;
+const QuestionImport = lazy(() => import('./pages/admin/QuestionImport'));;
+const ManageQuizSetup = lazy(() => import('./pages/admin/ManageQuizSetup'));;
+const ManageQuizList = lazy(() => import('./pages/admin/ManageQuizList'));;
+const ManageSubCategories = lazy(() => import('./pages/admin/ManageSubCategories'));;
+const ManageQuizReports = lazy(() => import('./pages/admin/ManageQuizReports'));;
+const ManageCertificates = lazy(() => import('./pages/admin/ManageCertificates'));;
+const ManageCertificateFonts = lazy(() => import('./pages/admin/ManageCertificateFonts'));;
+const ManageCertificateSettings = lazy(() => import('./pages/admin/ManageCertificateSettings'));;
+const ManageFinancials = lazy(() => import('./pages/admin/ManageFinancials'));;
+const InstructorRevenueReport = lazy(() => import('./pages/admin/InstructorRevenueReport'));;
+const CourseStatsReport = lazy(() => import('./pages/admin/CourseStatsReport'));;
+const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));;
+const InstitutionReport = lazy(() => import('./pages/admin/InstitutionReport'));;
+const UserPerformanceReport = lazy(() => import('./pages/admin/UserPerformanceReport'));;
+const NewEnrollment = lazy(() => import('./pages/admin/NewEnrollment'));;
+const ManageEnrollments = lazy(() => import('./pages/admin/ManageEnrollments'));;
+const RefundSettings = lazy(() => import('./pages/admin/RefundSettings'));;
+const ManageInstructorPayouts = lazy(() => import('./pages/admin/ManageInstructorPayouts'));;
+const ManageECommerce = lazy(() => import('./pages/admin/ManageECommerce'));;
+const ManagePayments = lazy(() => import('./pages/admin/ManagePayments'));;
+const PayoutSettings = lazy(() => import('./pages/admin/PayoutSettings'));;
+const ManageGamification = lazy(() => import('./pages/admin/ManageGamification'));;
+const ManageBadges = lazy(() => import('./pages/admin/ManageBadges'));;
+const GamificationHistory = lazy(() => import('./pages/admin/GamificationHistory'));;
+const ManageCommunication = lazy(() => import('./pages/admin/ManageCommunication'));;
+const ManageMessages = lazy(() => import('./pages/admin/ManageMessages'));;
+const ManageQA = lazy(() => import('./pages/admin/ManageQA'));;
+const ManageComments = lazy(() => import('./pages/admin/ManageComments'));;
+const ManagePushNotifications = lazy(() => import('./pages/admin/ManagePushNotifications'));;
+const CommunicationSettings = lazy(() => import('./pages/admin/settings/CommunicationSettings'));;
+const ManageCoupons = lazy(() => import('./pages/admin/ManageCoupons'));;
+const StudentDetails = lazy(() => import('./pages/admin/StudentDetails'));;
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));;
+const ManageCodOrders = lazy(() => import('./pages/admin/ManageCodOrders'));;
 
 
 
 // Administration Settings
-import SystemSetting from './pages/admin/settings/SystemSetting';
-import Activation from './pages/admin/settings/Activation';
-import GeneralSetting from './pages/admin/settings/GeneralSetting';
-import Commission from './pages/admin/settings/Commission';
-import EmailSetup from './pages/admin/settings/EmailSetup';
-import EmailTemplate from './pages/admin/settings/EmailTemplate';
-import ApiSettings from './pages/admin/settings/ApiSettings';
-import VimeoConfiguration from './pages/admin/settings/VimeoConfiguration';
-import VdoCipherConfiguration from './pages/admin/settings/VdoCipherConfiguration';
-import GDriveConfiguration from './pages/admin/settings/GDriveConfiguration';
-import HomepageSeoSetup from './pages/admin/settings/HomepageSeoSetup';
-import Language from './pages/admin/settings/Language';
-import Currency from './pages/admin/settings/Currency';
-import Timezone from './pages/admin/settings/Timezone';
-import City from './pages/admin/settings/City';
-import CacheSetting from './pages/admin/settings/CacheSetting';
-import QueueSettings from './pages/admin/settings/QueueSettings';
-import CronJob from './pages/admin/settings/CronJob';
-import ReCaptcha from './pages/admin/settings/ReCaptcha';
-import SocialLogin from './pages/admin/settings/SocialLogin';
-import CookieGdprSetting from './pages/admin/settings/CookieGdprSetting';
-import SmsSettings from './pages/admin/settings/SmsSettings';
-import AnalyticsTool from './pages/admin/settings/AnalyticsTool';
-import PusherSetting from './pages/admin/settings/PusherSetting';
-import ModuleManager from './pages/admin/settings/ModuleManager';
-import AboutUpdate from './pages/admin/settings/AboutUpdate';
-import ManageCourses from './pages/admin/ManageCourses';
-import ManageCategories from './pages/admin/ManageCategories';
-import ManageCMS from './pages/admin/ManageCMS';
-import ManageBlogs from './pages/admin/ManageBlogs';
-import AIChatWidget from './components/common/AIChatWidget';
+const SystemSetting = lazy(() => import('./pages/admin/settings/SystemSetting'));;
+const Activation = lazy(() => import('./pages/admin/settings/Activation'));;
+const GeneralSetting = lazy(() => import('./pages/admin/settings/GeneralSetting'));;
+const Commission = lazy(() => import('./pages/admin/settings/Commission'));;
+const EmailSetup = lazy(() => import('./pages/admin/settings/EmailSetup'));;
+const EmailTemplate = lazy(() => import('./pages/admin/settings/EmailTemplate'));;
+const ApiSettings = lazy(() => import('./pages/admin/settings/ApiSettings'));;
+const VimeoConfiguration = lazy(() => import('./pages/admin/settings/VimeoConfiguration'));;
+const VdoCipherConfiguration = lazy(() => import('./pages/admin/settings/VdoCipherConfiguration'));;
+const GDriveConfiguration = lazy(() => import('./pages/admin/settings/GDriveConfiguration'));;
+const HomepageSeoSetup = lazy(() => import('./pages/admin/settings/HomepageSeoSetup'));;
+const Language = lazy(() => import('./pages/admin/settings/Language'));;
+const Currency = lazy(() => import('./pages/admin/settings/Currency'));;
+const Timezone = lazy(() => import('./pages/admin/settings/Timezone'));;
+const City = lazy(() => import('./pages/admin/settings/City'));;
+const CacheSetting = lazy(() => import('./pages/admin/settings/CacheSetting'));;
+const QueueSettings = lazy(() => import('./pages/admin/settings/QueueSettings'));;
+const CronJob = lazy(() => import('./pages/admin/settings/CronJob'));;
+const ReCaptcha = lazy(() => import('./pages/admin/settings/ReCaptcha'));;
+const SocialLogin = lazy(() => import('./pages/admin/settings/SocialLogin'));;
+const CookieGdprSetting = lazy(() => import('./pages/admin/settings/CookieGdprSetting'));;
+const SmsSettings = lazy(() => import('./pages/admin/settings/SmsSettings'));;
+const AnalyticsTool = lazy(() => import('./pages/admin/settings/AnalyticsTool'));;
+const PusherSetting = lazy(() => import('./pages/admin/settings/PusherSetting'));;
+const ModuleManager = lazy(() => import('./pages/admin/settings/ModuleManager'));;
+const AboutUpdate = lazy(() => import('./pages/admin/settings/AboutUpdate'));;
+const ManageCourses = lazy(() => import('./pages/admin/ManageCourses'));;
+const ManageCategories = lazy(() => import('./pages/admin/ManageCategories'));;
+const ManageCMS = lazy(() => import('./pages/admin/ManageCMS'));;
+const ManageBlogs = lazy(() => import('./pages/admin/ManageBlogs'));;
+const AIChatWidget = lazy(() => import('./components/common/AIChatWidget'));;
 
 
 const App = () => {
@@ -214,7 +214,7 @@ const App = () => {
     <div className="text-[var(--text-main)] min-h-screen bg-[var(--background)]">
       <ToastContainer />
       {!isEducatorRoute && !isAdminRoute && <Navbar />}
-      <Routes>
+      <Suspense fallback={<Loading />}><Routes>
         <Route path="/" element={<Home />} />
         <Route path="/course/:id" element={<CourseDetails />} />
         <Route path="/course-list" element={<CoursesList />} />
@@ -255,6 +255,7 @@ const App = () => {
         <Route path='/educator' element={<Educator />}>
           <Route index element={<Dashboard />} />
           <Route path='add-course' element={<AddCourse />} />
+          <Route path='edit-course/:id' element={<AddCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
           <Route path='course-settings' element={<InstructorCourseSettings />} />
 
@@ -375,7 +376,7 @@ const App = () => {
           <Route path='my-profile' element={<AdminProfile />} />
 
         </Route>
-      </Routes>
+      </Routes></Suspense>
       <AIChatWidget />
     </div>
   )

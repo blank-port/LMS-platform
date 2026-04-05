@@ -11,6 +11,7 @@ import Discussion from '../models/Discussion.js';
 import Setting from '../models/Setting.js';
 import Refund from '../models/Refund.js';
 import Referral from '../models/Referral.js';
+import Review from '../models/Review.js';
 
 // Add New Course
 export const addCourse = async (req, res) => {
@@ -105,6 +106,24 @@ export const getInstructorCourses = async (req, res) => {
             .populate('category', 'name')
             .sort({ createdAt: -1 });
         res.json({ success: true, courses });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Get Single Instructor Course for Editing
+export const getInstructorCourseById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const course = await Course.findById(id).populate('category', 'name');
+        
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+        if (course.instructor.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view this course' });
+        }
+        res.json({ success: true, courseData: course });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -405,6 +424,16 @@ export const getInstructorMyPanel = async (req, res) => {
                 totalLectures: c.courseContent?.reduce((acc, ch) => acc + (ch.chapterContent?.length || 0), 0) || 0
             }));
             return res.json({ success: true, tab, data: topics });
+        }
+
+        if (tab === 'reviews') {
+            const courses = await Course.find({ instructor: userId }).select('_id');
+            const courseIds = courses.map(c => c._id);
+            const reviews = await Review.find({ courseId: { $in: courseIds } })
+                .populate('userId', 'name profilePicture')
+                .populate('courseId', 'courseTitle')
+                .sort({ createdAt: -1 });
+            return res.json({ success: true, tab, data: reviews });
         }
 
         if (tab === 'refund_cancellation') {

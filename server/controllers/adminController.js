@@ -440,3 +440,65 @@ export const getAllEnrollmentsAdmin = async (req, res) => {
     }
 };
 
+
+
+// --- Certificate Templates (Admin) ---
+
+export const getCertificateTemplates = async (req, res) => {
+    try {
+        const CertificateTemplate = (await import('../models/CertificateTemplate.js')).default;
+        const templates = await CertificateTemplate.find().sort({ createdAt: -1 });
+        res.json({ success: true, templates });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const createCertificateTemplate = async (req, res) => {
+    try {
+        const CertificateTemplate = (await import('../models/CertificateTemplate.js')).default;
+        const { title, htmlContent, cssContent, backgroundImage, fontSize, fontFamily, isDefault } = req.body;
+
+        if (isDefault) {
+            await CertificateTemplate.updateMany({}, { isDefault: false });
+        }
+
+        const template = await CertificateTemplate.create({
+            title, htmlContent, cssContent, backgroundImage, fontSize, fontFamily, isDefault
+        });
+
+        res.status(201).json({ success: true, message: 'Certificate Template Created', template });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const updateCertificateTemplate = async (req, res) => {
+    try {
+        const CertificateTemplate = (await import('../models/CertificateTemplate.js')).default;
+        const { id } = req.params;
+        const updateData = req.body;
+
+        if (updateData.isDefault) {
+            await CertificateTemplate.updateMany({ _id: { $ne: id } }, { isDefault: false });
+        }
+
+        const template = await CertificateTemplate.findByIdAndUpdate(id, updateData, { new: true });
+        if (!template) return res.status(404).json({ success: false, message: 'Template not found' });
+
+        res.json({ success: true, message: 'Template Updated', template });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteCertificateTemplate = async (req, res) => {
+    try {
+        const CertificateTemplate = (await import('../models/CertificateTemplate.js')).default;
+        const { id } = req.params;
+        await CertificateTemplate.findByIdAndDelete(id);
+        res.json({ success: true, message: 'Template Deleted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

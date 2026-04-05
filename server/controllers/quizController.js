@@ -1,6 +1,8 @@
 import Quiz from '../models/Quiz.js';
+import Course from '../models/Course.js';
 import QuizAttempt from '../models/QuizAttempt.js';
 import { grantPoints } from '../services/gamificationService.js';
+import { issueAutomatedCertificate } from './certificateController.js';
 
 // Create Quiz (Instructor)
 export const createQuiz = async (req, res) => {
@@ -110,6 +112,11 @@ export const submitQuiz = async (req, res) => {
         // Gamification hook
         if (isPassed) {
             await grantPoints(userId, 'quiz_pass', { percentage });
+            
+            const course = await Course.findById(quiz.courseId);
+            if (course && course.issueMethod === 'quiz') {
+                await issueAutomatedCertificate(userId, quiz.courseId);
+            }
         }
 
         res.json({

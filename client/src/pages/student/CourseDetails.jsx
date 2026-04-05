@@ -101,11 +101,14 @@ const CourseDetails = () => {
     };
 
     const handleAddReview = async () => {
-        if (!token) { navigate('/login'); return; }
+        if (!newReview.comment.trim() || !token) return;
         try {
             const { data } = await axios.post(`${backendUrl}/api/review/add`, {
-                courseId: id, rating: newReview.rating, comment: newReview.comment
+                courseId: id,
+                rating: newReview.rating,
+                comment: newReview.comment
             }, { headers: { Authorization: `Bearer ${token}` } });
+            
             if (data.success) {
                 setNewReview({ rating: 5, comment: '' });
                 fetchReviews();
@@ -372,6 +375,67 @@ const CourseDetails = () => {
                                                 <p className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">No student feedback yet</p>
                                             </div>
                                         )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'reviews' && (
+                                <div className="space-y-16 animate-fadeIn">
+                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-12">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Student Sentiments</span>
+                                            <h3 className="text-3xl font-black text-[var(--text-main)] tracking-tight">Course Reviews</h3>
+                                        </div>
+                                    </div>
+
+                                    {isEnrolled && (
+                                        <div className="flex flex-col gap-6 p-8 bg-[var(--surface)] dark:bg-[#0C132B] rounded-[2.5rem] mb-12 shadow-2xl relative border border-[var(--border)] transition-all">
+                                            <h4 className="text-sm font-black text-[var(--text-main)] tracking-tight uppercase">Write a Review</h4>
+                                            
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mr-4">Rating Focus</span>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button 
+                                                        key={star} 
+                                                        onClick={() => setNewReview({ ...newReview, rating: star })}
+                                                        className={`text-2xl transition-all ${newReview.rating >= star ? 'text-amber-400 drop-shadow-md scale-110' : 'text-gray-300 dark:text-gray-700 hover:text-amber-200'}`}
+                                                    >
+                                                        ★
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <textarea
+                                                value={newReview.comment}
+                                                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                                                className="w-full bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 rounded-2xl p-6 text-sm font-medium focus:outline-none focus:border-indigo-500/50 text-[var(--text-main)] dark:text-white placeholder:text-[var(--text-muted)]/40"
+                                                rows={4}
+                                                placeholder="Share your experience with this course. Did it help your career? How was the instructor?"
+                                            />
+                                            <button onClick={handleAddReview} className="btn-primary w-fit px-12 self-end">Submit Review</button>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {reviews.length === 0 ? (
+                                            <div className="col-span-full py-10 text-center text-[var(--text-muted)] font-black text-xs uppercase tracking-widest">No reviews have been published yet.</div>
+                                        ) : reviews.map((review) => (
+                                            <div key={review._id} className="p-8 bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] rounded-[2rem] hover:shadow-xl transition-all group">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <img src={review.userId?.profilePicture || `https://ui-avatars.com/api/?name=${review.userId?.name}&background=random`} alt="User" className="w-12 h-12 rounded-full border border-gray-100" />
+                                                        <div>
+                                                            <h5 className="font-black text-sm uppercase tracking-tight text-[var(--text-main)] leading-none mb-1">{review.userId?.name}</h5>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-1 text-amber-400 text-sm">
+                                                        {[...Array(review.rating)].map((_, i) => <span key={i}>★</span>)}
+                                                    </div>
+                                                </div>
+                                                <p className="text-[var(--text-muted)] text-sm font-medium leading-relaxed italic">"{review.comment}"</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}

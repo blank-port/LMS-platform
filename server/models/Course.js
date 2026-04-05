@@ -44,6 +44,7 @@ const courseSchema = new mongoose.Schema({
         default: 'pending'
     },
     certificateTemplate: { type: mongoose.Schema.Types.ObjectId, ref: 'CertificateTemplate' },
+    issueMethod: { type: String, enum: ['quiz', 'completion'], default: 'quiz' },
     courseContent: [chapterSchema],
     instructor: {
         type: mongoose.Schema.Types.ObjectId,

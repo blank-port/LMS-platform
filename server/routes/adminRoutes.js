@@ -4,7 +4,8 @@ import {
     getAllInstructors, approveInstructor,
     getAllCoursesAdmin, updateCourseStatus, deleteCourseAdmin, updateCourseAdmin,
     createCategory, updateCategory, deleteCategory, getScholarPerformance,
-    getAllPayouts, updatePayoutStatus, getAllEnrollmentsAdmin
+    getAllPayouts, updatePayoutStatus, getAllEnrollmentsAdmin,
+    getCertificateTemplates, createCertificateTemplate, updateCertificateTemplate, deleteCertificateTemplate
 } from '../controllers/adminController.js';
 import { getAllCategories } from '../controllers/courseController.js';
 import { authMiddleware, authorize } from '../middlewares/authMiddleware.js';
@@ -49,5 +50,11 @@ adminRouter.get('/enrollments', getAllEnrollmentsAdmin);
 // Instructor Payouts
 adminRouter.get('/instructor-payouts', getAllPayouts);
 adminRouter.put('/instructor-payouts/:id/status', updatePayoutStatus);
+
+// Certificate Templates
+adminRouter.get('/certificates/templates', getCertificateTemplates);
+adminRouter.post('/certificates/templates', createCertificateTemplate);
+adminRouter.put('/certificates/templates/:id', updateCertificateTemplate);
+adminRouter.delete('/certificates/templates/:id', deleteCertificateTemplate);
 
 export default adminRouter;

@@ -3,7 +3,7 @@ import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { 
     ShoppingBag, Award, BookOpen, ChevronRight, 
-    Download, RotateCcw, Share2, Monitor, Wallet 
+    Download, RotateCcw, Share2, Monitor, Wallet, Star
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -15,6 +15,7 @@ const TABS = [
     { key: 'certificates', label: 'My Certificate', icon: Award },
     { key: 'deposit', label: 'Deposit', icon: Wallet },
     { key: 'topics', label: 'My Topics', icon: BookOpen },
+    { key: 'reviews', label: 'Student Reviews', icon: Star },
 ];
 
 const InstructorMyPanel = () => {
@@ -311,6 +312,49 @@ const InstructorMyPanel = () => {
         </div>
     );
 
+    const renderReviews = () => (
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Global Feedback Activity</h3>
+            </div>
+            <table className="w-full text-left">
+                <thead>
+                    <tr className="bg-gray-50/50">
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Student</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Course</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Rating</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Comment</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Date</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                    {(Array.isArray(data) ? data : []).length === 0 ? (
+                        <tr><td colSpan={5} className="px-8 py-16 text-center text-gray-300 font-bold text-sm">No reviews collected yet.</td></tr>
+                    ) : (Array.isArray(data) ? data : []).map((rev, i) => (
+                        <tr key={rev._id || i} className="hover:bg-gray-50/30 transition-colors">
+                            <td className="px-8 py-6">
+                                <div className="flex items-center gap-3">
+                                    <img src={rev.userId?.profilePicture || `https://ui-avatars.com/api/?name=${rev.userId?.name}&background=random`} className="w-8 h-8 rounded-full border border-gray-100" alt="" />
+                                    <span className="text-sm font-bold text-gray-900">{rev.userId?.name || 'Unknown'}</span>
+                                </div>
+                            </td>
+                            <td className="px-8 py-6 text-xs font-bold text-gray-500 line-clamp-1 max-w-[200px]">{rev.courseId?.courseTitle}</td>
+                            <td className="px-8 py-6">
+                                <div className="flex items-center gap-1">
+                                    {[...Array(5)].map((_, index) => (
+                                        <Star key={index} size={12} className={index < rev.rating ? "text-amber-400 fill-amber-400" : "text-gray-200"} />
+                                    ))}
+                                </div>
+                            </td>
+                            <td className="px-8 py-6 text-sm text-gray-600 max-w-md break-words">{rev.comment || 'No comment provided.'}</td>
+                            <td className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(rev.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
     return (
         <div className="p-8 lg:p-12 bg-gray-50/30 min-h-screen font-inter">
             <div className="mb-12">
@@ -353,6 +397,7 @@ const InstructorMyPanel = () => {
                     {activeTab === 'certificates' && renderCertificates()}
                     {activeTab === 'deposit' && renderDeposit()}
                     {activeTab === 'topics' && renderTopics()}
+                    {activeTab === 'reviews' && renderReviews()}
                 </div>
             )}
         </div>

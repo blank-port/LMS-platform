@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     addCourse, updateCourse, deleteCourse,
-    getInstructorCourses, instructorDashboardData,
+    getInstructorCourses, getInstructorCourseById, instructorDashboardData,
     getEnrolledStudentsData, seedDashboardTestData,
     getInstructorMyPanel, getInstructorPayouts,
     getInstructorRevenue, getInstructorCourseStats,
@@ -22,6 +22,7 @@ instructorRouter.post('/add-course', upload.single('image'), addCourse);
 instructorRouter.put('/update-course/:id', upload.single('image'), updateCourse);
 instructorRouter.delete('/delete-course/:id', deleteCourse);
 instructorRouter.get('/courses', getInstructorCourses);
+instructorRouter.get('/course/:id', getInstructorCourseById);
 instructorRouter.get('/dashboard', instructorDashboardData);
 instructorRouter.get('/enrolled-students', getEnrolledStudentsData);
 

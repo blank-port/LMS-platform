@@ -9,7 +9,7 @@ import { grantPoints } from "../services/gamificationService.js";
 export const getAllCourses = async (req, res) => {
     try {
         const courses = await Course.find({ isPublished: true, status: 'approved' })
-            .select(['-courseContent', '-enrolledStudents'])
+            .select(['-courseContent', '-enrolledStudents', '-courseDescription', '-courseOutcomes', '-courseRequirements', '-courseRatings', '-certificateTemplate'])
             .populate({ path: 'instructor', select: 'name profilePicture' })
             .populate({ path: 'category', select: 'name' })
             .sort({ createdAt: -1 });
@@ -211,11 +211,16 @@ export const updateCourseProgress = async (req, res) => {
         if (markAsComplete && lessonId) {
             await grantPoints(userId, 'unit_complete');
         }
+
         if (enrollment.completed && enrollment.progress === 100) {
-            // Check if this was the first time it was completed (prevent double dipping)
-            // But since enrollment.save() happened, we can't easily check 'wasModified' here.
-            // Let's rely on service logic or just grant points (service could handle throttle).
             await grantPoints(userId, 'course_complete');
+            
+            // Check for completion-based certificate issuance
+            const courseData = await Course.findById(courseId);
+            if (courseData && courseData.issueMethod === 'completion') {
+                const { issueAutomatedCertificate } = await import('./certificateController.js');
+                await issueAutomatedCertificate(userId, courseId);
+            }
         }
 
         res.json({ success: true, message: 'Progress updated', enrollment });

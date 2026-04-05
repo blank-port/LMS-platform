@@ -31,6 +31,7 @@ import subCategoryRouter from './routes/subCategoryRoutes.js'
 import gamificationRouter from './routes/gamificationRoutes.js'
 import notificationRouter from './routes/notificationRoutes.js'
 import chatRouter from './routes/chatRoutes.js'
+import certificateRouter from './routes/certificateRoutes.js'
 
 
 import path from 'path'
@@ -112,6 +113,7 @@ app.use('/api/sub-category', subCategoryRouter)
 app.use('/api/gamification', gamificationRouter)
 app.use('/api/notification', notificationRouter)
 app.use('/api/chat', chatRouter)
+app.use('/api/certificate', certificateRouter)
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'))

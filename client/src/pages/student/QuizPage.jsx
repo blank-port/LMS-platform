@@ -175,6 +175,14 @@ const QuizPage = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            {result.isPassed && (
+                                <button 
+                                    onClick={() => navigate('/student/certificates')}
+                                    className="bg-emerald-600 text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-500/20"
+                                >
+                                    🎖️ Claim Certificate
+                                </button>
+                            )}
                             <button onClick={() => startQuiz(selectedQuiz)} className="btn-primary px-12 py-5">
                                 Realize Higher Score
                             </button>

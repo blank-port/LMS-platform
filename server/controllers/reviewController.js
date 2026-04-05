@@ -1,5 +1,6 @@
 import Review from '../models/Review.js';
 import Course from '../models/Course.js';
+import Enrollment from '../models/Enrollment.js';
 import { grantPoints } from '../services/gamificationService.js';
 
 // Add Review
@@ -7,6 +8,12 @@ export const addReview = async (req, res) => {
     try {
         const { courseId, rating, comment } = req.body;
         const userId = req.user._id;
+
+        // Verify Enrollment
+        const isEnrolled = await Enrollment.findOne({ courseId, userId });
+        if (!isEnrolled) {
+            return res.json({ success: false, message: 'You must be enrolled to review this course.' });
+        }
 
         // Check if already reviewed
         const existing = await Review.findOne({ courseId, userId });

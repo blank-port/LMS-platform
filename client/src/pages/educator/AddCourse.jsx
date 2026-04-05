@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -6,10 +7,15 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 import Quill from 'quill';
 import { Line } from 'rc-progress';
 
+
 const AddCourse = () => {
     const { backendUrl, token, categories } = useContext(AppContext);
     const quillRef = useRef(null);
     const editorRef = useRef(null);
+
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const [activeTab, setActiveTab] = useState('basic');
     const [courseTitle, setCourseTitle] = useState('');
@@ -26,6 +32,31 @@ const AddCourse = () => {
     const [loading, setLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({}); // { lectureId: progress }
     const [isUploading, setIsUploading] = useState(false);
+    const [isCertificateEnabled, setIsCertificateEnabled] = useState(true);
+    const [isQuizEnabled, setIsQuizEnabled] = useState(true);
+    const [selectedTemplate, setSelectedTemplate] = useState('');
+    const [issueMethod, setIssueMethod] = useState('quiz'); // 'quiz' or 'completion'
+    const [templates, setTemplates] = useState([]);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const { data } = await axios.get(`${backendUrl}/api/finance/certificate-templates`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (data.success) {
+                    setTemplates(data.templates);
+                    // Set default template if exists
+                    const defaultTemp = data.templates.find(t => t.isDefault);
+                    if (defaultTemp) setSelectedTemplate(defaultTemp._id);
+                    else if (data.templates.length > 0) setSelectedTemplate(data.templates[0]._id);
+                }
+            } catch (error) {
+                console.error("Failed to load templates", error);
+            }
+        };
+        fetchTemplates();
+    }, []);
 
     useEffect(() => {
         if (!quillRef.current && editorRef.current) {
@@ -35,6 +66,48 @@ const AddCourse = () => {
             });
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        if (id) {
+            setIsEditMode(true);
+            fetchCourseDetails(id);
+        }
+    }, [id]);
+
+    const fetchCourseDetails = async (courseId) => {
+        try {
+            const { data } = await axios.get(`${backendUrl}/api/instructor/course/${courseId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                const course = data.courseData;
+                setCourseTitle(course.courseTitle);
+                setCoursePrice(course.coursePrice);
+                setDiscount(course.discount);
+                setCategory(course.category?._id || course.category);
+                setCourseLevel(course.level || 'Beginner');
+                setCourseLanguage(course.courseLanguage || 'English');
+                setCoursePreviewVideo(course.coursePreviewVideo || '');
+                setCourseOutcomes(course.courseOutcomes?.length ? course.courseOutcomes : ['']);
+                setCourseRequirements(course.courseRequirements?.length ? course.courseRequirements : ['']);
+                setChapters(course.courseContent || []);
+                if (course.isCertificateEnabled !== undefined) setIsCertificateEnabled(course.isCertificateEnabled);
+                if (course.isQuizEnabled !== undefined) setIsQuizEnabled(course.isQuizEnabled);
+                if (course.issueMethod) setIssueMethod(course.issueMethod);
+                if (course.certificateTemplate) setSelectedTemplate(course.certificateTemplate);
+                
+                // Ensure Quill is populated if instantiated
+                setTimeout(() => {
+                    if (quillRef.current) {
+                        quillRef.current.root.innerHTML = course.courseDescription || '';
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            toast.error('Failed to load course details');
+        }
+    };
+
 
     const addChapter = () => {
         setChapters([...chapters, {
@@ -165,7 +238,11 @@ const AddCourse = () => {
                     isPreviewFree: lec.isPreviewFree,
                     lectureOrder: j
                 }))
-            }))
+            })),
+            isCertificateEnabled,
+            isQuizEnabled,
+            certificateTemplate: selectedTemplate,
+            issueMethod
         };
 
         const formData = new FormData();
@@ -174,24 +251,33 @@ const AddCourse = () => {
 
         setLoading(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/instructor/add-course`, formData, {
+            const url = isEditMode ? `${backendUrl}/api/instructor/update-course/${id}` : `${backendUrl}/api/instructor/add-course`;
+            const method = isEditMode ? 'put' : 'post';
+            const { data } = await axios[method](url, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (data.success) {
-                toast.success('Module Deployed Successfully');
-                setCourseTitle('');
-                setCoursePrice(0);
-                setDiscount(0);
-                setCategory('');
-                setImage(null);
-                setChapters([]);
-                if (quillRef.current) quillRef.current.root.innerHTML = '';
-                setActiveTab('basic');
+                toast.success(`Module ${isEditMode ? 'Updated' : 'Deployed'} Successfully`);
+                if (!isEditMode) {
+                    setCourseTitle('');
+                    setCoursePrice(0);
+                    setDiscount(0);
+                    setCategory('');
+                    setImage(null);
+                    setChapters([]);
+                    if (quillRef.current) quillRef.current.root.innerHTML = '';
+                    setIsCertificateEnabled(true);
+                    setIsQuizEnabled(true);
+                    setIssueMethod('quiz');
+                    setActiveTab('basic');
+                } else {
+                    navigate('/educator/my-courses');
+                }
             } else {
                 toast.error(data.message);
             }
         } catch (error) {
-            toast.error('Deployment Failure');
+            toast.error(`Deployment Failure: ${error.message}`);
         }
         setLoading(false);
     };
@@ -203,7 +289,7 @@ const AddCourse = () => {
             className={`flex flex-col items-center gap-4 group transition-all ${current === step ? 'opacity-100' : 'opacity-40 hover:opacity-60'}`}
         >
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black transition-all ${current === step ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'bg-gray-100 text-gray-400'}`}>
-                {step === 'basic' ? '01' : step === 'details' ? '02' : step === 'curriculum' ? '03' : '04'}
+                {step === 'basic' ? '01' : step === 'details' ? '02' : step === 'curriculum' ? '03' : step === 'certification' ? '04' : '05'}
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
         </button>
@@ -218,7 +304,7 @@ const AddCourse = () => {
                             <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Knowledge Deployment</p>
                         </div>
-                        <h1 className="text-4xl lg:text-5xl font-black text-[#0C132B] tracking-tighter">Compose Module</h1>
+                        <h1 className="text-4xl lg:text-5xl font-black text-[#0C132B] tracking-tighter">{isEditMode ? 'Reconfigure Module' : 'Compose Module'}</h1>
                     </div>
 
                     <div className="flex items-center gap-8 bg-white px-10 py-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-gray-50">
@@ -227,6 +313,8 @@ const AddCourse = () => {
                         <StepIcon step="details" label="Dynamics" current={activeTab} />
                         <div className="w-8 h-px bg-gray-100"></div>
                         <StepIcon step="curriculum" label="Modules" current={activeTab} />
+                        <div className="w-8 h-px bg-gray-100"></div>
+                        <StepIcon step="certification" label="Credentials" current={activeTab} />
                         <div className="w-8 h-px bg-gray-100"></div>
                         <StepIcon step="metadata" label="Economics" current={activeTab} />
                     </div>
@@ -534,8 +622,114 @@ const AddCourse = () => {
 
                             <div className="flex justify-between items-center pt-10">
                                 <button type="button" onClick={() => setActiveTab('basic')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Foundations</button>
+                                <button type="button" onClick={() => setActiveTab('certification')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
+                                    Define Credentials →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'certification' && (
+                        <div className="bg-white rounded-[3rem] p-10 md:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 animate-in fade-in slide-in-from-bottom-5">
+                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Certification Blueprint</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                <div className={`p-8 rounded-[2.5rem] border-2 transition-all cursor-pointer ${isCertificateEnabled ? 'border-indigo-500 bg-indigo-50/30' : 'border-gray-100 bg-white opacity-50'}`} onClick={() => setIsCertificateEnabled(!isCertificateEnabled)}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="w-12 h-12 bg-indigo-500 text-white rounded-xl flex items-center justify-center text-xl shadow-lg">🎖️</div>
+                                        <div className={`w-12 h-6 rounded-full transition-all relative ${isCertificateEnabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isCertificateEnabled ? 'right-1' : 'left-1'}`}></div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-sm font-black text-[#0C132B] uppercase tracking-widest mb-2">Enable Certification</h3>
+                                    <p className="text-[10px] text-gray-400 font-bold leading-relaxed">Students will receive a digital credential upon successful curriculum mastery.</p>
+                                </div>
+
+                                <div className={`p-8 rounded-[2.5rem] border-2 transition-all cursor-pointer ${isQuizEnabled ? 'border-indigo-500 bg-indigo-50/30' : 'border-gray-100 bg-white opacity-50'}`} onClick={() => isCertificateEnabled && setIsQuizEnabled(!isQuizEnabled)}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="w-12 h-12 bg-indigo-500 text-white rounded-xl flex items-center justify-center text-xl shadow-lg">📝</div>
+                                        <div className={`w-12 h-6 rounded-full transition-all relative ${isQuizEnabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isQuizEnabled ? 'right-1' : 'left-1'}`}></div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-sm font-black text-[#0C132B] uppercase tracking-widest mb-2">Enforce Assessment Gate</h3>
+                                    <p className="text-[10px] text-gray-400 font-bold leading-relaxed">Certification is locked until a passing score is achieved in the final quiz.</p>
+                                </div>
+                            </div>
+
+                            {isCertificateEnabled && (
+                                <div className="mt-16 space-y-12">
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Credential Architecture</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            {templates.map(temp => (
+                                                <div 
+                                                    key={temp._id} 
+                                                    onClick={() => setSelectedTemplate(temp._id)}
+                                                    className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all ${selectedTemplate === temp._id ? 'border-indigo-500 bg-indigo-50/20 shadow-xl shadow-indigo-500/10' : 'border-gray-50 bg-gray-50/30 opacity-60 hover:opacity-100'}`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <span className="text-2xl">📜</span>
+                                                        {selectedTemplate === temp._id && <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">✓</span>}
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-[#0C132B] uppercase tracking-widest truncate">{temp.title}</p>
+                                                    {temp.isDefault && <span className="text-[8px] font-black text-amber-500 uppercase mt-1 block">Default Protocol</span>}
+                                                </div>
+                                            ))}
+                                            {templates.length === 0 && (
+                                                <div className="col-span-full p-8 text-center bg-gray-50/50 rounded-[2rem] border border-dashed border-gray-100">
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No Global Templates Found</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Issuance Protocol</label>
+                                        <div className="flex flex-wrap gap-6">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIssueMethod('quiz')}
+                                                className={`flex-1 min-w-[200px] p-6 rounded-[2rem] border-2 flex items-center gap-6 transition-all ${issueMethod === 'quiz' ? 'border-indigo-500 bg-indigo-50/20' : 'border-gray-100 opacity-60'}`}
+                                            >
+                                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${issueMethod === 'quiz' ? 'border-indigo-500 bg-white' : 'border-gray-200'}`}>
+                                                    {issueMethod === 'quiz' && <div className="w-4 h-4 bg-indigo-500 rounded-full animate-in zoom-in-50 duration-300"></div>}
+                                                </div>
+                                                <div className="text-left">
+                                                    <span className="block text-[10px] font-black text-[#0C132B] uppercase tracking-widest mb-1">Assessment Gate</span>
+                                                    <span className="block text-[8px] font-bold text-gray-400 uppercase">Requires Quiz Mastery</span>
+                                                </div>
+                                            </button>
+
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIssueMethod('completion')}
+                                                className={`flex-1 min-w-[200px] p-6 rounded-[2rem] border-2 flex items-center gap-6 transition-all ${issueMethod === 'completion' ? 'border-indigo-500 bg-indigo-50/20' : 'border-gray-100 opacity-60'}`}
+                                            >
+                                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${issueMethod === 'completion' ? 'border-indigo-500 bg-white' : 'border-gray-200'}`}>
+                                                    {issueMethod === 'completion' && <div className="w-4 h-4 bg-indigo-500 rounded-full animate-in zoom-in-50 duration-300"></div>}
+                                                </div>
+                                                <div className="text-left">
+                                                    <span className="block text-[10px] font-black text-[#0C132B] uppercase tracking-widest mb-1">Full Curriculum Mastery</span>
+                                                    <span className="block text-[8px] font-bold text-gray-400 uppercase">Issues on 100% Completion</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!isCertificateEnabled && (
+                                <div className="mt-12 p-8 bg-amber-50 rounded-[1.5rem] border border-amber-100 flex gap-4">
+                                    <span className="text-xl">⚠️</span>
+                                    <p className="text-[10px] text-amber-900 font-bold leading-relaxed">Certification is currently deactivated for this curriculum node. Manual uploads will still be authorized for individual scholars.</p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-between items-center pt-16">
+                                <button type="button" onClick={() => setActiveTab('curriculum')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Architecture</button>
                                 <button type="button" onClick={() => setActiveTab('metadata')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
-                                    Proceed to Economics →
+                                    Define Economics →
                                 </button>
                             </div>
                         </div>
@@ -583,10 +777,11 @@ const AddCourse = () => {
                                 <button
                                     type="submit"
                                     disabled={loading || isUploading}
-                                    className="bg-[#0C132B] text-white px-16 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-2xl shadow-black/10 disabled:opacity-50 min-w-[280px]"
+                                    className={`bg-[#0C132B] text-white px-16 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-${isEditMode ? 'indigo' : 'emerald'}-500 transition-all shadow-2xl shadow-black/10 disabled:opacity-50 min-w-[280px]`}
                                 >
-                                    {isUploading ? 'Transmitting Assets...' : loading ? 'Transmitting Data...' : 'Deploy Global Module'}
+                                    {isUploading ? 'Transmitting Assets...' : loading ? 'Transmitting Data...' : (isEditMode ? 'Commit Intelligence' : 'Deploy Global Module')}
                                 </button>
+
                             </div>
 
                             <div className="mt-12 text-center">

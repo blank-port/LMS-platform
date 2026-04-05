@@ -1,13 +1,21 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import axios from 'axios';
+import ManualCertificateModal from '../../components/educator/ManualCertificateModal.jsx';
+import { Award, Mail, ChevronRight, Search, LayoutGrid, List } from 'lucide-react';
 
 const StudentsEnrolled = () => {
-    const { backendUrl, token } = useContext(AppContext);
+    const { backendUrl, token, navigate } = useContext(AppContext);
     const [students, setStudents] = useState([]);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState('all');
     const [loading, setLoading] = useState(true);
+    
+    // Modal states
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [selectedCourseId, setSelectedCourseId] = useState('');
+    const [selectedCourseTitle, setSelectedCourseTitle] = useState('');
 
     useEffect(() => { 
         fetchStudents();
@@ -33,12 +41,19 @@ const StudentsEnrolled = () => {
         setLoading(false);
     };
 
+    const openIssueModal = (student, courseId, courseTitle) => {
+        setSelectedStudent(student);
+        setSelectedCourseId(courseId);
+        setSelectedCourseTitle(courseTitle);
+        setIsModalOpen(true);
+    };
+
     const filteredStudents = selectedCourse === 'all' 
         ? students 
         : students.filter(s => s.courseId === selectedCourse);
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center justify-center min-vh-[400px]">
             <div className="w-12 h-12 border-4 border-[#0C132B] border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Syncing Learner Data...</p>
         </div>
@@ -88,7 +103,7 @@ const StudentsEnrolled = () => {
                                     <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Target Module</th>
                                     <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell text-center">Mastery Progress</th>
                                     <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Contact</th>
-                                    <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Registration</th>
+                                    <th className="px-10 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -120,16 +135,30 @@ const StudentsEnrolled = () => {
                                             </div>
                                         </td>
                                         <td className="px-10 py-8 text-center">
-                                            <button 
-                                                onClick={() => navigate('/educator/communication?view=messages&student=' + item.student?._id)}
-                                                className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-indigo-600 hover:bg-[#0C132B] hover:text-white transition-all shadow-sm mx-auto"
-                                                title="Send Signal"
-                                            >
-                                                💬
-                                            </button>
+                                            <div className="flex items-center justify-center gap-3">
+                                                <button 
+                                                    onClick={() => navigate('/educator/communication?view=messages&student=' + item.student?._id)}
+                                                    className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-indigo-600 hover:bg-[#0C132B] hover:text-white transition-all shadow-sm"
+                                                    title="Send Signal"
+                                                >
+                                                    💬
+                                                </button>
+                                                <a 
+                                                    href={`mailto:${item.student?.email}`}
+                                                    className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-indigo-600 hover:bg-[#0C132B] hover:text-white transition-all shadow-sm"
+                                                    title="Email Institutional Lead"
+                                                >
+                                                    <Mail size={16} />
+                                                </a>
+                                            </div>
                                         </td>
                                         <td className="px-10 py-8 text-right">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(item.enrolledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                            <button 
+                                                onClick={() => openIssueModal(item.student, item.courseId, item.courseTitle)}
+                                                className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 flex items-center gap-2 ml-auto"
+                                            >
+                                                <Award size={14} /> Certificate
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -137,6 +166,17 @@ const StudentsEnrolled = () => {
                         </table>
                     </div>
                 </div>
+            )}
+
+            {/* Modal Injection */}
+            {selectedStudent && (
+                <ManualCertificateModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    student={selectedStudent}
+                    courseId={selectedCourseId}
+                    courseTitle={selectedCourseTitle}
+                />
             )}
         </div>
     );
