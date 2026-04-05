@@ -126,8 +126,6 @@ const menuGroups = [
         icon: '⚙️',
         isSubGroup: true,
         children: [
-          { path: '/admin/system-setting', icon: '⚙️', label: 'System Setting' },
-          { path: '/admin/activation', icon: '🔑', label: 'Activation' },
           { path: '/admin/general-setting', icon: '🛠️', label: 'General Setting' },
           { path: '/admin/commission', icon: '💸', label: 'Commission' },
           { path: '/admin/email-setup', icon: '📧', label: 'Email Setup' },

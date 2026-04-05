@@ -59,10 +59,7 @@ const Navbar = () => {
           {!settings.hide_search && (
             <Link to="/course-list" className={`text-sm tracking-wide transition-all hover:text-[#7C32FF] ${location.pathname.startsWith('/course-list') ? 'text-[#7C32FF]' : 'text-[var(--text-main)]/80 dark:text-white/80'}`}>Explore</Link>
           )}
-          <Link to="/features" className="text-sm tracking-wide text-[var(--text-main)]/80 dark:text-white/80 transition-all hover:text-[#7C32FF]">Features</Link>
-          {!settings.hide_ecommerce && (
-            <Link to="/pricing" className="text-sm tracking-wide text-[var(--text-main)]/80 dark:text-white/80 transition-all hover:text-[#7C32FF]">Pricing</Link>
-          )}
+
         </div>
 
         {/* Right Actions */}

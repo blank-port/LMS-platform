@@ -47,8 +47,6 @@ const Footer = () => {
             <ul className="flex flex-col gap-4 text-sm font-bold text-[var(--text-muted)]">
               <li><a href="/" className="hover:text-[var(--text-main)] transition-colors">Home</a></li>
               <li><a href="/course-list" className="hover:text-[var(--text-main)] transition-colors">Courses Catalog</a></li>
-              <li><a href="/features" className="hover:text-[var(--text-main)] transition-colors">Features</a></li>
-              <li><a href="/pricing" className="hover:text-[var(--text-main)] transition-colors">Pricing Plan</a></li>
             </ul>
           </div>
 
