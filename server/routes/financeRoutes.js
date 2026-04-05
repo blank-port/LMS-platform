@@ -1,6 +1,6 @@
 import express from 'express';
 import { 
-    createCertificateTemplate, getCertificateTemplates, getAdminRevenue, 
+    createCertificateTemplate, getCertificateTemplates, updateCertificateTemplate, getAdminRevenue, 
     studentRequestRefund, getStudentRefunds, awardBadge, getInstructorRevenue, getPayments, getRefunds,
     debugPayments, getPayoutSettings, updatePayoutSettings,
     approveRefund, rejectRefund,
@@ -12,6 +12,7 @@ const financeRouter = express.Router();
 
 financeRouter.post('/certificate-template', adminAuth, createCertificateTemplate);
 financeRouter.get('/certificate-templates', adminAuth, getCertificateTemplates);
+financeRouter.put('/certificate-template/:id', adminAuth, updateCertificateTemplate);
 financeRouter.get('/admin-revenue', adminAuth, getAdminRevenue);
 financeRouter.get('/instructor-revenue/:id?', adminAuth, getInstructorRevenue);
 financeRouter.get('/payments', adminAuth, getPayments);

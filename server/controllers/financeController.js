@@ -11,6 +11,10 @@ import { createStudentNotification } from "../services/notificationService.js";
 // Certificate Templates
 export const createCertificateTemplate = async (req, res) => {
     try {
+        // Enforce singleton default
+        if (req.body.isDefault) {
+            await CertificateTemplate.updateMany({}, { isDefault: false });
+        }
         const template = await CertificateTemplate.create(req.body);
         res.json({ success: true, template });
     } catch (error) {
@@ -20,8 +24,25 @@ export const createCertificateTemplate = async (req, res) => {
 
 export const getCertificateTemplates = async (req, res) => {
     try {
-        const templates = await CertificateTemplate.find();
+        const templates = await CertificateTemplate.find().sort({ createdAt: -1 });
         res.json({ success: true, templates });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const updateCertificateTemplate = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Enforce singleton default
+        if (req.body.isDefault) {
+            await CertificateTemplate.updateMany({ _id: { $ne: id } }, { isDefault: false });
+        }
+        const template = await CertificateTemplate.findByIdAndUpdate(id, req.body, { new: true });
+        if (!template) {
+            return res.status(404).json({ success: false, message: 'Template not found.' });
+        }
+        res.json({ success: true, template });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
