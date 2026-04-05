@@ -28,9 +28,11 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [hasMounted, setHasMounted] = useState(false);
     const isMounted = React.useRef(true);
     
     useEffect(() => {
+        setHasMounted(true);
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
         return () => {
@@ -193,12 +195,12 @@ const Login = () => {
                             <p className="text-gray-400 text-sm font-medium">{isOtpMode ? "Complete authentication" : "Continue your learning progress"}</p>
                         </div>
 
-                        {!isOtpMode && (
-                            <>
+                        {!isOtpMode && hasMounted && !isMobile && !isRegisterMode && (
+                            <div className="flex flex-col items-center">
                                 <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
                                     <GoogleLogin 
                                         onSuccess={handleGoogleSuccess} 
-                                        onError={() => toast.error("Google Login Failed")}
+                                        onError={() => toast.error("Google Auth Failed")}
                                         theme="filled_black" 
                                         shape="pill" 
                                         width={320} 
@@ -207,11 +209,11 @@ const Login = () => {
                                         locale="en"
                                     />
                                 </div>
-                                <div className="relative my-4">
+                                <div className="relative w-full my-4">
                                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
                                     <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-[#121214] px-4 text-gray-500 font-bold tracking-widest italic">Or use email</span></div>
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         <AnimatePresence mode="wait">
@@ -287,25 +289,25 @@ const Login = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="text-center mb-8">
-                                    <h2 className="text-3xl font-extrabold text-white mb-2">{isOtpMode ? "Verify Identity" : "Create Account"}</h2>
-                                    <p className="text-gray-400 text-sm font-medium">{isOtpMode ? "Final step in onboarding" : "Join thousands of students"}</p>
-                                </div>
-
-                                {!isOtpMode && (
-                                    <>
+                                {!isOtpMode && hasMounted && !isMobile && isRegisterMode && (
+                                    <div className="flex flex-col items-center">
                                         <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
                                             <GoogleLogin 
                                                 onSuccess={handleGoogleSuccess} 
-                                                onError={() => toast.error("Google Registration Failed")}
-                                                theme="filled_black" shape="pill" width={320} text="signup_with" use_fedcm_for_prompt={true} locale="en"
+                                                onError={() => toast.error("Google Auth Failed")}
+                                                theme="filled_black" 
+                                                shape="pill" 
+                                                width={320} 
+                                                text="signup_with" 
+                                                use_fedcm_for_prompt={true}
+                                                locale="en"
                                             />
                                         </div>
-                                        <div className="relative my-4">
+                                        <div className="relative w-full my-4">
                                             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
                                             <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-[#121214] px-4 text-gray-500 font-bold tracking-widest italic">Or use email</span></div>
                                         </div>
-                                    </>
+                                    </div>
                                 )}
 
                                 <AnimatePresence mode="wait">
@@ -409,7 +411,7 @@ const Login = () => {
                         <div className="mt-8 text-center"><button onClick={() => setIsOtpMode(false)} className="text-gray-500 font-bold text-xs uppercase tracking-widest underline decoration-white/20 underline-offset-4">Change Email</button></div>
                     )}
                 </div>
-                {!isOtpMode && (
+                {!isOtpMode && hasMounted && isMobile && (
                     <div className="flex justify-center text-center min-h-[50px]">
                         <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => toast.error("Google Auth Failed")} theme="filled_black" shape="pill" width={300} text={isRegisterMode ? "signup_with" : "signin_with"} use_fedcm_for_prompt={true} locale="en" />
                     </div>

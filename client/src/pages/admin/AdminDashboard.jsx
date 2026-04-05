@@ -10,9 +10,13 @@ import { TrendingUp, Users, BookOpen, IndianRupee, ShieldCheck, Zap, AlertCircle
 const AdminDashboard = () => {
   const { backendUrl, token, navigate } = useContext(AppContext);
   const [stats, setStats] = useState(null);
+  const [hasMounted, setHasMounted] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { 
+    setHasMounted(true);
+    fetchStats(); 
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -107,7 +111,8 @@ const AdminDashboard = () => {
           </div>
 
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+            {hasMounted && (
+              <ResponsiveContainer width="100%" height="100%" minHeight={320}>
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -130,6 +135,7 @@ const AdminDashboard = () => {
                 <Area type="monotone" dataKey="users" stroke="#06B6D4" strokeWidth={4} fillOpacity={1} fill="url(#colorUsers)" />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 

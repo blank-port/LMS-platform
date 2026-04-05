@@ -7,9 +7,11 @@ import { TrendingUp, DollarSign, Calendar, BookOpen } from 'lucide-react';
 const InstructorRevenue = () => {
     const { backendUrl, token, currency } = useContext(AppContext);
     const [data, setData] = useState(null);
+    const [hasMounted, setHasMounted] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setHasMounted(true);
         const fetchRevenue = async () => {
             try {
                 const { data: res } = await axios.get(`${backendUrl}/api/instructor/revenue`, {
@@ -58,7 +60,8 @@ const InstructorRevenue = () => {
                     <Calendar size={20} className="text-indigo-400" />
                 </div>
                 <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                    {hasMounted && (
+                        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                         <BarChart data={data?.monthlyBreakdown || []}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
@@ -71,6 +74,7 @@ const InstructorRevenue = () => {
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
+                    )}
                 </div>
             </div>
 

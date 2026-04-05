@@ -21,6 +21,7 @@ const data = [
 const StudentDashboard = () => {
     const { user, enrolledCourses, backendUrl, token, navigate } = useContext(AppContext);
     const [notices, setNotices] = useState([]);
+    const [hasMounted, setHasMounted] = useState(false);
 
     const fetchNotices = async () => {
         try {
@@ -32,6 +33,7 @@ const StudentDashboard = () => {
     };
 
     useEffect(() => {
+        setHasMounted(true);
         window.scrollTo(0, 0);
         if (token) fetchNotices();
     }, [token]);
@@ -116,7 +118,8 @@ const StudentDashboard = () => {
                             <Activity size={24} className="text-blue-600 animate-pulse" />
                         </div>
                         <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                            {hasMounted && (
+                                <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
@@ -134,6 +137,7 @@ const StudentDashboard = () => {
                                     <Area type="monotone" dataKey="xp" stroke="#3B82F6" strokeWidth={5} fillOpacity={1} fill="url(#colorXp)" />
                                 </AreaChart>
                             </ResponsiveContainer>
+                            )}
                         </div>
                     </div>
                 </div>

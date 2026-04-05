@@ -13,9 +13,11 @@ import {
 const Dashboard = () => {
     const { backendUrl, token, currency, navigate } = useContext(AppContext);
     const [dashboardData, setDashboardData] = useState(null);
+    const [hasMounted, setHasMounted] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setHasMounted(true);
         fetchDashboardData();
     }, []);
 
@@ -123,7 +125,8 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="h-96 w-full">
-                        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                        {hasMounted && (
+                            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                             <BarChart data={dashboardData?.monthlyEarnings || []}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -146,6 +149,7 @@ const Dashboard = () => {
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
 
@@ -162,7 +166,8 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="h-96 w-full relative z-10">
-                        <ResponsiveContainer width="100%" height="100%" minHeight={384}>
+                        {hasMounted && (
+                            <ResponsiveContainer width="100%" height="100%" minHeight={384}>
                             <AreaChart data={dashboardData?.paymentStatistics || []}>
                                 <defs>
                                     <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
@@ -178,6 +183,7 @@ const Dashboard = () => {
                                 <Area type="monotone" dataKey="amount" stroke="#3B82F6" strokeWidth={5} fillOpacity={1} fill="url(#colorAmt)" />
                             </AreaChart>
                         </ResponsiveContainer>
+                        )}
                     </div>
                     <div className="mt-10 flex items-center justify-between relative z-10 border-t border-white/5 pt-10">
                         <div className="space-y-1">
