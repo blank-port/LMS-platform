@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { useSearchParams } from 'react-router-dom';
 
 const InstructorRevenueReport = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [searchParams] = useSearchParams();
     const instructorId = searchParams.get('id');
     const [report, setReport] = useState(null);
@@ -14,9 +14,9 @@ const InstructorRevenueReport = () => {
     const fetchReport = async () => {
         try {
             const endpoint = instructorId 
-                ? `${backendUrl}/api/finance/instructor-revenue/${instructorId}`
-                : `${backendUrl}/api/finance/admin-revenue`;
-            const { data } = await axios.get(endpoint, getHeaders());
+                ? `/finance/instructor-revenue/${instructorId}`
+                : '/finance/admin-revenue';
+            const { data } = await api.get(endpoint);
             if (data.success) setReport(data.report);
         } catch (error) {
             toast.error('Fiscal Intelligence Synchronization Failure');
@@ -93,3 +93,7 @@ const InstructorRevenueReport = () => {
 };
 
 export default InstructorRevenueReport;
+
+
+
+

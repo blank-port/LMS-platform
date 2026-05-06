@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 let mongoServer;
+const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
 
 // Connect to the MongoDB database
 const connectDB = async () => {
@@ -12,25 +13,24 @@ const connectDB = async () => {
         // Try connecting to Atlas first
         if (process.env.MONGODB_URI) {
             console.log('Connecting to MongoDB Atlas...');
-            await mongoose.connect(`${process.env.MONGODB_URI}/lms`, {
+            await mongoose.connect(process.env.MONGODB_URI, {
                 serverSelectionTimeoutMS: 5000,
                 connectTimeoutMS: 10000,
             });
             return;
-        } else {
-            console.error('CRITICAL: MONGODB_URI is missing from environment variables.');
-            if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
-                console.error('Deployment Failure: Terminating process. Production environments require a valid MONGODB_URI.');
-                process.exit(1);
-            }
+        }
+
+        console.error('CRITICAL: MONGODB_URI is missing from environment variables.');
+        if (isProductionRuntime) {
+            throw new Error('Production environments require a valid MONGODB_URI.');
         }
     } catch (err) {
         console.error('CRITICAL: Atlas connection failed:', err.message);
         
         // In local development, we can fallback, but in production, we must fail.
-        if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
-            console.error('Deployment Failure: Terminating process. Please ensure MONGODB_URI is reachable from this environment.');
-            process.exit(1);
+        if (isProductionRuntime) {
+            console.error('Deployment Failure: Terminating process. Please ensure MONGODB_URI is configured and reachable from this environment.');
+            throw err;
         }
         
         console.log('Development context: Falling back to in-memory MongoDB...');

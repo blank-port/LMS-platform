@@ -5,7 +5,7 @@ const Navbar = () => {
   const { user, logout, navigate } = useContext(AppContext);
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-20 glass-effect z-50 flex items-center justify-between px-8 lg:px-14 shadow-sm border-b border-slate-200">
+    <header className="fixed top-0 left-0 right-0 h-20 bg-white z-50 flex items-center justify-between px-8 lg:px-14 shadow-md border-b border-slate-200">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center transform group-hover:rotate-[15deg] transition-all duration-500 shadow-lg shadow-blue-500/20">
@@ -48,7 +48,7 @@ const Navbar = () => {
               <p className="text-[10px] font-bold text-slate-400 truncate mt-1 tracking-wide">{user?.email}</p>
             </div>
             <div className="p-3">
-              <button 
+              <button
                 onClick={() => navigate('/educator/settings')}
                 className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl hover:bg-blue-50 text-[12px] font-black text-slate-600 hover:text-blue-600 transition-all group/item"
               >
@@ -60,7 +60,7 @@ const Navbar = () => {
                 </div>
                 Studio Settings
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/dashboard')}
                 className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl hover:bg-emerald-50 text-[12px] font-black text-slate-600 hover:text-emerald-600 transition-all group/item"
               >
@@ -72,8 +72,8 @@ const Navbar = () => {
                 Student Panel
               </button>
               <div className="h-px bg-slate-100 my-2 mx-2"></div>
-              <button 
-                onClick={logout} 
+              <button
+                onClick={logout}
                 className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl hover:bg-red-50 text-[12px] font-black text-slate-600 hover:text-red-600 transition-all group/item"
               >
                 <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 transition-transform group-hover/item:scale-110">
@@ -92,3 +92,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     CheckCircleIcon, 
@@ -33,17 +33,14 @@ const ManagePayments = ({ title, method }) => {
         setLoading(true);
         try {
             const methodMap = {
-                'online': 'razorpay', // Currently, only Razorpay and Stripe generate pending lists
+                'online': 'razorpay',
                 'offline': 'cod',
                 'bank': 'bank_transfer'
             };
             const backendMethod = methodMap[method] || method || 'all';
-            const { data } = await axios.get(`${backendUrl}/api/payment/pending?method=${backendMethod}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/payment/pending?method=${backendMethod}`);
             if (data.success) {
                 setPayments(data.payments);
-                // System Intelligence: If queue is neutral, default to architectural configuration
                 if (data.payments.length === 0) setView('config');
             }
         } catch (error) {
@@ -66,9 +63,7 @@ const ManagePayments = ({ title, method }) => {
     const handleApprove = async (paymentId) => {
         const actionToast = toast.loading('Authorizing Fiscal Transaction...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/payment/approve-cod`, { paymentId }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/payment/approve-cod', { paymentId });
             if (data.success) {
                 toast.update(actionToast, { render: 'Transaction authorized.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchPendingPayments();
@@ -449,5 +444,9 @@ const ManagePayments = ({ title, method }) => {
 };
 
 export default ManagePayments;
+
+
+
+
 
 

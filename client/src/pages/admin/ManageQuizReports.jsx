@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageQuizReports = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchReports = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/quiz/reports/unified`, getHeaders());
+            const { data } = await api.get('/quiz/reports/unified');
             if (data.success) {
                 setReports(data.reports.map(report => ({
                     student: report.userId.name,
@@ -121,4 +121,8 @@ const ManageQuizReports = () => {
 };
 
 export default ManageQuizReports;
+
+
+
+
 

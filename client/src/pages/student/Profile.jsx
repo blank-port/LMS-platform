@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { User, Mail, Lock, Camera, Shield, Save, Key, Copy, Share2, Star } from 'lucide-react';
 
@@ -21,9 +21,8 @@ const Profile = () => {
         if (image) formData.append('image', image);
 
         try {
-            const { data } = await axios.post(`${backendUrl}/api/user/update-profile`, formData, {
+            const { data } = await api.post('/user/update-profile', formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
@@ -45,11 +44,9 @@ const Profile = () => {
         }
         setChangingPass(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/user/change-password`, {
+            const { data } = await api.post('/user/change-password', {
                 currentPassword: passwords.current,
                 newPassword: passwords.new
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             if (data.success) {
                 toast.success('Security layer upgraded!');
@@ -242,3 +239,7 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+
+

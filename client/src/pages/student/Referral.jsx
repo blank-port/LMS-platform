@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { Users, Copy, Share2, Award, Calendar, CheckCircle, ExternalLink } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -11,9 +11,7 @@ const Referral = () => {
 
     const fetchStats = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/user/referrals`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/user/referrals');
             if (data.success) setStats(data);
         } catch (error) {
             console.error('Referral Fetch Error:', error);
@@ -128,3 +126,7 @@ const Referral = () => {
 };
 
 export default Referral;
+
+
+
+

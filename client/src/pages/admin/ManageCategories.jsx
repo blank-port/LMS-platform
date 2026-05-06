@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const ManageCategories = () => {
-    const { backendUrl, token, fetchCategories } = useContext(AppContext);
+    const { fetchCategories } = useContext(AppContext);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -17,10 +17,9 @@ const ManageCategories = () => {
 
     const fetchCats = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/categories`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (data.success) setCategories(data.categories);
+            const { data } = await api.get('/admin/categories');
+            if (data && data.categories) setCategories(data.categories);
+            else if (Array.isArray(data)) setCategories(data);
         } catch (error) { console.error(error); }
         setLoading(false);
     };
@@ -29,18 +28,14 @@ const ManageCategories = () => {
         const actionToast = toast.loading(editingId ? 'Calibrating Lexicon Entry...' : 'Initializing New Discipline...');
         try {
             if (editingId) {
-                const { data } = await axios.put(`${backendUrl}/api/admin/categories/${editingId}`, form, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.put(`/admin/categories/${editingId}`, form);
                 if (data.success) { 
                     toast.update(actionToast, { render: 'Lexicon entry calibrated.', type: "success", isLoading: false, autoClose: 3000 });
                     fetchCats(); 
                     fetchCategories(); 
                 }
             } else {
-                const { data } = await axios.post(`${backendUrl}/api/admin/categories`, form, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.post('/admin/categories', form);
                 if (data.success) { 
                     toast.update(actionToast, { render: 'New discipline initialized.', type: "success", isLoading: false, autoClose: 3000 });
                     fetchCats(); 
@@ -59,9 +54,7 @@ const ManageCategories = () => {
     const handleDelete = async (id) => {
         if (!confirm('Proceed with permanent disciplinary erasure? This action will affect global asset classification.')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/admin/categories/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.delete(`/admin/categories/${id}`);
             if (data.success) { toast.success('Discipline erased from lexicon.'); fetchCats(); fetchCategories(); }
         } catch (error) { toast.error('Erasure failed.'); }
     };
@@ -168,4 +161,8 @@ const ManageCategories = () => {
 };
 
 export default ManageCategories;
+
+
+
+
 

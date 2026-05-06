@@ -1,6 +1,6 @@
 import express from 'express';
 import { 
-    getMessages, sendMessage, getConversations,
+    getMessages, sendMessage, getConversations, searchUsers,
     getAdminComments, updateCommentStatus, addComment, deleteComment,
     getQA, addQuestion, deleteQuestion, toggleQAReserve, toggleGoldenKnowledge,
     getSettings, updateSettings,
@@ -15,12 +15,13 @@ const router = express.Router();
 router.get('/messages', authMiddleware, getMessages);
 router.post('/messages', authMiddleware, sendMessage);
 router.get('/conversations', authMiddleware, getConversations);
+router.get('/search-users', authMiddleware, searchUsers);
 
 // Interaction & Moderation (Comments)
 router.get('/comments', authMiddleware, getAdminComments);
 router.post('/comments', authMiddleware, addComment);
 router.delete('/comments/:id', authMiddleware, deleteComment);
-router.patch('/comments/:id/status', authMiddleware, adminAuth, updateCommentStatus); // Executive Moderation
+router.patch('/comments/:id/status', adminAuth, updateCommentStatus); // Executive Moderation
 
 // Q&A Hub Protocols
 router.get('/qa', authMiddleware, getQA);

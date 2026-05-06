@@ -4,160 +4,127 @@ import QuestionGroup from "../models/QuestionGroup.js";
 import Quiz from "../models/Quiz.js";
 import Course from "../models/Course.js";
 import Subject from "../models/Subject.js";
+import responseHelper from "../utils/responseHelper.js";
+import AppError from "../utils/appError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 // Question Group Management
-export const createQuestionGroup = async (req, res) => {
-    try {
-        const group = await QuestionGroup.create(req.body);
-        res.json({ success: true, group });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const createQuestionGroup = asyncHandler(async (req, res, next) => {
+    const group = await QuestionGroup.create(req.body);
+    return responseHelper.success(res, { group }, 'Pedagogical organisation group provisioned', 201);
+});
 
-export const getQuestionGroups = async (req, res) => {
-    try {
-        const groups = await QuestionGroup.find({ course: req.params.courseId });
-        res.json({ success: true, groups });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getQuestionGroups = asyncHandler(async (req, res, next) => {
+    const groups = await QuestionGroup.find({ course: req.params.courseId });
+    return responseHelper.success(res, { groups }, 'Institutional organisation groups synchronized');
+});
 
-export const getAllQuestionGroups = async (req, res) => {
-    try {
-        const groups = await QuestionGroup.find().populate('course', 'courseTitle');
-        res.json({ success: true, groups });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getAllQuestionGroups = asyncHandler(async (req, res, next) => {
+    const groups = await QuestionGroup.find().populate('course', 'courseTitle');
+    return responseHelper.success(res, { groups }, 'Global organisation group registry synchronized');
+});
 
 // Question Bank Management
-export const addQuestionToBank = async (req, res) => {
-    try {
-        const question = await QuestionBank.create(req.body);
-        res.json({ success: true, question });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const addQuestionToBank = asyncHandler(async (req, res, next) => {
+    const question = await QuestionBank.create(req.body);
+    return responseHelper.success(res, { question }, 'Intelligence unit integrated into bank', 201);
+});
 
-export const getQuestionsFromBank = async (req, res) => {
-    try {
-        const questions = await QuestionBank.find({ group: req.params.groupId });
-        res.json({ success: true, questions });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getQuestionsFromBank = asyncHandler(async (req, res, next) => {
+    const questions = await QuestionBank.find({ group: req.params.groupId });
+    return responseHelper.success(res, { questions }, 'Intelligence units synchronized from bank');
+});
 
-export const updateQuestionInBank = async (req, res) => {
-    try {
-        const question = await QuestionBank.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json({ success: true, question });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const updateQuestionInBank = asyncHandler(async (req, res, next) => {
+    const question = await QuestionBank.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!question) return next(new AppError('Intelligence unit not found', 404));
+    return responseHelper.success(res, { question }, 'Intelligence unit recalibrated');
+});
 
-export const deleteQuestionFromBank = async (req, res) => {
-    try {
-        await QuestionBank.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: 'Intelligence unit decommissioned.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const deleteQuestionFromBank = asyncHandler(async (req, res, next) => {
+    const question = await QuestionBank.findByIdAndDelete(req.params.id);
+    if (!question) return next(new AppError('Intelligence unit not found', 404));
+    return responseHelper.success(res, {}, 'Intelligence unit decommissioned');
+});
 
 // Advanced Quiz Setup
-export const setupQuiz = async (req, res) => {
-    try {
-        const { 
-            quizTitle, 
-            courseId, 
-            categoryId,
-            subCategoryId,
-            questionGroups, 
-            duration, 
-            passingScore,
-            minimumPercentage,
-            randomizeQuestions,
-            changeDefaultSettings
-        } = req.body;
-        const createdBy = req.user._id;
+export const setupQuiz = asyncHandler(async (req, res, next) => {
+    const { 
+        quizTitle, 
+        courseId, 
+        categoryId,
+        subCategoryId,
+        questionGroups, 
+        duration, 
+        passingScore,
+        minimumPercentage,
+        randomizeQuestions,
+        changeDefaultSettings
+    } = req.body;
+    const createdBy = req.user._id;
 
-        // Fetch questions from the bank for selected groups
-        const bankQuestions = await QuestionBank.find({
-            group: { $in: questionGroups }
-        });
+    const bankQuestions = await QuestionBank.find({
+        group: { $in: questionGroups }
+    });
 
-        // Map bank questions to quiz schema
-        const questions = bankQuestions.map(q => ({
-            questionText: q.question,
-            questionType: q.questionType,
-            marks: q.marks,
-            image: q.image,
-            options: q.options,
-            correctAnswer: q.correctAnswerIndex
-        }));
+    const questions = bankQuestions.map(q => ({
+        questionText: q.question,
+        questionType: q.questionType,
+        marks: q.marks,
+        image: q.image,
+        options: q.options,
+        correctAnswer: q.correctAnswerIndex
+    }));
 
-        const quiz = await Quiz.create({
-            title: quizTitle,
-            courseId,
-            categoryId,
-            subCategoryId,
-            questionGroups,
-            duration,
-            passingScore,
-            minimumPercentage,
-            randomizeQuestions,
-            changeDefaultSettings,
-            questions,
-            createdBy
-        });
+    const quiz = await Quiz.create({
+        title: quizTitle,
+        courseId,
+        categoryId,
+        subCategoryId,
+        questionGroups,
+        duration,
+        passingScore,
+        minimumPercentage,
+        randomizeQuestions,
+        changeDefaultSettings,
+        questions,
+        createdBy
+    });
 
-        res.json({ success: true, message: 'Assessment blueprint finalized and linked.', quiz });
-    } catch (error) {
-        console.error('Quiz Setup Error:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+    return responseHelper.success(res, { quiz }, 'Assessment blueprint finalized and integrated', 201);
+});
 
 // Course Levels & Subjects Tracking (Static/Dynamic)
-export const updateCourseEducationFields = async (req, res) => {
-    try {
-        const { courseId, level, subject } = req.body;
-        const course = await Course.findByIdAndUpdate(courseId, { level, subject }, { new: true });
-        res.json({ success: true, course });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const updateCourseEducationFields = asyncHandler(async (req, res, next) => {
+    const { courseId, level, subject } = req.body;
+    const course = await Course.findByIdAndUpdate(courseId, { level, subject }, { new: true });
+    if (!course) return next(new AppError('Curriculum unit not found', 404));
+    return responseHelper.success(res, { course }, 'Curriculum domain fields synchronized');
+});
 
-export const importQuestions = async (req, res) => {
+export const importQuestions = asyncHandler(async (req, res, next) => {
     try {
         const { group } = req.body;
         const file = req.file;
 
         if (!file || !group) {
-            return res.status(400).json({ success: false, message: 'Source node and organization group required.' });
+            return next(new AppError('Source node and organisation group required for synchronization', 400));
         }
 
         const data = fs.readFileSync(file.path, 'utf8');
         const lines = data.split('\n');
         const importedQuestions = [];
 
-        // Simple CSV parser (skip header)
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].split(',');
             if (row.length >= 8) {
                 const [questionText, opt1, opt2, opt3, opt4, correctIndex, marks, typeCode] = row;
                 
                 let type = 'Multiple Choice';
-                if (typeCode?.trim().toUpperCase() === 'S') type = 'Short Answer';
-                else if (typeCode?.trim().toUpperCase() === 'L') type = 'Long Answer';
-                else if (typeCode?.trim().toUpperCase() === 'T') type = 'True/False';
+                const code = typeCode?.trim().toUpperCase();
+                if (code === 'S') type = 'Short Answer';
+                else if (code === 'L') type = 'Long Answer';
+                else if (code === 'T') type = 'True/False';
 
                 importedQuestions.push({
                     group: group,
@@ -174,54 +141,39 @@ export const importQuestions = async (req, res) => {
             await QuestionBank.insertMany(importedQuestions);
         }
 
-        // Cleanup
         fs.unlinkSync(file.path);
 
-        res.json({ success: true, message: `Bulk synchronization successful. ${importedQuestions.length} assets integrated.` });
+        return responseHelper.success(res, {}, `Bulk synchronization successful. ${importedQuestions.length} assets integrated.`);
     } catch (error) {
-        console.error('Import Error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        // Ensure file cleanup on error
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        throw error; // Let asyncHandler handle it
     }
-};
+});
 
-export const getAllQuizzes = async (req, res) => {
-    try {
-        const quizzes = await Quiz.find()
-            .populate('categoryId', 'name')
-            .populate('subCategoryId', 'name')
-            .sort({ createdAt: -1 });
-        res.json({ success: true, quizzes });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getAllQuizzes = asyncHandler(async (req, res, next) => {
+    const quizzes = await Quiz.find()
+        .populate('categoryId', 'name')
+        .populate('subCategoryId', 'name')
+        .sort({ createdAt: -1 });
+    return responseHelper.success(res, { quizzes }, 'Assessment blueprint registry synchronized');
+});
 
 // Subject Management
-export const getAllSubjects = async (req, res) => {
-    try {
-        const subjects = await Subject.find().sort({ name: 1 });
-        res.json({ success: true, subjects });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getAllSubjects = asyncHandler(async (req, res, next) => {
+    const subjects = await Subject.find().sort({ name: 1 });
+    return responseHelper.success(res, { subjects }, 'Scholarly domain registry synchronized');
+});
 
-export const createSubject = async (req, res) => {
-    try {
-        const { name, icon } = req.body;
-        const subject = await Subject.create({ name, icon });
-        res.json({ success: true, message: 'Domain stabilized.', subject });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const createSubject = asyncHandler(async (req, res, next) => {
+    const { name, icon } = req.body;
+    const subject = await Subject.create({ name, icon });
+    return responseHelper.success(res, { subject }, 'Pedagogical domain stabilized', 201);
+});
 
-export const deleteSubject = async (req, res) => {
-    try {
-        const { id } = req.params;
-        await Subject.findByIdAndDelete(id);
-        res.json({ success: true, message: 'Domain excised.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const deleteSubject = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const subject = await Subject.findByIdAndDelete(id);
+    if (!subject) return next(new AppError('Scholarly domain not found', 404));
+    return responseHelper.success(res, {}, 'Pedagogical domain excised');
+});

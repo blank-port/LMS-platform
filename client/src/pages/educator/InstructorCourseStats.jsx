@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { BookOpen, Users, TrendingUp, Award, BarChart3, Star } from 'lucide-react';
 
 const InstructorCourseStats = () => {
-    const { backendUrl, token, currency } = useContext(AppContext);
+    const { currency } = useContext(AppContext);
     const [courseStats, setCourseStats] = useState([]);
     const [totals, setTotals] = useState({});
     const [loading, setLoading] = useState(true);
@@ -12,9 +12,7 @@ const InstructorCourseStats = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/instructor/course-stats`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.get('/instructor/course-stats');
                 if (data.success) {
                     setCourseStats(data.courseStats);
                     setTotals(data.totals);
@@ -127,3 +125,7 @@ const InstructorCourseStats = () => {
 };
 
 export default InstructorCourseStats;
+
+
+
+

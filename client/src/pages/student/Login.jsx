@@ -30,6 +30,8 @@ const Login = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [hasMounted, setHasMounted] = useState(false);
     const isMounted = React.useRef(true);
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const isGoogleLoginConfigured = Boolean(googleClientId);
     
     useEffect(() => {
         setHasMounted(true);
@@ -129,6 +131,12 @@ const Login = () => {
         }
     };
 
+    const handleGoogleError = () => {
+        toast.error(
+            `Google Sign-In is blocked for this origin. Add ${window.location.origin} to the OAuth client's allowed JavaScript origins.`
+        );
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c] relative overflow-hidden font-sans selection:bg-blue-500/30 px-4">
             {/* Dark background particles */}
@@ -197,18 +205,26 @@ const Login = () => {
 
                         {!isOtpMode && hasMounted && !isMobile && !isRegisterMode && (
                             <div className="flex flex-col items-center">
-                                <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
-                                    <GoogleLogin 
-                                        onSuccess={handleGoogleSuccess} 
-                                        onError={() => toast.error("Google Auth Failed")}
-                                        theme="filled_black" 
-                                        shape="pill" 
-                                        width={320} 
-                                        text="signin_with" 
-                                        use_fedcm_for_prompt={true}
-                                        locale="en"
-                                    />
-                                </div>
+                                {isGoogleLoginConfigured ? (
+                                    <div className="flex justify-center gap-4 mb-6 min-h-[50px]">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleSuccess}
+                                            onError={handleGoogleError}
+                                            theme="filled_black"
+                                            shape="pill"
+                                            width={320}
+                                            text="signin_with"
+                                            use_fedcm_for_prompt={true}
+                                            locale="en"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-full mb-6 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-center">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-200">
+                                            Google Sign-In is not configured for this environment.
+                                        </p>
+                                    </div>
+                                )}
                                 <div className="relative w-full my-4">
                                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
                                     <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-[#121214] px-4 text-gray-500 font-bold tracking-widest italic">Or use email</span></div>
@@ -447,3 +463,7 @@ const Login = () => {
 };
 
 export default Login;
+
+
+
+

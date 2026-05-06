@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageDeleteRequests = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchRequests = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/users`, getHeaders());
+            const { data } = await api.get('/admin/users');
             if (data.success) {
                 setRequests(data.users.filter(u => u.deleteRequest?.isRequested));
             }
@@ -24,7 +22,7 @@ const ManageDeleteRequests = () => {
     const handleDelete = async (userId) => {
         const actionToast = toast.loading('Executing Permanent Data Erasure...');
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/admin/user/${userId}`, getHeaders());
+            const { data } = await api.delete(`/admin/user/${userId}`);
             if (data.success) {
                 toast.update(actionToast, { render: 'Entity purged from institutional records.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchRequests();
@@ -96,3 +94,8 @@ const ManageDeleteRequests = () => {
 };
 
 export default ManageDeleteRequests;
+
+
+
+
+

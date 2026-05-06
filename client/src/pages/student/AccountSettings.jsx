@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     User, Mail, Phone, FileText, Camera, Shield, Bell, Globe, 
@@ -57,6 +57,9 @@ const AccountSettings = () => {
     const [deletePass, setDeletePass] = useState('');
 
     useEffect(() => {
+        if (user?.requiresPasswordChange) {
+            setActiveTab('password');
+        }
         if (user) {
             setBasicInfo({
                 name: user.name || '',
@@ -93,9 +96,7 @@ const AccountSettings = () => {
             formData.append('about', basicInfo.about);
             if (avatar) formData.append('profilePicture', avatar);
 
-            const { data } = await axios.put(`${backendUrl}/api/user/update-account-profile`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.put('/user/update-account-profile', formData);
 
             if (data.success) {
                 toast.success('Basic information updated');
@@ -112,11 +113,9 @@ const AccountSettings = () => {
     const handleUpdateSecondary = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.put(`${backendUrl}/api/user/update-secondary-details`, {
+            const { data } = await api.put('/user/update-secondary-details', {
                 education, experience, skills, financial, socialLinks, 
                 notificationSettings: notifSettings, language
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (data.success) {
@@ -135,11 +134,9 @@ const AccountSettings = () => {
         if (passwords.new !== passwords.confirm) return toast.error('Passwords do not match');
         setLoading(true);
         try {
-            const { data } = await axios.put(`${backendUrl}/api/user/change-password`, {
+            const { data } = await api.put('/user/change-password', {
                 currentPassword: passwords.current,
                 newPassword: passwords.new
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (data.success) {
@@ -157,9 +154,7 @@ const AccountSettings = () => {
         e.preventDefault();
         if (!window.confirm('Are you absolutely sure? This action is irreversible.')) return;
         try {
-            const { data } = await axios.post(`${backendUrl}/api/user/delete-account`, { password: deletePass }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/user/delete-account', { password: deletePass });
             if (data.success) {
                 toast.success('Account deleted Successfully');
                 window.location.href = '/';
@@ -313,6 +308,18 @@ const AccountSettings = () => {
                                     <h3 className="text-xl font-bold text-gray-900">Security Settings</h3>
                                     <p className="text-sm text-gray-500">Update your account password regularly for better security</p>
                                 </div>
+
+                                {user?.requiresPasswordChange && (
+                                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 animate-pulse">
+                                        <div className="bg-amber-100 p-2 rounded-lg text-amber-600">
+                                            <Shield size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-amber-900">Mandatory Security Update Required</p>
+                                            <p className="text-xs text-amber-700">Your account was provisioned via AI on-boarding or external protocol. Please synchronize your local core password to continue.</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -684,3 +691,7 @@ const AccountSettings = () => {
 };
 
 export default AccountSettings;
+
+
+
+

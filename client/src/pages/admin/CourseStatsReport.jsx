@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const CourseStatsReport = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [stats, setStats] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/course/popularity-stats`, getHeaders());
+            const { data } = await api.get('/course/popularity-stats');
             if (data.success) setStats(data.stats);
         } catch (error) {
             toast.error('Curriculum Efficacy Synchronization Failure');
@@ -70,3 +70,7 @@ const CourseStatsReport = () => {
 };
 
 export default CourseStatsReport;
+
+
+
+

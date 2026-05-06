@@ -1,15 +1,22 @@
 import nodemailer from 'nodemailer';
 import Setting from '../models/Setting.js';
 
-// Build transporter from DB settings (SMTP configured by admin)
+// Strategic Transporter Provisioning: Unified SMTP Engine
 const getTransporter = async () => {
   const keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
   const docs = await Setting.find({ key: { $in: keys } });
   const cfg = {};
   docs.forEach(d => cfg[d.key] = d.value);
 
-  // If no SMTP configured, return a mock transporter to avoid network hangs
-  if (!cfg.smtp_host || !cfg.smtp_user) {
+  // Priority 1: Environment Variables (Production Managed)
+  const host = process.env.SMTP_HOST || cfg.smtp_host;
+  const user = process.env.SMTP_USER || cfg.smtp_user;
+  const pass = process.env.SMTP_PASS || cfg.smtp_pass;
+  const port = parseInt(process.env.SMTP_PORT || cfg.smtp_port) || 587;
+  const fromAddress = process.env.SMTP_FROM || cfg.smtp_from || `"PrismEd LMS" <${user}>`;
+
+  // If no SMTP configured anywhere, return a mock transporter to avoid blocking
+  if (!host || !user) {
     return {
       transporter: {
         sendMail: async (mailOptions) => {
@@ -26,15 +33,17 @@ const getTransporter = async () => {
   }
 
   const t = nodemailer.createTransport({
-    host: cfg.smtp_host,
-    port: parseInt(cfg.smtp_port) || 587,
-    secure: parseInt(cfg.smtp_port) === 465,
-    auth: { user: cfg.smtp_user, pass: cfg.smtp_pass }
+    host: host,
+    port: port,
+    secure: port === 465,
+    auth: { user: user, pass: pass }
   });
-  return { transporter: t, from: cfg.smtp_from || `PrismEd <${cfg.smtp_user}>`, isTest: false };
+  return { transporter: t, from: fromAddress, isTest: false };
 };
 
-// Send welcome/credentials email to newly registered AI chat user
+/**
+ * Send welcome/credentials email to newly registered AI chat user
+ */
 export const sendWelcomeEmail = async ({ name, email, password, loginUrl = 'http://localhost:3000/login' }) => {
   try {
     const { transporter, from, isTest } = await getTransporter();
@@ -92,7 +101,7 @@ export const sendWelcomeEmail = async ({ name, email, password, loginUrl = 'http
       <a href="${loginUrl}" class="btn">Access Your Dashboard →</a>
 
       <div class="security-note">
-        🔒 <strong>Security Tip:</strong> Please change your password after your first login from Account Settings.
+        🔒 <strong>Security Protocol:</strong> You will be required to change this temporary password upon your first login.
       </div>
     </div>
     <div class="footer">
@@ -112,7 +121,98 @@ export const sendWelcomeEmail = async ({ name, email, password, loginUrl = 'http
     const previewUrl = isTest ? nodemailer.getTestMessageUrl(info) : null;
     return { success: true, messageId: info.messageId, previewUrl };
   } catch (error) {
-    console.error('[EmailService] Failed to send email:', error.message);
+    console.error('[EmailService] Failed to send welcome email:', error.message);
     return { success: false, error: error.message };
   }
+};
+
+/**
+ * Send OTP for account verification
+ */
+export const sendOTP = async (email, otp) => {
+    try {
+        const { transporter, from } = await getTransporter();
+        const mailOptions = {
+            from,
+            to: email,
+            subject: '🔐 Verify Your PrismEd Scholar Identity',
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f6f9fc; padding: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <div style="background-color: #4f46e5; padding: 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">PrismEd LMS</h1>
+                            <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Identity Verification</p>
+                        </div>
+                        <div style="padding: 40px;">
+                            <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #1f2937;">Welcome to the Sanctuary of Learning!</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">To activate your scholar account and begin your journey, please verify your email address using the one-time passcode below:</p>
+                            
+                            <div style="margin: 30px 0; text-align: center; background-color: #f3f4f6; border-radius: 12px; padding: 25px; border: 2px dashed #e5e7eb;">
+                                <span style="font-size: 36px; font-weight: 900; letter-spacing: 12px; color: #4f46e5; font-family: 'Courier New', Courier, monospace;">${otp}</span>
+                            </div>
+                            
+                            <p style="font-size: 14px; color: #6b7280; margin-bottom: 30px;">This code is valid for 24 hours. If you did not request this, please ignore this email.</p>
+                            
+                            <div style="border-top: 1px solid #e5e7eb; pt-30px; text-align: center; color: #9ca3af; font-size: 12px;">
+                                <p>© ${new Date().getFullYear()} PrismEd LMS. All rights reserved.</p>
+                                <p>Powered by Advanced Agentic Learning Systems</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        return !!result.messageId;
+    } catch (error) {
+        console.error('[EmailService] OTP Dispatch Error:', error.message);
+        return false;
+    }
+};
+
+/**
+ * Send Course Completion Notification
+ */
+export const sendCourseCompletionEmail = async (email, userName, courseTitle) => {
+    try {
+        const { transporter, from } = await getTransporter();
+        const mailOptions = {
+            from,
+            to: email,
+            subject: `🎉 Congratulations on Completing ${courseTitle}!`,
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f6f9fc; padding: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <div style="background-color: #4f46e5; padding: 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">Mastery Achieved!</h1>
+                            <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Academic Milestone Recorded</p>
+                        </div>
+                        <div style="padding: 40px;">
+                            <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #1f2937;">Kudos, ${userName}!</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">You have successfully navigated the complexities of <strong>${courseTitle}</strong>. This accomplishment marks a significant expansion of your professional and intellectual horizon.</p>
+                            
+                            <div style="margin: 30px 0; text-align: center; background-color: #f3f4f6; border-radius: 12px; padding: 25px;">
+                                <p style="margin: 0; color: #4b5563; font-size: 16px;">"The beautiful thing about learning is that no one can take it away from you."</p>
+                                <p style="margin: 10px 0 0 0; color: #4f46e5; font-weight: 700;">— B.B. King</p>
+                            </div>
+                            
+                            <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">Your certificate is now available in your scholarship dashboard. Continue your quest by exploring new domains in our catalog.</p>
+                            
+                            <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 30px; text-align: center; color: #9ca3af; font-size: 12px;">
+                                <p>© ${new Date().getFullYear()} PrismEd LMS. All rights reserved.</p>
+                                <p>Powered by Advanced Agentic Learning Systems</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        return !!result.messageId;
+    } catch (error) {
+        console.error('[EmailService] Course Completion Alert Error:', error.message);
+        return false;
+    }
 };

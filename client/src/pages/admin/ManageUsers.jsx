@@ -1,11 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const ManageUsers = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [institutes, setInstitutes] = useState([]);
@@ -22,10 +20,6 @@ const ManageUsers = () => {
     });
     const [editingId, setEditingId] = useState(null);
 
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
-
     useEffect(() => {
         fetchUsers();
         fetchInstitutes();
@@ -33,17 +27,21 @@ const ManageUsers = () => {
 
     const fetchInstitutes = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/institute/all`, getHeaders());
-            if (data.success) setInstitutes(data.institutes);
+            const { data } = await api.get('/audit/institute/all');
+            if (data && data.institutes) {
+                setInstitutes(data.institutes);
+            } else if (Array.isArray(data)) {
+                setInstitutes(data);
+            }
         } catch (error) { console.error('Institute retrieval failure'); }
     };
 
     const fetchUsers = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/users?role=student&page=${page}`, getHeaders())
-            if (data.success) {
-                setUsers(data.users);
-                setTotalPages(data.pages);
+            const { data } = await api.get(`/admin/users?role=student&page=${page}`)
+            if (data) {
+                setUsers(data.users || []);
+                setTotalPages(data.pagination?.pages || 1);
             }
         } catch (error) {
             toast.error('Identity Retrieval Failure');
@@ -71,7 +69,7 @@ const ManageUsers = () => {
             try {
                 const importToast = toast.loading(`Synchronizing ${dataToImport.length} Identities...`);
                 for (const user of dataToImport) {
-                    await axios.post(backendUrl + '/api/user/register', user);
+                    await api.post('/user/register', user);
                 }
                 toast.update(importToast, { render: 'Batch Identity Synchronization completed.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchUsers();
@@ -86,13 +84,13 @@ const ManageUsers = () => {
         const actionToast = toast.loading(editingId ? 'Updating Identity...' : 'Initializing New Identity...');
         try {
             if (editingId) {
-                const { data } = await axios.put(`${backendUrl}/api/admin/users/${editingId}`, form, getHeaders());
+                const { data } = await api.put(`/admin/users/${editingId}`, form);
                 if (data.success) {
                     toast.update(actionToast, { render: 'Identity calibrated successfully.', type: "success", isLoading: false, autoClose: 3000 });
                     fetchUsers();
                 }
             } else {
-                const { data } = await axios.post(`${backendUrl}/api/admin/users`, form, getHeaders());
+                const { data } = await api.post('/admin/users', form);
                 if (data.success) {
                     toast.update(actionToast, { render: 'New identity deployed.', type: "success", isLoading: false, autoClose: 3000 });
                     fetchUsers();
@@ -114,10 +112,10 @@ const ManageUsers = () => {
 
     const handleEdit = (user) => {
         setForm({
-            name: user.name,
-            email: user.email,
+            name: user.name || '',
+            email: user.email || '',
             password: '',
-            role: user.role,
+            role: user.role || 'student',
             institute: user.institute?._id || user.institute || '',
             phone: user.phone || '',
             about: user.about || '',
@@ -134,9 +132,32 @@ const ManageUsers = () => {
     const handleDelete = async (id) => {
         if (!confirm('Proceed with permanent identity erasure? This action is irreversible.')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/admin/users/${id}`, getHeaders());
+            const { data } = await api.delete(`/admin/users/${id}`);
             if (data.success) { toast.success('Identity erased from repository.'); fetchUsers(); }
         } catch (error) { toast.error('Erasure failed.'); }
+    };
+
+    const handleCSVExport = () => {
+        if (users.length === 0) return;
+        const exportData = users.map(u => ({
+            Name: u.name,
+            Email: u.email,
+            Role: u.role,
+            Institute: u.institute?.name || 'CENTRAL COMMAND',
+            Phone: u.phone || 'N/A',
+            CreatedAt: new Date(u.createdAt).toLocaleDateString()
+        }));
+        const headers = Object.keys(exportData[0]).join(',');
+        const rows = exportData.map(obj => Object.values(obj).join(',')).join('\n');
+        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `PrismEd_User_Registry_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Registry exported successfully.');
     };
 
     if (loading) return (
@@ -163,8 +184,11 @@ const ManageUsers = () => {
                         className="px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-purple-500/20 transition-all text-[var(--text-main)]"
                     >
                         <option value="">All Institutional Nodes</option>
-                        {institutes.map(inst => <option key={inst._id} value={inst._id}>{inst.name}</option>)}
+                        {Array.isArray(institutes) && institutes.map(inst => <option key={inst._id} value={inst._id}>{inst.name}</option>)}
                     </select>
+                    <button onClick={handleCSVExport} className="px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--background)] transition-all flex items-center gap-3 text-[var(--text-main)]">
+                        📤 Export Registry
+                    </button>
                     <label className="px-6 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-[var(--background)] transition-all flex items-center gap-3 text-[var(--text-main)]">
                         📥 Batch Sync
                         <input type="file" accept=".csv" className="hidden" onChange={handleCSVImport} />
@@ -175,7 +199,7 @@ const ManageUsers = () => {
                         financial: { bankName: '', accountNumber: '', ifscCode: '' },
                         socialLinks: { facebook: '', twitter: '', linkedin: '', instagram: '' }
                     }); }}
-                        className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 transition-all shadow-xl shadow-black/10/10">
+                        className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 transition-all shadow-xl shadow-black/10">
                         + Deploy Identity
                     </button>
                 </div>
@@ -302,7 +326,7 @@ const ManageUsers = () => {
                                         <select value={form.institute} onChange={(e) => setForm({ ...form, institute: e.target.value })}
                                             className="w-full px-5 py-4 border border-[var(--border)] rounded-2xl bg-[var(--background)] outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-[var(--surface)] transition-all font-black text-[var(--text-main)] text-sm appearance-none">
                                             <option value="">Central Command</option>
-                                            {institutes.map(inst => <option key={inst._id} value={inst._id}>{inst.name}</option>)}
+                                            {Array.isArray(institutes) && institutes.map(inst => <option key={inst._id} value={inst._id}>{inst.name}</option>)}
                                         </select>
                                     </div>
                                 </div>
@@ -380,4 +404,5 @@ const ManageUsers = () => {
 };
 
 export default ManageUsers;
+
 

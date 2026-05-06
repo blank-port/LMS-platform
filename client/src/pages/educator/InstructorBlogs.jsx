@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const InstructorBlogs = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [blogs, setBlogs] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ title: '', content: '', category: 'Education', status: 'Published' });
     const [editingId, setEditingId] = useState(null);
 
-    const getHeaders = () => ({ headers: { Authorization: `Bearer ${token}` } });
-
     const fetchBlogs = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/blog/my-blogs`, getHeaders());
+            const { data } = await api.get('/blog/my-blogs');
             if (data.success) setBlogs(data.blogs);
         } catch (error) {
             toast.error('Identity Verification Failed');
@@ -25,9 +22,9 @@ const InstructorBlogs = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                await axios.put(`${backendUrl}/api/blog/${editingId}`, formData, getHeaders());
+                await api.put(`/blog/${editingId}`, formData);
             } else {
-                await axios.post(`${backendUrl}/api/blog/create`, formData, getHeaders());
+                await api.post('/blog', formData);
             }
             toast.success('Conceptual Asset Synchronized');
             setShowModal(false);
@@ -40,7 +37,7 @@ const InstructorBlogs = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Erase this conceptual asset?')) return;
         try {
-            await axios.delete(`${backendUrl}/api/blog/${id}`, getHeaders());
+            await api.delete(`/blog/${id}`);
             toast.success('Asset Erased');
             fetchBlogs();
         } catch (error) {
@@ -175,3 +172,7 @@ const InstructorBlogs = () => {
 };
 
 export default InstructorBlogs;
+
+
+
+

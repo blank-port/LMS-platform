@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     DocumentTextIcon, 
@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ManageCMS = () => {
-    const { backendUrl, token } = useContext(AppContext);
+    const { token } = useContext(AppContext);
     const [pages, setPages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -33,9 +33,7 @@ const ManageCMS = () => {
         sectionData: {}
     });
 
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
+
 
     useEffect(() => {
         fetchPages();
@@ -43,7 +41,7 @@ const ManageCMS = () => {
 
     const fetchPages = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/cms`, getHeaders());
+            const { data } = await api.get('/cms');
             if (data.success) setPages(data.pages);
         } catch (error) { toast.error('Failed to fetch CMS pages'); }
         setLoading(false);
@@ -54,9 +52,9 @@ const ManageCMS = () => {
         const action = editingId ? 'Updating' : 'Creating';
         const loadingToast = toast.loading(`${action} CMS Node...`);
         try {
-            const url = editingId ? `${backendUrl}/api/cms/${editingId}` : `${backendUrl}/api/cms`;
+            const url = editingId ? `/cms/${editingId}` : '/cms';
             const method = editingId ? 'put' : 'post';
-            const { data } = await axios[method](url, form, getHeaders());
+            const { data } = await api[method](url, form);
             
             if (data.success) {
                 toast.update(loadingToast, { render: `CMS node ${action.toLowerCase()}ed successfully`, type: "success", isLoading: false, autoClose: 3000 });
@@ -71,7 +69,7 @@ const ManageCMS = () => {
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this page?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/cms/${id}`, getHeaders());
+            const { data } = await api.delete(`/cms/${id}`);
             if (data.success) {
                 toast.success('CMS Page deleted');
                 fetchPages();
@@ -332,3 +330,7 @@ const ManageCMS = () => {
 };
 
 export default ManageCMS;
+
+
+
+

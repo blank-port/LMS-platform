@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { Wallet, ArrowUpRight, ArrowDownRight, DollarSign, TrendingUp } from 'lucide-react';
 
 const InstructorPayouts = () => {
-    const { backendUrl, token, currency } = useContext(AppContext);
+    const { currency } = useContext(AppContext);
     const [payouts, setPayouts] = useState([]);
     const [summary, setSummary] = useState({ totalEarnings: 0, totalWithdrawn: 0, balance: 0 });
     const [loading, setLoading] = useState(true);
@@ -12,9 +12,7 @@ const InstructorPayouts = () => {
     useEffect(() => {
         const fetchPayouts = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/instructor/payouts`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.get('/instructor/payouts');
                 if (data.success) {
                     setPayouts(data.payouts);
                     setSummary(data.summary);
@@ -109,3 +107,7 @@ const InstructorPayouts = () => {
 };
 
 export default InstructorPayouts;
+
+
+
+

@@ -5,117 +5,91 @@ import PointHistory from "../models/PointHistory.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import { seedGamificationSettings } from "../services/gamificationService.js";
 import { createAdminNotification } from "../services/notificationService.js";
+import responseHelper from "../utils/responseHelper.js";
+import AppError from "../utils/appError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 // Admin: Get all gamification settings
-export const getSettings = async (req, res) => {
-    try {
-        let settings = await GamificationSetting.find();
-        if (settings.length === 0) {
-            await seedGamificationSettings();
-            settings = await GamificationSetting.find();
-        }
-        res.json({ success: true, settings });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+export const getSettings = asyncHandler(async (req, res, next) => {
+    let settings = await GamificationSetting.find();
+    if (settings.length === 0) {
+        await seedGamificationSettings();
+        settings = await GamificationSetting.find();
     }
-};
+    return responseHelper.success(res, { settings }, 'Gamification protocols synchronized');
+});
 
 // Admin: Update point settings
-export const updateSettings = async (req, res) => {
-    try {
-        const { settings } = req.body; // Array of { _id, points, isActive }
-        for (const s of settings) {
-            await GamificationSetting.findByIdAndUpdate(s._id, { 
-                points: s.points, 
-                isActive: s.isActive 
-            });
-        }
-        res.json({ success: true, message: 'Gamification rules synchronized' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+export const updateSettings = asyncHandler(async (req, res, next) => {
+    const { settings } = req.body; // Array of { _id, points, isActive }
+    for (const s of settings) {
+        await GamificationSetting.findByIdAndUpdate(s._id, { 
+            points: s.points, 
+            isActive: s.isActive 
+        });
     }
-};
+    return responseHelper.success(res, {}, 'Gamification rules synchronized');
+});
 
 // Admin/Student: Get all badges
-export const getBadges = async (req, res) => {
-    try {
-        const badges = await Badge.find();
-        res.json({ success: true, badges });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getBadges = asyncHandler(async (req, res, next) => {
+    const badges = await Badge.find();
+    return responseHelper.success(res, { badges }, 'Reward typography registry synchronized');
+});
 
 // Admin: Create Badge
-export const createBadge = async (req, res) => {
-    try {
-        const badge = await Badge.create(req.body);
-        res.json({ success: true, badge });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const createBadge = asyncHandler(async (req, res, next) => {
+    const badge = await Badge.create(req.body);
+    return responseHelper.success(res, { badge }, 'Institutional badge provisioned', 201);
+});
 
 // Admin: Delete Badge
-export const deleteBadge = async (req, res) => {
-    try {
-        await Badge.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: 'Badge decommissioned' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const deleteBadge = asyncHandler(async (req, res, next) => {
+    const badge = await Badge.findByIdAndDelete(req.params.id);
+    if (!badge) return next(new AppError('Institutional badge not found', 404));
+    return responseHelper.success(res, {}, 'Institutional badge decommissioned');
+});
 
 // Student: Get personal stats
-export const getUserStats = async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id)
-            .select('gamification')
-            .populate('gamification.badges');
-        
-        if (!user.gamification) {
-            user.gamification = { totalPoints: 0, currentPoints: 0, level: 1, badges: [] };
-        }
+export const getUserStats = asyncHandler(async (req, res, next) => {
+    const user = await User.findById(req.user._id)
+        .select('gamification')
+        .populate('gamification.badges');
+    
+    if (!user) return next(new AppError('Identity not found in repository', 404));
 
-        res.json({ success: true, stats: user.gamification });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (!user.gamification) {
+        user.gamification = { totalPoints: 0, currentPoints: 0, level: 1, badges: [] };
     }
-};
+
+    return responseHelper.success(res, { stats: user.gamification }, 'Institutional performance synchronized');
+});
 
 // Student: Get point history
-export const getPointHistory = async (req, res) => {
-    try {
-        const { limit = 20, skip = 0 } = req.query;
-        const history = await PointHistory.find({ userId: req.user._id })
-            .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .skip(parseInt(skip));
-            
-        res.json({ success: true, history });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getPointHistory = asyncHandler(async (req, res, next) => {
+    const { limit = 20, skip = 0 } = req.query;
+    const history = await PointHistory.find({ userId: req.user._id })
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit))
+        .skip(parseInt(skip));
+        
+    return responseHelper.success(res, { history }, 'Point accrual history synchronized');
+});
 
 // Admin: Get all point history (for audit)
-export const getAllPointHistory = async (req, res) => {
-    try {
-        const { limit = 50, skip = 0 } = req.query;
-        const history = await PointHistory.find()
-            .populate('userId', 'name email')
-            .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .skip(parseInt(skip));
-            
-        res.json({ success: true, history });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getAllPointHistory = asyncHandler(async (req, res, next) => {
+    const { limit = 50, skip = 0 } = req.query;
+    const history = await PointHistory.find()
+        .populate('userId', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit))
+        .skip(parseInt(skip));
+        
+    return responseHelper.success(res, { history }, 'Global point accrual ledger synchronized');
+});
 
 // Student: Convert points to wallet balance
-export const convertToWallet = async (req, res) => {
+export const convertToWallet = asyncHandler(async (req, res, next) => {
     const session = await User.startSession();
     session.startTransaction();
 
@@ -127,7 +101,7 @@ export const convertToWallet = async (req, res) => {
         if (!user || !user.gamification) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(404).json({ success: false, message: 'Institutional Intelligence Record Not Found' });
+            return next(new AppError('Institutional intelligence record not found', 404));
         }
 
         const currentPoints = user.gamification.currentPoints || 0;
@@ -136,7 +110,7 @@ export const convertToWallet = async (req, res) => {
         if (currentPoints < RATE) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(400).json({ success: false, message: `Minimum ${RATE} points required for conversion. You currently have ${currentPoints} points.` });
+            return next(new AppError(`Minimum mastery threshold (${RATE} points) required for conversion`, 400));
         }
 
         const pointsToConvert = Math.floor(currentPoints / RATE) * RATE;
@@ -159,7 +133,7 @@ export const convertToWallet = async (req, res) => {
         if (!updatedUser) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(409).json({ success: false, message: 'Strategic Synchronization Conflict or Insufficient Points' });
+            return next(new AppError('Strategic synchronization conflict or insufficient point ledger', 409));
         }
 
         await PointHistory.create([{
@@ -189,65 +163,73 @@ export const convertToWallet = async (req, res) => {
             module: 'gamification'
         });
 
-        res.json({ 
-            success: true, 
-            message: `Converted ${pointsToConvert} points to ₹${cashAmount}`,
+        return responseHelper.success(res, {
             newBalance: updatedUser.walletBalance,
             remainedPoints: updatedUser.gamification.currentPoints
-        });
+        }, `Redeemed ${pointsToConvert} points for ₹${cashAmount}`);
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        res.status(500).json({ success: false, message: "Transaction Aborted: " + error.message });
+        throw error;
     }
-};
+});
 
 // Student: Get Global Leaderboard (Top 50)
-export const getLeaderboard = async (req, res) => {
-    try {
-        const { limit = 50, skip = 0 } = req.query;
-        const topScholars = await User.find({ role: 'student' })
-            .select('name avatar gamification')
-            .populate('gamification.badges', 'title')
-            .sort({ 'gamification.totalPoints': -1 })
-            .limit(parseInt(limit))
-            .skip(parseInt(skip));
-        
-        res.json({ success: true, leaderboard: topScholars });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+export const getLeaderboard = asyncHandler(async (req, res, next) => {
+    const { limit = 50, skip = 0 } = req.query;
+    
+    const topScholars = await User.aggregate([
+        { $match: { role: 'student' } },
+        { $sort: { 'gamification.totalPoints': -1 } },
+        { $skip: parseInt(skip) },
+        { $limit: parseInt(limit) },
+        {
+            $lookup: {
+                from: 'badges',
+                localField: 'gamification.badges',
+                foreignField: '_id',
+                as: 'badges_data'
+            }
+        },
+        {
+            $project: {
+                name: 1,
+                avatar: 1,
+                gamification: {
+                    totalPoints: 1,
+                    badges: "$badges_data"
+                }
+            }
+        }
+    ]);
+    
+    return responseHelper.success(res, { leaderboard: topScholars }, 'Global scholarly leaderboard synchronized');
+});
 
 // Admin: Get Global Gamification Statistics
-export const getAdminStats = async (req, res) => {
-    try {
-        const totalPointsIssuedRes = await User.aggregate([
-            { $group: { _id: null, total: { $sum: '$gamification.totalPoints' } } }
-        ]);
+export const getAdminStats = asyncHandler(async (req, res, next) => {
+    const totalPointsIssuedRes = await User.aggregate([
+        { $group: { _id: null, total: { $sum: '$gamification.totalPoints' } } }
+    ]);
 
-        const activeBadgeCount = await Badge.countDocuments({ isActive: true });
-        
-        const recentActivity = await PointHistory.find()
-            .populate('userId', 'name')
-            .sort({ createdAt: -1 })
-            .limit(10);
+    const activeBadgeCount = await Badge.countDocuments({ isActive: true });
+    
+    const recentActivity = await PointHistory.find()
+        .populate('userId', 'name')
+        .sort({ createdAt: -1 })
+        .limit(10);
 
-        const badgeClaimsRes = await User.aggregate([
-            { $project: { badgeCount: { $size: { $ifNull: ['$gamification.badges', []] } } } },
-            { $group: { _id: null, total: { $sum: '$badgeCount' } } }
-        ]);
+    const badgeClaimsRes = await User.aggregate([
+        { $project: { badgeCount: { $size: { $ifNull: ['$gamification.badges', []] } } } },
+        { $group: { _id: null, total: { $sum: '$badgeCount' } } }
+    ]);
 
-        res.json({ 
-            success: true, 
-            stats: {
-                totalPointsIssued: totalPointsIssuedRes[0]?.total || 0,
-                activeBadgeCount,
-                badgeClaims: badgeClaimsRes[0]?.total || 0,
-                recentActivity
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+    return responseHelper.success(res, { 
+        stats: {
+            totalPointsIssued: totalPointsIssuedRes[0]?.total || 0,
+            activeBadgeCount,
+            badgeClaims: badgeClaimsRes[0]?.total || 0,
+            recentActivity
+        }
+    }, 'Institutional gamification metrics synchronized');
+});

@@ -1,10 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { useNavigate } from 'react-router-dom';
 
 const MyCourses = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,9 +12,7 @@ const MyCourses = () => {
 
     const fetchCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/courses`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/instructor/courses');
             if (data.success) setCourses(data.courses);
         } catch (error) { console.error(error); }
         setLoading(false);
@@ -131,3 +128,7 @@ const MyCourses = () => {
 };
 
 export default MyCourses;
+
+
+
+

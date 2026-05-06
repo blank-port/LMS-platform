@@ -62,7 +62,10 @@ const ApiSettings = () => {
     smtp_port: '587',
     smtp_user: '',
     smtp_pass: '',
-    smtp_from: ''
+    smtp_from: '',
+    livekit_url: '',
+    livekit_api_key: '',
+    livekit_api_secret: ''
   });
 
   useEffect(() => {
@@ -244,3 +247,7 @@ const ApiSettings = () => {
 };
 
 export default ApiSettings;
+
+
+
+

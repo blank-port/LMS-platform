@@ -10,24 +10,23 @@ import { broadcast } from './pusherService.js';
  * @param {string} params.module - module name
  * @param {string} [params.referenceId] - related record ID
  */
-export const createAdminNotification = async ({ type, message, module, referenceId }) => {
+export const createAdminNotification = async ({ type, title, message, module, referenceId, actionUrl }) => {
     try {
-        const admins = await User.find({ role: 'admin' });
+        const admins = await User.find({ role: 'admin' }).select('_id');
         
-        const notificationPromises = admins.map(admin => {
-            return Notification.create({
-                user: admin._id,
-                type,
-                message,
-                module,
-                referenceId
-            });
-        });
+        const notifications = admins.map(admin => ({
+            user: admin._id,
+            type,
+            title: title || 'Admin Alert',
+            message,
+            module,
+            referenceId,
+            actionUrl: actionUrl || ''
+        }));
 
-        const createdNotifications = await Promise.all(notificationPromises);
+        const created = await Notification.insertMany(notifications);
 
-        // Real-time broadcast for each admin
-        // We broadcast to a global admin channel or individual admin channels
+        // Real-time broadcast (Strategic global channel for efficiency)
         await broadcast('admin-notifications-channel', 'new-notification', {
             type,
             message,
@@ -35,9 +34,43 @@ export const createAdminNotification = async ({ type, message, module, reference
             referenceId
         });
 
-        return createdNotifications;
+        return created;
     } catch (error) {
         console.error('Failed to create administrative notification:', error);
+    }
+};
+
+/**
+ * Creates notifications for multiple users in a single operation.
+ */
+export const createBatchNotifications = async (userIds, { type, title, message, module, referenceId, actionUrl }) => {
+    try {
+        const notifications = userIds.map(userId => ({
+            user: userId,
+            type,
+            title: title || 'Notification',
+            message,
+            module,
+            referenceId,
+            actionUrl: actionUrl || ''
+        }));
+
+        const created = await Notification.insertMany(notifications);
+
+        // Real-time broadcast for each (parallelized)
+        await Promise.all(userIds.map(userId => 
+            broadcast(`private-user-${userId}`, 'new-notification', {
+                type,
+                message,
+                module,
+                referenceId,
+                createdAt: new Date()
+            })
+        ));
+
+        return created;
+    } catch (error) {
+        console.error('Failed to create batch notifications:', error);
     }
 };
 
@@ -50,23 +83,27 @@ export const createAdminNotification = async ({ type, message, module, reference
  * @param {string} params.module - module name
  * @param {string} [params.referenceId] - related record ID
  */
-export const createStudentNotification = async ({ userId, type, message, module, referenceId }) => {
+export const createStudentNotification = async ({ userId, type, title, message, module, referenceId, actionUrl }) => {
     try {
         const notification = await Notification.create({
             user: userId,
             type,
+            title: title || 'Notification',
             message,
             module,
-            referenceId
+            referenceId,
+            actionUrl: actionUrl || ''
         });
 
         // Real-time broadcast for the specific student
         await broadcast(`private-user-${userId}`, 'new-notification', {
             id: notification._id,
             type,
+            title: notification.title,
             message,
             module,
             referenceId,
+            actionUrl: notification.actionUrl,
             createdAt: notification.createdAt
         });
 

@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const InstitutionReport = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [institutes, setInstitutes] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchInstitutes = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/institute/all`, getHeaders());
+            const { data } = await api.get('/audit/institute/all');
             if (data.success) setInstitutes(data.institutes);
         } catch (error) {
             toast.error('Institutional Benchmarking Failure');
@@ -86,3 +86,7 @@ const InstitutionReport = () => {
 };
 
 export default InstitutionReport;
+
+
+
+

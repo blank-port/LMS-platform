@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { FileText, Clock, CheckCircle, AlertCircle, Upload } from 'lucide-react';
 
@@ -22,18 +22,14 @@ const Assignments = () => {
         try {
             // Fetch assignments for all enrolled courses
             const assignmentPromises = enrolledCourses.map(e => 
-                axios.get(`${backendUrl}/api/assignment/course/${e.courseId._id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
+                api.get(`/assignment/course/${e.courseId._id}`)
             );
             const responses = await Promise.all(assignmentPromises);
             const allAssignments = responses.flatMap(r => r.data.assignments);
             setAssignments(allAssignments);
 
             // Fetch submissions
-            const { data } = await axios.get(`${backendUrl}/api/assignment/my-submissions`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/assignment/my-submissions');
             if (data.success) {
                 const subMap = {};
                 data.submissions.forEach(s => {
@@ -58,9 +54,8 @@ const Assignments = () => {
         }
 
         try {
-            const { data } = await axios.post(`${backendUrl}/api/assignment/submit`, formData, {
+            const { data } = await api.post('/assignment/submit', formData, {
                 headers: { 
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
@@ -180,3 +175,7 @@ const Assignments = () => {
 };
 
 export default Assignments;
+
+
+
+

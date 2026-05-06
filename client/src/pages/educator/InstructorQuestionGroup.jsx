@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const InstructorQuestionGroup = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({ name: '', description: '' });
 
     const fetchGroups = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/education/question-group/all');
             if (data.success) setGroups(data.groups);
         } catch (error) {
             toast.error('Question Group Retrieval Failure');
@@ -27,9 +24,7 @@ const InstructorQuestionGroup = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Sector Node...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/education/question-group`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/education/question-group', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Sector node stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setFormData({ name: '', description: '' });
@@ -133,3 +128,7 @@ const InstructorQuestionGroup = () => {
 };
 
 export default InstructorQuestionGroup;
+
+
+
+

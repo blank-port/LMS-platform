@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import ManualCertificateModal from '../../components/educator/ManualCertificateModal.jsx';
 import { Award, Mail, ChevronRight, Search, LayoutGrid, List } from 'lucide-react';
 
 const StudentsEnrolled = () => {
-    const { backendUrl, token, navigate } = useContext(AppContext);
+    const { navigate } = useContext(AppContext);
     const [students, setStudents] = useState([]);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState('all');
@@ -24,18 +24,14 @@ const StudentsEnrolled = () => {
 
     const fetchCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/courses`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/instructor/courses');
             if (data.success) setCourses(data.courses);
         } catch (error) { console.error(error); }
     };
 
     const fetchStudents = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/enrolled-students`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/instructor/enrolled-students');
             if (data.success) setStudents(data.enrolledStudents);
         } catch (error) { console.error(error); }
         setLoading(false);
@@ -183,3 +179,7 @@ const StudentsEnrolled = () => {
 };
 
 export default StudentsEnrolled;
+
+
+
+

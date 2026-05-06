@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageInstitutes = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [institutes, setInstitutes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -12,7 +12,7 @@ const ManageInstitutes = () => {
 
     const fetchInstitutes = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/institute/all`, getHeaders());
+            const { data } = await api.get('/audit/institute/all');
             if (data.success) {
                 setInstitutes(data.institutes);
             }
@@ -27,7 +27,7 @@ const ManageInstitutes = () => {
         e.preventDefault();
         const actionToast = toast.loading('Initializing Corporate Node...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/audit/institute/create`, formData, getHeaders());
+            const { data } = await api.post('/audit/institute/create', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Corporate identity stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowAddModal(false);
@@ -163,4 +163,8 @@ const ManageInstitutes = () => {
 };
 
 export default ManageInstitutes;
+
+
+
+
 

@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '@/utils/api';
 
 const InstructorSettings = () => {
-    const { user, backendUrl, token, setUser } = useContext(AppContext);
+    const { user, setUser } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(false);
 
@@ -45,6 +45,33 @@ const InstructorSettings = () => {
     const [newSkill, setNewSkill] = useState('');
     const [avatar, setAvatar] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
+
+    useEffect(() => {
+        setProfileData({
+            name: user?.name || '',
+            phone: user?.phone || '',
+            language: user?.language || 'English',
+            dob: user?.dob || '',
+            about: user?.about || '',
+            headline: user?.headline || ''
+        });
+        setSocialLinks({
+            facebook: user?.socialLinks?.facebook || '',
+            twitter: user?.socialLinks?.twitter || '',
+            linkedin: user?.socialLinks?.linkedin || '',
+            instagram: user?.socialLinks?.instagram || ''
+        });
+        setFiscalData({
+            bankName: user?.payoutSettings?.bankName || '',
+            accountName: user?.payoutSettings?.accountName || '',
+            accountNumber: user?.payoutSettings?.accountNumber || '',
+            ifscCode: user?.payoutSettings?.ifscCode || ''
+        });
+        setEducation(user?.education || []);
+        setExperience(user?.experience || []);
+        setSkills(user?.skills || []);
+        setAvatarPreview(user?.avatar || null);
+    }, [user]);
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
@@ -121,11 +148,7 @@ const InstructorSettings = () => {
             // Append avatar if selected
             if (avatar) formData.append('profilePicture', avatar);
 
-            const { data } = await axios.put(
-                `${backendUrl}/api/user/profile`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const { data } = await api.put('/user/profile', formData);
             if (data.success) {
                 toast.success('Global identity synchronized successfully');
                 setUser(data.user);
@@ -146,15 +169,10 @@ const InstructorSettings = () => {
         }
         setLoading(true);
         try {
-            const token = await getToken();
-            const { data } = await axios.put(
-                `${backendUrl}/api/user/change-password`,
-                { 
-                    currentPassword: passwordData.currentPassword, 
-                    newPassword: passwordData.newPassword 
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const { data } = await api.put('/user/change-password', { 
+                currentPassword: passwordData.currentPassword, 
+                newPassword: passwordData.newPassword 
+            });
             if (data.success) {
                 toast.success('Security layer updated successfully');
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -550,3 +568,7 @@ const InstructorSettings = () => {
 };
 
 export default InstructorSettings;
+
+
+
+

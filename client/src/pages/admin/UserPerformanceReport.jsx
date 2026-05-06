@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const UserPerformanceReport = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [performance, setPerformance] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchPerformance = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/scholar-performance`, getHeaders());
+            const { data } = await api.get('/admin/scholar-performance');
             if (data.success) setPerformance(data.performance);
         } catch (error) {
             toast.error('Performance Matrix Retrieval Failure');
@@ -89,3 +88,7 @@ const UserPerformanceReport = () => {
 };
 
 export default UserPerformanceReport;
+
+
+
+

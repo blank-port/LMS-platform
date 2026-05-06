@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageEnrollments = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [enrollments, setEnrollments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/enrollments`, getHeaders());
+            const { data } = await api.get('/admin/enrollments');
             if (data.success) {
                 setEnrollments(data.enrollments);
             }
@@ -119,4 +119,8 @@ const ManageEnrollments = () => {
 };
 
 export default ManageEnrollments;
+
+
+
+
 

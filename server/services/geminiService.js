@@ -24,9 +24,13 @@ CONTEXT: You are embedded in a chat bubble on the PrismEd platform. Users may or
 
 // Get Gemini API key from DB settings (admin-configurable)
 const getGeminiKey = async () => {
-    const setting = await Setting.findOne({ key: 'gemini_api_key' });
-    if (setting && setting.value && setting.value.trim().length > 0) {
-        return setting.value;
+    try {
+        const setting = await Setting.findOne({ key: 'gemini_api_key' });
+        if (setting && typeof setting.value === 'string' && setting.value.trim().length > 0) {
+            return setting.value.trim();
+        }
+    } catch (err) {
+        console.error("[GeminiService] Error fetching key from DB:", err.message);
     }
     return process.env.GEMINI_API_KEY || null;
 };
@@ -38,22 +42,25 @@ export const isAiChatEnabled = async () => {
 };
 
 // Send a message to Gemini and get a response
-export const chatWithGemini = async (message, history = []) => {
+export const chatWithGemini = async (message, history = [], systemPromptOverride = null, modelOverride = null) => {
     const apiKey = await getGeminiKey();
     if (!apiKey) {
         return {
             success: false,
-            text: "AI chat is not configured yet. Please ask the admin to set the Gemini API key in Settings → API Settings."
+            message: "AI chat is not configured yet. Please ask the admin to set the Gemini API key in Settings → API Settings."
         };
     }
 
-    // Try multiple models in order of performance for maximum compatibility
-    const modelsToTry = [
-        'gemini-1.5-flash', 
-        'gemini-1.5-flash-latest', 
+    const currentSystemPrompt = systemPromptOverride || SYSTEM_PROMPT;
+
+    // Try broadly-supported models first to maximize compatibility across keys/regions.
+    const modelsToTry = modelOverride ? [modelOverride] : [
+        'gemini-1.5-flash',
         'gemini-1.5-pro',
-        'gemini-pro', 
-        'gemini-1.0-pro'
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-flash-latest',
+        'gemini-pro-latest'
     ];
     let lastError = null;
 
@@ -61,10 +68,13 @@ export const chatWithGemini = async (message, history = []) => {
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
             
-            // Format systemInstruction based on model capability
+            // Detect legacy models that don't support systemInstruction
+            const isLegacyModel = modelName.includes('1.0') || modelName === 'gemini-pro';
+            
+            // Format systemInstruction for all modern models (1.5+, 2.x, 3.x)
             const modelConfigs = { model: modelName };
-            if (modelName.includes('1.5')) {
-                modelConfigs.systemInstruction = { parts: [{ text: SYSTEM_PROMPT }] };
+            if (!isLegacyModel) {
+                modelConfigs.systemInstruction = { parts: [{ text: currentSystemPrompt }] };
             }
 
             const model = genAI.getGenerativeModel(modelConfigs);
@@ -83,12 +93,12 @@ export const chatWithGemini = async (message, history = []) => {
                 }
             }
 
-            // For models that don't support systemInstruction (1.0 pro), 
+            // For legacy models that don't support systemInstruction,
             // prepend context to history manually
-            if (!modelName.includes('1.5')) {
+            if (isLegacyModel) {
                 formattedHistory.unshift(
-                    { role: 'user', parts: [{ text: "Context: " + SYSTEM_PROMPT }] },
-                    { role: 'model', parts: [{ text: "Understood. I am PrismBot." }] }
+                    { role: 'user', parts: [{ text: "Context: " + currentSystemPrompt }] },
+                    { role: 'model', parts: [{ text: "Understood." }] }
                 );
             }
 
@@ -101,12 +111,15 @@ export const chatWithGemini = async (message, history = []) => {
             console.error(`[GeminiService] Model ${modelName} failed:`, error.message);
             lastError = error;
             
-            // If it's a 404 (Model not found), try the next model in the list
+            if (modelOverride) break;
+            // 429/RESOURCE_EXHAUSTED: same API key → all models will fail, break immediately
+            if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+                break;
+            }
+            // 404/not found: model unavailable in this region, try next model
             if (error.message?.includes('404') || error.message?.includes('not found')) {
                 continue;
             }
-            
-            // If it's a 429 or 403, it's likely a key problem, so stop trying.
             break;
         }
     }
@@ -116,17 +129,26 @@ export const chatWithGemini = async (message, history = []) => {
     console.error(`[GeminiService] All models failed. Last Error: ${errMsg}. Using key ending in: ${apiKey.slice(-5)}`);
 
     if (errMsg.includes('404')) {
-        return { 
-            success: false, 
-            text: `⚠️ Error 404: The Gemini models [${modelsToTry.join(', ')}] are not responding to this API key in your region. (Key: ...${apiKey.slice(-5)}). Please check your Google Cloud Console → APIs & Services → Enabled APIs to ensure the 'Generative Language API' is active.` 
+        return {
+            success: false,
+            message: `The configured Gemini models are unavailable for this API key or region. Last checked models: ${modelsToTry.join(', ')}.`
         };
     }
     if (errMsg.includes('403')) {
-        return { success: false, text: "⚠️ Error 403: Specific Permission Denied. Your API key may be restricted or invalid." };
+        return {
+            success: false,
+            message: 'Gemini rejected the request with a permissions error. Please verify the API key and its restrictions.'
+        };
     }
-    if (errMsg.includes('429')) {
-        return { success: false, text: "⚠️ AI quota exceeded. Please try again in 1 minute! ⏳" };
+    if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+        return {
+            success: false,
+            message: 'Gemini quota is exhausted right now. Please wait a minute and try again.'
+        };
     }
-    
-    return { success: false, text: "I'm having a bit of trouble connecting to the AI brain. Please check your API key or try again! 🔄" };
+
+    return {
+        success: false,
+        message: "I'm having a bit of trouble connecting to the AI brain. Please check your API key or try again! 🔄"
+    };
 };

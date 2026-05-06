@@ -12,7 +12,12 @@ const reviewSchema = new mongoose.Schema({
         required: true
     },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, default: '' }
+    comment: { type: String, default: '' },
+    status: {
+        type: String,
+        enum: ['approved', 'rejected', 'pending'],
+        default: 'approved'
+    }
 }, { timestamps: true });
 
 reviewSchema.index({ courseId: 1, userId: 1 }, { unique: true });

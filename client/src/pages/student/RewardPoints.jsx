@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { Gift, Award, Zap, History, Calendar, CheckCircle, RotateCcw, TrendingUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -12,9 +12,7 @@ const RewardPoints = () => {
 
     const fetchStats = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/stats`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/gamification/stats');
             if (data.success) setStats(data.stats);
         } catch (error) {
             console.error('Stats Fetch Error:', error);
@@ -23,9 +21,7 @@ const RewardPoints = () => {
 
     const fetchHistory = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/history`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/gamification/history');
             if (data.success) setHistory(data.history);
         } catch (error) {
             console.error('History Fetch Error:', error);
@@ -37,9 +33,7 @@ const RewardPoints = () => {
     const handleRedeem = async () => {
         const actionToast = toast.loading('Synchronizing points to currency...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/gamification/redeem`, {}, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.post('/gamification/redeem', {});
             if (data.success) {
                 toast.update(actionToast, { render: data.message, type: "success", isLoading: false, autoClose: 3000 });
                 fetchStats();
@@ -148,3 +142,7 @@ const RewardPoints = () => {
 };
 
 export default RewardPoints;
+
+
+
+

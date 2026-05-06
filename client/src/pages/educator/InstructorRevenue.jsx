@@ -1,27 +1,26 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Calendar, BookOpen } from 'lucide-react';
 
 const InstructorRevenue = () => {
-    const { backendUrl, token, currency } = useContext(AppContext);
+    const { currency } = useContext(AppContext);
     const [data, setData] = useState(null);
     const [hasMounted, setHasMounted] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setHasMounted(true);
+        const timer = setTimeout(() => setHasMounted(true), 100);
         const fetchRevenue = async () => {
             try {
-                const { data: res } = await axios.get(`${backendUrl}/api/instructor/revenue`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data: res } = await api.get('/instructor/revenue');
                 if (res.success) setData(res);
             } catch (err) { console.error(err); }
             setLoading(false);
         };
         fetchRevenue();
+        return () => clearTimeout(timer);
     }, []);
 
     if (loading) return (
@@ -61,7 +60,7 @@ const InstructorRevenue = () => {
                 </div>
                 <div className="h-80 w-full">
                     {hasMounted && (
-                        <ResponsiveContainer width="100%" height="100%" minHeight={320} minWidth={0}>
+                        <ResponsiveContainer width="100%" height="100%" minHeight={320} minWidth={0} debounce={100}>
                         <BarChart data={data?.monthlyBreakdown || []}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
@@ -143,3 +142,7 @@ const InstructorRevenue = () => {
 };
 
 export default InstructorRevenue;
+
+
+
+

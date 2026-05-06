@@ -460,7 +460,11 @@ const seedDatabase = async () => {
             { key: 'notify_assignment_submitted', value: 'No', isSensitive: false },
 
             // AI Chat Assistant
-            { key: 'ai_chat_enabled', value: true, isSensitive: false }
+            { key: 'ai_chat_enabled', value: true, isSensitive: false },
+
+            // Fiscal Gateway: Razorpay Credentials
+            { key: 'razorpay_key_id', value: '', isSensitive: false },
+            { key: 'razorpay_key_secret', value: '', isSensitive: true }
         ];
         await Setting.insertMany(initialSettings);
         console.log('  → 16 Global Platform Settings initialized.');

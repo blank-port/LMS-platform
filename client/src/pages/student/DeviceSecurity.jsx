@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { ShieldCheck, Monitor, Smartphone, Globe, LogOut, Clock, Calendar, CheckCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -11,9 +11,7 @@ const DeviceSecurity = () => {
 
     const fetchSessions = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/user/sessions`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/user/sessions');
             if (data.success) setSessions(data.sessions);
         } catch (error) {
             console.error('Session Fetch Error:', error);
@@ -25,9 +23,7 @@ const DeviceSecurity = () => {
     const revokeSession = async (sessionId) => {
         const actionToast = toast.loading('Terminating remote session...');
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/user/sessions/${sessionId}`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.delete(`/user/sessions/${sessionId}`);
             if (data.success) {
                 toast.update(actionToast, { render: 'Session terminated from central registry.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchSessions();
@@ -128,3 +124,7 @@ const DeviceSecurity = () => {
 };
 
 export default DeviceSecurity;
+
+
+
+

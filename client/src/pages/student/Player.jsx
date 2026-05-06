@@ -1,20 +1,25 @@
 import React, { useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import Footer from '../../components/student/Footer';
+import AssignmentSubmissionModal from '../../components/student/AssignmentSubmissionModal';
 import { 
     Award, Star, MessageCircle, Clock, CheckCircle, ShieldCheck,
     Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
     Maximize, Minimize, Settings, ChevronDown, ChevronRight,
     BookOpen, FileText, MessageSquare, PenLine, ArrowLeft,
-    PictureInPicture2, Bookmark, ChevronLeft
+    PictureInPicture2, Bookmark, ChevronLeft, Download, ClipboardList, 
+    ExternalLink, FileDown, Trophy, Sparkles
 } from 'lucide-react';
+
+const DiscussionSystem = React.lazy(() => import('../../components/common/DiscussionSystem.jsx'));
+import FlashcardPlayer from '../../components/student/FlashcardPlayer.jsx';
 
 const Player = () => {
     const { courseId } = useParams();
-    const { backendUrl, token, navigate, settings } = useContext(AppContext);
+    const { token, navigate, settings } = useContext(AppContext);
     const [courseData, setCourseData] = useState(null);
     const [enrollment, setEnrollment] = useState(null);
     const [currentLecture, setCurrentLecture] = useState(null);
@@ -38,7 +43,14 @@ const Player = () => {
     const [intendedSeekTime, setIntendedSeekTime] = useState(null);
     const [collapsedChapters, setCollapsedChapters] = useState({});
     const [lectureNotes, setLectureNotes] = useState('');
+    const [bookmarks, setBookmarks] = useState([]);
+    const [courseAssignments, setCourseAssignments] = useState([]);
+    const [studentSubmissions, setStudentSubmissions] = useState([]);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [showResumingCue, setShowResumingCue] = useState(false);
     const [buffered, setBuffered] = useState(0);
+    const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+    const [selectedSubmissionAssignment, setSelectedSubmissionAssignment] = useState(null);
 
     const videoRef = React.useRef(null);
     const playerRef = React.useRef(null);
@@ -79,9 +91,7 @@ const Player = () => {
 
     const fetchCourseData = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/course/full/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/course/full/${courseId}`);
             if (data.success) {
                 setCourseData(data.courseData);
                 setEnrollment(data.enrollment);
@@ -101,9 +111,7 @@ const Player = () => {
 
     const fetchDiscussions = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/comm/qa?courseId=${courseId}&lessonId=${currentLecture?._id || ''}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/comm/qa?courseId=${courseId}&lessonId=${currentLecture?._id || ''}`);
             if (data.success) {
                 const sorted = data.discussions.sort((a, b) => (b.isGoldenKnowledge ? 1 : 0) - (a.isGoldenKnowledge ? 1 : 0));
                 setDiscussions(sorted);
@@ -113,20 +121,34 @@ const Player = () => {
 
     const fetchReviews = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/review/course/${courseId}`);
+            const { data } = await api.get(`/review/course/${courseId}`);
             if (data.success) setReviews(data.reviews);
         } catch (error) { console.error('Reviews fetch failed'); }
+    };
+
+    const fetchAssignments = async () => {
+        try {
+            const { data } = await api.get(`/assignment/course/${courseId}`);
+            if (data.success) setCourseAssignments(data.assignments);
+        } catch (error) { console.error('Assignments fetch failed'); }
+    };
+
+    const fetchSubmissions = async () => {
+        try {
+            const { data } = await api.get('/assignment/my-submissions');
+            if (data.success) setStudentSubmissions(data.submissions);
+        } catch (error) { console.error('Submissions fetch failed'); }
     };
 
     const handleSubmitQuestion = async (e) => {
         e.preventDefault();
         if (!newQuestion.trim()) return;
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/qa`, {
+            const { data } = await api.post('/comm/qa', {
                 courseId,
                 lessonId: currentLecture?._id,
                 message: newQuestion
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             if (data.success) {
                 setNewQuestion('');
                 fetchDiscussions();
@@ -138,7 +160,11 @@ const Player = () => {
     useEffect(() => {
         if (activeTab === 'qa') fetchDiscussions();
         if (activeTab === 'reviews') fetchReviews();
-    }, [activeTab, currentLecture]);
+        if (activeTab === 'assignments') {
+            fetchAssignments();
+            fetchSubmissions();
+        }
+    }, [activeTab, currentLecture, courseId]);
 
     // ─── Notes (localStorage) ────────────────────────────────────────
     useEffect(() => {
@@ -155,15 +181,50 @@ const Player = () => {
         localStorage.setItem(key, value);
     }, [currentLecture, courseId]);
 
+    // ─── Bookmarks (localStorage) ────────────────────────────────────
+    useEffect(() => {
+        if (!currentLecture) return;
+        const key = `prismed_bookmarks_${courseId}_${currentLecture._id}`;
+        const saved = localStorage.getItem(key);
+        setBookmarks(saved ? JSON.parse(saved) : []);
+    }, [currentLecture, courseId]);
+
+    const handleBookmarkSave = useCallback(() => {
+        if (!currentLecture || !videoRef.current) return;
+        const newBookmark = {
+            id: Date.now(),
+            time: videoRef.current.currentTime,
+            note: `Marker at ${formatTime(videoRef.current.currentTime)}`
+        };
+        const updated = [...bookmarks, newBookmark].sort((a, b) => a.time - b.time);
+        setBookmarks(updated);
+        const key = `prismed_bookmarks_${courseId}_${currentLecture._id}`;
+        localStorage.setItem(key, JSON.stringify(updated));
+        toast.success('Bookmark saved');
+    }, [currentLecture, courseId, bookmarks]);
+
+    const removeBookmark = (bookmarkId) => {
+        const updated = bookmarks.filter(b => b.id !== bookmarkId);
+        setBookmarks(updated);
+        const key = `prismed_bookmarks_${courseId}_${currentLecture._id}`;
+        localStorage.setItem(key, JSON.stringify(updated));
+    };
+
     // ─── Progress / Completion ───────────────────────────────────────
     const markComplete = async (lectureId) => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/course/progress/update`, {
+            const { data } = await api.post('/course/progress/update', {
                 courseId, lessonId: lectureId, markAsComplete: true
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             if (data.success) {
                 setEnrollment(data.enrollment);
                 toast.success('Lecture marked complete');
+                
+                // Trigger celebration if progress hit 100%
+                if (data.enrollment.progress === 100 && enrollment?.progress < 100) {
+                    setShowConfetti(true);
+                    toast.success('🎉 Congratulations! You have completed the course!', { autoClose: 5000 });
+                }
                 return true;
             }
         } catch (error) { console.error('Progress sync failed'); }
@@ -174,17 +235,6 @@ const Player = () => {
         if (!courseData || !courseData.courseContent) return [];
         return courseData.courseContent.flatMap(ch => ch.chapterContent);
     }, [courseData]);
-
-    const navigateModule = (direction) => {
-        const flat = getFlattenedLectures();
-        const index = flat.findIndex(l => l._id === currentLecture?._id);
-        if (index === -1) return;
-        if (direction === 'next' && index < flat.length - 1) {
-            setCurrentLecture(flat[index + 1]);
-        } else if (direction === 'prev' && index > 0) {
-            setCurrentLecture(flat[index - 1]);
-        }
-    };
 
     // ─── Video Controls ──────────────────────────────────────────────
     const togglePlay = () => {
@@ -292,11 +342,11 @@ const Player = () => {
         if (!isPlaying || !currentLecture) return;
         const saverInstance = setInterval(async () => {
             try {
-                await axios.post(`${backendUrl}/api/course/progress/update`, {
+                await api.post('/course/progress/update', {
                     courseId,
                     lessonId: currentLecture._id,
                     lastWatchedTime: videoRef.current?.currentTime || 0
-                }, { headers: { Authorization: `Bearer ${token}` } });
+                });
             } catch (err) { console.error('Progress sync failed'); }
         }, 10000);
         return () => clearInterval(saverInstance);
@@ -360,36 +410,39 @@ const Player = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--text-main)] flex flex-col pt-16">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--text-main)] flex flex-col pt-0 student-theme">
             {/* ─── Clean Header Bar ─────────────────────────────────── */}
-            <div className="bg-[var(--surface)] border-b border-[var(--border)] py-3 px-4 md:px-8 flex items-center justify-between sticky top-16 z-50">
-                <div className="flex items-center gap-4 min-w-0">
+            <div className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)]/80 py-3 px-6 backdrop-blur-2xl md:px-10 transition-all duration-300">
+                <div className="flex items-center gap-6 min-w-0">
                     <button
-                        onClick={() => navigate('/my-enrollments')}
-                        className="w-9 h-9 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-white/10 transition-all group flex-shrink-0"
+                        onClick={() => navigate('/student/my-courses')}
+                        className="w-10 h-10 rounded-2xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group flex-shrink-0 shadow-sm"
                     >
-                        <ArrowLeft size={16} className="text-[var(--text-muted)] group-hover:text-indigo-600 transition-colors" />
+                        <ArrowLeft size={18} className="text-[var(--text-muted)] group-hover:text-white transition-colors" />
                     </button>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider">Now Learning</p>
-                        <h1 className="text-sm font-bold text-[var(--text-main)] truncate">{courseData.courseTitle}</h1>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <Sparkles size={12} className="text-indigo-500 animate-pulse" />
+                            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Learning Node</p>
+                        </div>
+                        <h1 className="text-base font-black text-[var(--text-main)] truncate tracking-tight">{courseData.courseTitle}</h1>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-3">
-                        <ProgressRing progress={enrollment?.progress || 0} />
-                        <div className="text-right">
-                            <p className="text-[10px] text-[var(--text-muted)] font-medium">{completedCount}/{totalLectures} lectures</p>
-                            <p className="text-xs font-bold text-[var(--text-main)]">{enrollment?.progress || 0}% complete</p>
+                <div className="flex items-center gap-6">
+                    <div className="hidden lg:flex items-center gap-4 px-6 py-2 bg-[var(--background)]/50 rounded-2xl border border-[var(--border)] backdrop-blur-sm">
+                        <ProgressRing progress={enrollment?.progress || 0} size={36} />
+                        <div className="text-left border-l border-[var(--border)] pl-4">
+                            <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest leading-none mb-1">{completedCount}/{totalLectures} Units</p>
+                            <p className="text-[11px] font-black text-[var(--text-main)] uppercase tracking-tighter leading-none">{enrollment?.progress || 0}% Complete</p>
                         </div>
                     </div>
                     {enrollment?.progress === 100 && (
                         <button
                             onClick={() => navigate(`/quiz/${courseId}`)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-3 active:scale-95"
                         >
-                            <Award size={14} /> Take Exam
+                            <Trophy size={14} /> Launch Exam
                         </button>
                     )}
                 </div>
@@ -400,7 +453,16 @@ const Player = () => {
                 {/* ─── Left: Video + Tabs ───────────────────────────── */}
                 <div className="flex-1 overflow-y-auto">
                     {/* ─── Video Player Container ───────────────────── */}
-                    <div className="bg-black">
+                    <div className="bg-black relative">
+                        {/* Resuming Cue Overlay */}
+                        {showResumingCue && (
+                            <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 duration-700">
+                                <div className="px-6 py-3 bg-indigo-600/90 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center gap-4 shadow-2xl">
+                                    <Clock size={16} className="text-white animate-pulse" />
+                                    <p className="text-xs font-bold text-white whitespace-nowrap">Resuming from {formatTime(enrollment?.lastWatchedTime)}</p>
+                                </div>
+                            </div>
+                        )}
                         <div
                             ref={playerRef}
                             onMouseMove={handleMouseMove}
@@ -434,6 +496,8 @@ const Player = () => {
                                                     setIntendedSeekTime(null);
                                                 } else if (enrollment && enrollment.lastWatchedLessonId === currentLecture._id && enrollment.lastWatchedTime > 0) {
                                                     videoRef.current.currentTime = enrollment.lastWatchedTime;
+                                                    setShowResumingCue(true);
+                                                    setTimeout(() => setShowResumingCue(false), 4000);
                                                     toast.success(`Resuming from ${formatTime(enrollment.lastWatchedTime)}`);
                                                 }
                                             }}
@@ -602,9 +666,13 @@ const Player = () => {
                         <div className="flex items-center gap-1 px-4 md:px-8 pt-4 border-b border-[var(--border)]">
                             {[
                                 { key: 'description', label: 'Overview', icon: FileText },
+                                { key: 'flashcards', label: 'AI Cards', icon: Sparkles },
                                 ...(settings?.hide_qa !== 'Yes' ? [{ key: 'qa', label: 'Q&A', icon: MessageSquare }] : []),
                                 { key: 'reviews', label: 'Reviews', icon: Star },
+                                { key: 'resources', label: 'Resources', icon: FileDown },
+                                { key: 'assignments', label: 'Assignments', icon: ClipboardList },
                                 { key: 'notes', label: 'Notes', icon: PenLine },
+                                { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
                             ].map(tab => (
                                 <button
                                     key={tab.key}
@@ -671,66 +739,27 @@ const Player = () => {
                                 </div>
                             )}
 
+                            {/* Flashcards Tab */}
+                            {activeTab === 'flashcards' && currentLecture && (
+                                <div className="animate-in fade-in duration-300">
+                                    <FlashcardPlayer 
+                                        courseId={courseId}
+                                        lectureId={currentLecture._id}
+                                        lectureTitle={currentLecture.lectureTitle}
+                                        lectureDescription={currentLecture.lectureDescription || ''}
+                                    />
+                                </div>
+                            )}
+
                             {/* Q&A Tab */}
                             {activeTab === 'qa' && (
-                                <div className="animate-in fade-in duration-300 space-y-6">
-                                    <form onSubmit={handleSubmitQuestion} className="bg-[var(--background)] p-6 rounded-2xl border border-[var(--border)]">
-                                        <h3 className="text-sm font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                                            <MessageSquare size={16} className="text-indigo-500" /> Ask a Question
-                                        </h3>
-                                        <textarea
-                                            value={newQuestion}
-                                            onChange={(e) => setNewQuestion(e.target.value)}
-                                            placeholder="What would you like to ask about this lecture?"
-                                            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/50 outline-none focus:border-indigo-500/50 resize-none min-h-[100px] transition-all"
+                                <div className="animate-in fade-in duration-300">
+                                    <React.Suspense fallback={<div className="h-64 bg-white/5 animate-pulse rounded-3xl"></div>}>
+                                        <DiscussionSystem 
+                                            courseId={courseId} 
+                                            lessonId={currentLecture?._id}
                                         />
-                                        <div className="mt-4 flex justify-end">
-                                            <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-all">Post Question</button>
-                                        </div>
-                                    </form>
-
-                                    <div className="space-y-4">
-                                        {discussions.length === 0 ? (
-                                            <div className="py-16 text-center">
-                                                <MessageCircle size={40} className="mx-auto text-[var(--text-muted)]/20 mb-3" />
-                                                <p className="text-sm text-[var(--text-muted)]">No questions yet. Be the first to ask!</p>
-                                            </div>
-                                        ) : discussions.map(q => (
-                                            <div key={q._id} className={`p-5 rounded-2xl border transition-all ${
-                                                q.isGoldenKnowledge
-                                                    ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20'
-                                                    : 'bg-[var(--background)] border-[var(--border)] hover:shadow-md'
-                                            }`}>
-                                                {q.isGoldenKnowledge && (
-                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-semibold mb-3">
-                                                        <Award size={10} /> Golden Knowledge
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ${
-                                                        q.isGoldenKnowledge ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-600' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600'
-                                                    }`}>
-                                                        {q.userId?.name?.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
-                                                            {q.userId?.name}
-                                                            {q.isGoldenKnowledge && <ShieldCheck size={14} className="text-amber-500" />}
-                                                        </p>
-                                                        <p className="text-[10px] text-[var(--text-muted)]">{new Date(q.createdAt).toLocaleDateString()}</p>
-                                                    </div>
-                                                </div>
-                                                <p className="text-sm text-[var(--text-muted)] leading-relaxed pl-12">{q.message}</p>
-                                                {q.isReplied && (
-                                                    <div className={`mt-3 ml-12 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${
-                                                        q.isGoldenKnowledge ? 'bg-amber-500 text-white' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
-                                                    }`}>
-                                                        <CheckCircle size={12} /> Answered by instructor
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+                                    </React.Suspense>
                                 </div>
                             )}
 
@@ -768,6 +797,131 @@ const Player = () => {
                                 </div>
                             )}
 
+                            {/* Resources Tab */}
+                            {activeTab === 'resources' && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h3 className="text-sm font-bold text-[var(--text-main)] mb-6 flex items-center gap-2">
+                                        <FileDown size={18} className="text-indigo-500" />
+                                        Lecture Resources
+                                    </h3>
+                                    {!currentLecture?.attachments || currentLecture.attachments.length === 0 ? (
+                                        <div className="py-20 text-center border-2 border-dashed border-[var(--border)] rounded-[2.5rem]">
+                                            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <FileText size={24} className="text-[var(--text-muted)] opacity-30" />
+                                            </div>
+                                            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-40">No resources deployed for this module</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {currentLecture.attachments.map((file, idx) => (
+                                                <div key={idx} className="p-5 bg-[var(--background)] border border-[var(--border)] rounded-2xl flex items-center justify-between group hover:border-indigo-500/30 hover:shadow-xl transition-all">
+                                                    <div className="flex items-center gap-4 min-w-0">
+                                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                                            <FileText size={18} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-bold text-[var(--text-main)] truncate">{file.fileName}</p>
+                                                            <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-tighter">Resource</p>
+                                                        </div>
+                                                    </div>
+                                                    <a 
+                                                        href={file.fileUrl} 
+                                                        target="_blank" 
+                                                        rel="noreferrer"
+                                                        download={file.fileName}
+                                                        className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-[var(--text-muted)] hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+                                                    >
+                                                        <Download size={16} />
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Assignments Tab */}
+                            {activeTab === 'assignments' && (
+                                <div className="animate-in fade-in duration-300">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
+                                            <ClipboardList size={18} className="text-indigo-500" />
+                                            Assignments
+                                        </h3>
+                                    </div>
+
+                                    {courseAssignments.length === 0 ? (
+                                        <div className="py-20 text-center border-2 border-dashed border-[var(--border)] rounded-[2.5rem]">
+                                            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <ClipboardList size={24} className="text-[var(--text-muted)] opacity-30" />
+                                            </div>
+                                            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-40">No assignments found in the curriculum</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {courseAssignments.map(assignment => {
+                                                const submission = studentSubmissions.find(s => s.assignmentId?._id === assignment._id || s.assignmentId === assignment._id);
+                                                const isOverdue = new Date(assignment.deadline) < new Date() && !submission;
+                                                
+                                                return (
+                                                    <div key={assignment._id} className="p-6 bg-[var(--background)] border border-[var(--border)] rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <h4 className="text-lg font-black text-[var(--text-main)] tracking-tight truncate">{assignment.title}</h4>
+                                                                <span className="px-3 py-1 bg-gray-100 dark:bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest">{assignment.totalMarks} Marks</span>
+                                                            </div>
+                                                            <p className="text-sm text-[var(--text-muted)] mb-4 line-clamp-2">{assignment.description}</p>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                                                                    <Clock size={12} />
+                                                                    <span className="text-[10px] font-bold uppercase tracking-widest">Due: {new Date(assignment.deadline).toLocaleDateString()}</span>
+                                                                </div>
+                                                                {submission && (
+                                                                    <div className="flex items-center gap-1.5 text-emerald-500">
+                                                                        <CheckCircle size={12} />
+                                                                        <span className="text-[10px] font-bold uppercase tracking-widest">Submitted</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-4 shrink-0">
+                                                            {submission?.status === 'graded' ? (
+                                                                <div className="text-right">
+                                                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-1">Score Obtained</p>
+                                                                    <p className="text-2xl font-black text-[var(--text-main)]">{submission.marksObtained}<span className="text-xs text-[var(--text-muted)] slashed-zero">/{assignment.totalMarks}</span></p>
+                                                                </div>
+                                                            ) : (
+                                                                <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${
+                                                                    submission ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600' : isOverdue ? 'bg-red-50 dark:bg-red-500/10 text-red-600' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
+                                                                }`}>
+                                                                    {submission ? 'Pending Grade' : isOverdue ? 'Overdue' : 'Awaiting Submission'}
+                                                                </div>
+                                                            )}
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if (submission) {
+                                                                        toast.info('Assessment Already Committed');
+                                                                    } else {
+                                                                        setSelectedSubmissionAssignment(assignment);
+                                                                        setIsSubmissionModalOpen(true);
+                                                                    }
+                                                                }}
+                                                                className={`h-12 px-8 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg ${
+                                                                    submission ? 'bg-gray-100 dark:bg-white/10 text-[var(--text-main)] hover:bg-white/20' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20'
+                                                                }`}
+                                                            >
+                                                                {submission ? 'Review Work' : 'Launch Submission'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Notes Tab */}
                             {activeTab === 'notes' && (
                                 <div className="animate-in fade-in duration-300">
@@ -785,6 +939,53 @@ const Player = () => {
                                         placeholder="Take notes for this lecture... Your notes are saved automatically and will persist when you return."
                                         className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl p-6 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)]/40 outline-none focus:border-indigo-500/50 resize-none min-h-[300px] transition-all leading-relaxed"
                                     />
+                                </div>
+                            )}
+
+                            {/* Bookmarks Tab */}
+                            {activeTab === 'bookmarks' && (
+                                <div className="animate-in fade-in duration-300">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+                                            <Bookmark size={16} className="text-indigo-500" />
+                                            Active Markers
+                                        </h3>
+                                        <button 
+                                            onClick={handleBookmarkSave}
+                                            className="px-4 py-2 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
+                                        >
+                                            Add Current Point
+                                        </button>
+                                    </div>
+                                    
+                                    {bookmarks.length === 0 ? (
+                                        <div className="py-16 text-center border-2 border-dashed border-[var(--border)] rounded-[2rem]">
+                                            <Bookmark size={32} className="mx-auto text-[var(--text-muted)] opacity-10 mb-3" />
+                                            <p className="text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)] opacity-40">No markers deployed in this module</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {bookmarks.map(b => (
+                                                <div key={b.id} className="p-5 bg-[var(--background)] border border-[var(--border)] rounded-2xl group/bm relative overflow-hidden">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <button 
+                                                            onClick={() => handleSeek(b.time)}
+                                                            className="text-xs font-black text-indigo-500 hover:text-indigo-400 flex items-center gap-2 uppercase tracking-tight"
+                                                        >
+                                                            <Play size={10} fill="currentColor" /> {formatTime(b.time)}
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => removeBookmark(b.id)}
+                                                            className="text-[var(--text-muted)] hover:text-rose-500 opacity-0 group-hover/bm:opacity-100 transition-opacity"
+                                                        >
+                                                            <CheckCircle size={14} className="rotate-45" />
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-[11px] font-medium text-[var(--text-muted)]">{b.note}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -811,16 +1012,22 @@ const Player = () => {
                 </div>
 
                 {/* ─── Right: Course Sidebar ─────────────────────────── */}
-                <div className="w-full lg:w-[380px] bg-[var(--surface)] border-l border-[var(--border)] flex flex-col lg:sticky lg:top-[112px] lg:h-[calc(100vh-112px)] overflow-hidden">
+                <div className="w-full lg:w-[420px] bg-[var(--surface)] border-l border-[var(--border)] flex flex-col lg:sticky lg:top-[73px] lg:h-[calc(100vh-73px)] overflow-hidden transition-all duration-500">
                     {/* Sidebar Header */}
-                    <div className="p-5 border-b border-[var(--border)]">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-bold text-[var(--text-main)]">Course Content</h3>
-                            <span className="text-xs text-[var(--text-muted)] font-medium">{completedCount}/{totalLectures} done</span>
+                    <div className="p-6 border-b border-[var(--border)] bg-[var(--background)]/30 backdrop-blur-md">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-1">Course Progress</span>
+                                <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-tight">Curriculum Pulse</h3>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs font-black text-[var(--text-main)]">{enrollment?.progress || 0}%</p>
+                                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-tighter opacity-60">{completedCount}/{totalLectures} Sync'd</p>
+                            </div>
                         </div>
-                        <div className="w-full bg-[var(--background)] rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-[var(--border)] rounded-full h-1.5 overflow-hidden">
                             <div
-                                className="bg-indigo-500 h-full rounded-full transition-all duration-700"
+                                className="bg-gradient-to-r from-indigo-600 to-indigo-400 h-full rounded-full transition-all duration-1000 ease-out"
                                 style={{ width: `${enrollment?.progress || 0}%` }}
                             ></div>
                         </div>
@@ -850,44 +1057,65 @@ const Player = () => {
 
                                     {/* Lecture List */}
                                     {!isCollapsed && (
-                                        <div className="divide-y divide-[var(--border)]">
+                                        <div className="divide-y divide-[var(--border)] bg-[var(--surface)]">
                                             {chapter.chapterContent?.map((lecture, lIndex) => {
                                                 const isActive = currentLecture?._id === lecture._id;
                                                 const isComplete = isLectureCompleted(lecture._id);
 
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={lIndex}
                                                         onClick={() => setCurrentLecture(lecture)}
-                                                        className={`w-full text-left px-5 py-3.5 flex items-center gap-3 transition-all relative group ${
+                                                        className={`w-full text-left px-6 py-4 flex items-center gap-4 transition-all relative group cursor-pointer ${
                                                             isActive
-                                                                ? 'bg-indigo-50 dark:bg-indigo-500/10'
+                                                                ? 'bg-indigo-600/5 dark:bg-indigo-500/10'
                                                                 : 'hover:bg-[var(--background)]'
                                                         }`}
                                                     >
-                                                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-indigo-500 rounded-r"></div>}
+                                                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 shadow-[2px_0_15px_rgba(79,70,229,0.4)]"></div>}
 
-                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-all ${
                                                             isComplete
-                                                                ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600'
+                                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                                                                 : isActive
-                                                                    ? 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600'
-                                                                    : 'bg-[var(--background)] text-[var(--text-muted)]'
+                                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                                                    : 'bg-[var(--background)] text-[var(--text-muted)] border border-[var(--border)]'
                                                         }`}>
-                                                            {isComplete ? <CheckCircle size={14} /> : (isActive ? <Play size={12} fill="currentColor" /> : lIndex + 1)}
+                                                            {isComplete ? <CheckCircle size={14} /> : (isActive ? <Play size={12} fill="currentColor" /> : (lIndex + 1).toString().padStart(2, '0'))}
                                                         </div>
 
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`text-xs leading-snug truncate ${
-                                                                isActive ? 'font-semibold text-indigo-600 dark:text-indigo-400' : 'text-[var(--text-main)] font-medium'
+                                                            <p className={`text-[12px] leading-tight mb-1 truncate transition-colors ${
+                                                                isActive ? 'font-black text-[var(--text-main)]' : 'text-[var(--text-main)] font-bold opacity-70'
                                                             }`}>
                                                                 {lecture.lectureTitle}
                                                             </p>
-                                                            <p className="text-[10px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
-                                                                <Clock size={10} /> {lecture.lectureDuration} min
-                                                            </p>
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--background)] border border-[var(--border)] rounded-md">
+                                                                    <Clock size={10} className="text-indigo-500" />
+                                                                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-tighter">{lecture.lectureDuration} MIN</span>
+                                                                </div>
+                                                                {isComplete && (
+                                                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                                                        <CheckCircle size={10} /> Sync'd
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </button>
+                                                        
+                                                        {/* Step-Access Shortcut */}
+                                                        {!isComplete && (
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    markComplete(lecture._id);
+                                                                }}
+                                                                className="w-9 h-9 rounded-xl bg-white/50 dark:bg-white/5 border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm"
+                                                            >
+                                                                <CheckCircle size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 );
                                             })}
                                         </div>
@@ -898,8 +1126,48 @@ const Player = () => {
                     </div>
                 </div>
             </div>
+            {/* Completion Celebration Overlay */}
+            {showConfetti && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+                    <div className="relative p-12 bg-[var(--surface)] rounded-[3rem] border border-white/10 shadow-2xl text-center max-w-lg mx-4">
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center shadow-xl">
+                            <Trophy size={48} className="text-white" />
+                        </div>
+                        <h2 className="text-3xl font-black text-[var(--text-main)] mt-6 mb-4 tracking-tight">Mission Accomplished!</h2>
+                        <p className="text-[var(--text-muted)] text-sm mb-8 leading-relaxed font-medium">
+                            You've conquered <span className="text-indigo-500 font-bold">{courseData.courseTitle}</span>. 
+                            Your dedication to growth is inspiring. Ready to claim your certification?
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => navigate(`/quiz/${courseId}`)}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-lg shadow-indigo-500/20"
+                            >
+                                Launch Certification Exam
+                            </button>
+                            <button
+                                onClick={() => setShowConfetti(false)}
+                                className="w-full py-4 bg-gray-100 dark:bg-white/5 text-[var(--text-muted)] font-black uppercase tracking-[0.2em] text-xs rounded-2xl hover:bg-white/10 transition-all"
+                            >
+                                Return to Player
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <AssignmentSubmissionModal 
+                isOpen={isSubmissionModalOpen}
+                onClose={() => setIsSubmissionModalOpen(false)}
+                assignment={selectedSubmissionAssignment}
+                onSubmissionSuccess={(newSubmission) => {
+                    setStudentSubmissions(prev => [newSubmission, ...prev]);
+                }}
+            />
         </div>
     );
 };
 
 export default Player;
+
+

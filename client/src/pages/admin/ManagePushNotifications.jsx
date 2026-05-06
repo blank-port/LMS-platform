@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     BellIcon, 
@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ManagePushNotifications = () => {
-    const { backendUrl, getHeaders, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
+    const { backendUrl, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState('api');
     const [loading, setLoading] = useState(true);
     const [config, setConfig] = useState({
@@ -71,7 +71,7 @@ const ManagePushNotifications = () => {
     const handleSendBlast = async () => {
         const loadingToast = toast.loading('Dispatching Strategic Alert...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/notification/broadcast`, blast, getHeaders());
+            const { data } = await api.post('/notification/broadcast', blast);
             if (data.success) {
                 toast.update(loadingToast, { render: data.message, type: 'success', isLoading: false, autoClose: 3000 });
                 setBlast({ title: '', message: '', audience: 'All Students', image: null });
@@ -271,3 +271,7 @@ const ManagePushNotifications = () => {
 };
 
 export default ManagePushNotifications;
+
+
+
+

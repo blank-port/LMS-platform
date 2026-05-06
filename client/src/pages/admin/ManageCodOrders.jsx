@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { AppContext } from '../../context/AppContextObject';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ManageCodOrders = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('pending_approval'); // approved, rejected
 
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get(`${backendUrl}/api/payment/pending-cod`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/payment/pending-cod');
             if (data.success) {
                 setOrders(data.payments);
             }
@@ -33,9 +28,7 @@ const ManageCodOrders = () => {
     const handleAction = async (orderId, action) => {
         try {
             const endpoint = action === 'approve' ? 'approve-cod' : 'reject-cod';
-            const { data } = await axios.post(`${backendUrl}/api/payment/${endpoint}`, { paymentId: orderId }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post(`/payment/${endpoint}`, { paymentId: orderId });
 
             if (data.success) {
                 toast.success(`Order ${action === 'approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -131,3 +124,8 @@ const ManageCodOrders = () => {
 };
 
 export default ManageCodOrders;
+
+
+
+
+

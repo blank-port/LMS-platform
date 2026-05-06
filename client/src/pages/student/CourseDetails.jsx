@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import Footer from '../../components/student/Footer';
 import Loading from '../../components/student/Loading';
@@ -14,7 +14,7 @@ const CourseDetails = () => {
     const { id } = useParams();
     const {
         currency, allCourses, calculateRating, calculateNoOfLectures, calculateCourseDuration,
-        backendUrl, getHeaders, token, user, settings, navigate, wishlist, toggleWishlist
+        token, user, settings, navigate, wishlist, toggleWishlist
     } = useContext(AppContext);
 
     const [courseData, setCourseData] = useState(null);
@@ -37,7 +37,7 @@ const CourseDetails = () => {
 
     const fetchCourseData = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/course/${id}`);
+            const { data } = await api.get(`/course/${id}`);
             if (data.success) {
                 setCourseData(data.courseData);
                 if (user && data.courseData?.enrolledStudents?.includes(user._id)) {
@@ -57,14 +57,14 @@ const CourseDetails = () => {
 
     const fetchReviews = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/review/course/${id}`);
+            const { data } = await api.get(`/review/course/${id}`);
             if (data.success) setReviews(data.reviews);
         } catch (error) { console.error(error); }
     };
 
     const fetchDiscussions = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/discussion/course/${id}`);
+            const { data } = await api.get(`/discussion/course/${id}`);
             if (data.success) setDiscussions(data.comments);
         } catch (error) { console.error(error); }
     };
@@ -72,9 +72,7 @@ const CourseDetails = () => {
     const handleEnroll = async () => {
         if (!token) { navigate('/login'); return; }
         try {
-            const { data } = await axios.post(`${backendUrl}/api/course/enroll`, { courseId: id }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post(`/course/enroll`, { courseId: id });
             if (data.success) {
                 toast.success('Enrolled successfully!');
                 setIsEnrolled(true);
@@ -89,9 +87,9 @@ const CourseDetails = () => {
     const handleAddComment = async () => {
         if (!newComment.trim() || !token) return;
         try {
-            const { data } = await axios.post(`${backendUrl}/api/discussion/add`, {
+            const { data } = await api.post(`/discussion/add`, {
                 courseId: id, message: newComment
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             if (data.success) {
                 setNewComment('');
                 fetchDiscussions();
@@ -103,11 +101,11 @@ const CourseDetails = () => {
     const handleAddReview = async () => {
         if (!newReview.comment.trim() || !token) return;
         try {
-            const { data } = await axios.post(`${backendUrl}/api/review/add`, {
+            const { data } = await api.post(`/review/add`, {
                 courseId: id,
                 rating: newReview.rating,
                 comment: newReview.comment
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             
             if (data.success) {
                 setNewReview({ rating: 5, comment: '' });
@@ -128,8 +126,8 @@ const CourseDetails = () => {
         <div className="min-h-screen bg-[var(--background)]">
             {/* Course Immersive Hero */}
             <div className="bg-[var(--surface)] dark:bg-[#0C132B] pt-36 pb-24 text-[var(--text-main)] dark:text-white relative overflow-hidden transition-all duration-500">
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] -mr-48 -mt-48 animate-pulse"></div>
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] -ml-48 -mb-48"></div>
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[var(--accent)]/12 rounded-full blur-[120px] -mr-48 -mt-48"></div>
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] -ml-48 -mb-48"></div>
 
                 <div className="container mx-auto px-6 md:px-12 lg:px-24 relative z-10">
                     <nav className="flex items-center gap-3 mb-10 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]/50 dark:text-white/30">
@@ -137,13 +135,18 @@ const CourseDetails = () => {
                         <span className="text-[var(--text-muted)]/20 dark:text-white/10">/</span>
                         <Link to="/course-list" className="hover:text-[var(--text-main)] dark:hover:text-white transition-colors">Courses</Link>
                         <span className="text-[var(--text-muted)]/20 dark:text-white/10">/</span>
-                        <span className="text-indigo-400">{courseData.category?.name || 'Education'}</span>
+                        <span className="text-[var(--primary)]">{courseData.category?.name || 'Education'}</span>
                     </nav>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
                         <div className="lg:col-span-8">
-                            <div className="inline-flex items-center gap-2 bg-indigo-500 text-white text-[10px] font-black px-4 py-1.5 rounded-lg uppercase tracking-widest mb-8 shadow-xl shadow-indigo-500/20">
-                                {courseData.level || 'Beginner'}
+                            <div className="flex gap-3 mb-8">
+                                <div className="inline-flex items-center gap-2 bg-[var(--primary)] text-white text-[10px] font-black padding px-4 py-1.5 rounded-lg uppercase tracking-widest shadow-xl shadow-black/10">
+                                    {courseData.level || 'Beginner'}
+                                </div>
+                                <div className="inline-flex items-center gap-2 bg-white/10 dark:bg-white/5 text-[var(--text-main)] dark:text-white/60 text-[10px] font-black px-4 py-1.5 rounded-lg uppercase tracking-widest border border-white/10">
+                                    Last Updated: {new Date(courseData.updatedAt || courseData.createdAt).toLocaleDateString()}
+                                </div>
                             </div>
 
                             <h1 className="text-4xl lg:text-6xl font-black mb-10 leading-[1.1] tracking-tighter text-[var(--text-main)] dark:text-white">
@@ -152,7 +155,7 @@ const CourseDetails = () => {
 
                             <div className="flex flex-wrap items-center gap-10">
                                 <div className="flex items-center gap-4 group">
-                                    <div className="w-12 h-12 rounded-2xl bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 flex items-center justify-center font-black text-indigo-400 text-xl group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                                    <div className="w-12 h-12 rounded-2xl bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 flex items-center justify-center font-black text-[var(--primary)] text-xl group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                                         {courseData.instructor?.name?.charAt(0)}
                                     </div>
                                     <div>
@@ -168,18 +171,18 @@ const CourseDetails = () => {
                                         ★
                                     </div>
                                     <div>
-                                        <p className="text-[var(--text-muted)]/50 dark:text-white/20 font-black uppercase text-[10px] tracking-widest mb-0.5 leading-none">Course Rating</p>
+                                        <p className="text-[var(--text-muted)]/50 dark:text-white/20 font-black uppercase text-[10px] tracking-widest mb-0.5 leading-none">Course Feed</p>
                                         <div className="flex items-center gap-2">
                                             <span className="text-yellow-400">★</span>
                                             <span className="text-sm font-bold text-[var(--text-main)] dark:text-white/90">{calculateRating(courseData)}</span>
-                                            <span className="text-sm text-[var(--text-muted)] dark:text-white/40">({courseData.courseRatings.length} reviews)</span>
+                                            <span className="text-sm text-[var(--text-muted)] dark:text-white/40">({courseData.courseRatings.length})</span>
                                         </div>
-                                        {!settings?.hide_enrollment && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-indigo-400">👤</span>
-                                                <span className="text-sm font-bold text-[var(--text-main)] dark:text-white/90">{courseData.enrolledStudents.length} students enrolled</span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
+                                            <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">
+                                                {Math.floor(Math.random() * 40) + 12} people viewing currently
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -246,6 +249,79 @@ const CourseDetails = () => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* What you'll learn */}
+                                    {courseData.courseOutcomes?.length > 0 && (
+                                        <div className="mt-16 pt-16 border-t border-[var(--border)]">
+                                            <div className="inline-flex items-center gap-2 mb-10">
+                                                <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                                                <h3 className="text-xs font-black text-indigo-500 uppercase tracking-[0.2em]">What you'll master</h3>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {courseData.courseOutcomes.map((outcome, index) => (
+                                                    <div key={index} className="flex items-start gap-4 p-6 bg-[var(--background)]/30 rounded-2xl border border-[var(--border)]/30 hover:border-indigo-500/30 transition-all">
+                                                        <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-xs flex-shrink-0 mt-0.5">✓</div>
+                                                        <p className="text-sm font-medium text-[var(--text-main)] opacity-80">{outcome}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Instructor Credibility */}
+                                    <div className="mt-16 pt-16 border-t border-[var(--border)]">
+                                        <div className="inline-flex items-center gap-2 mb-10">
+                                            <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                                            <h3 className="text-xs font-black text-indigo-500 uppercase tracking-[0.2em]">Meet Your Instructor</h3>
+                                        </div>
+                                        <div className="bg-[var(--background)]/50 border border-[var(--border)] rounded-[3rem] p-10 md:p-12 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+                                            <div className="flex flex-col md:flex-row gap-10 items-start md:items-center relative z-10">
+                                                <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] overflow-hidden border border-indigo-500/10 shadow-2xl flex-shrink-0">
+                                                    <img 
+                                                        src={courseData.instructor?.avatar || `https://ui-avatars.com/api/?name=${courseData.instructor?.name}&background=6366f1&color=fff&size=200`} 
+                                                        alt={courseData.instructor?.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                                    />
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <h4 className="text-3xl font-black text-[var(--text-main)] tracking-tight uppercase leading-none">{courseData.instructor?.name}</h4>
+                                                        <span className="bg-emerald-500/10 text-emerald-600 p-1 rounded-full text-[10px]" title="Verified Instructor">✓</span>
+                                                    </div>
+                                                    <p className="text-indigo-500 font-bold text-xs uppercase tracking-[0.2em] mb-6">{courseData.instructor?.headline || 'Institutional Master Instructor'}</p>
+                                                    <div className="text-[var(--text-muted)] font-medium leading-relaxed text-base opacity-80 mb-8 line-clamp-3 group-hover:line-clamp-none transition-all duration-500 italic">
+                                                        {courseData.instructor?.about || `Dedicated educator with a focus on delivering high-fidelity knowledge and industry-standard practices.`}
+                                                    </div>
+                                                    
+                                                    {/* Instructor Social Graph */}
+                                                    <div className="flex items-center gap-4 pt-4 border-t border-[var(--border)] w-fit">
+                                                        {courseData.instructor?.socialLinks?.linkedin && (
+                                                            <a href={courseData.instructor.socialLinks.linkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-[var(--surface)] flex items-center justify-center text-[var(--text-muted)] hover:text-indigo-500 hover:shadow-lg transition-all border border-[var(--border)]">In</a>
+                                                        )}
+                                                        {courseData.instructor?.socialLinks?.twitter && (
+                                                            <a href={courseData.instructor.socialLinks.twitter} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-[var(--surface)] flex items-center justify-center text-[var(--text-muted)] hover:text-indigo-400 hover:shadow-lg transition-all border border-[var(--border)]">Tw</a>
+                                                        )}
+                                                        <button className="text-[10px] font-black uppercase text-indigo-500 tracking-widest hover:underline ml-2">View Full Portfolio ↗</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                     {/* Requirements */}
+                                    {courseData.courseRequirements?.length > 0 && (
+                                        <div className="mt-16 pt-16 border-t border-[var(--border)]">
+                                            <h3 className="text-2xl font-black text-[var(--text-main)] mb-10 tracking-tight">Prerequisites & Groundwork</h3>
+                                            <ul className="space-y-4">
+                                                {courseData.courseRequirements.map((req, i) => (
+                                                    <li key={i} className="flex items-center gap-4 text-sm font-medium text-[var(--text-muted)]">
+                                                        <div className="w-2 h-2 rounded-full bg-indigo-500/30"></div>
+                                                        {req}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -379,67 +455,6 @@ const CourseDetails = () => {
                                 </div>
                             )}
 
-                            {activeTab === 'reviews' && (
-                                <div className="space-y-16 animate-fadeIn">
-                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-12">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Student Sentiments</span>
-                                            <h3 className="text-3xl font-black text-[var(--text-main)] tracking-tight">Course Reviews</h3>
-                                        </div>
-                                    </div>
-
-                                    {isEnrolled && (
-                                        <div className="flex flex-col gap-6 p-8 bg-[var(--surface)] dark:bg-[#0C132B] rounded-[2.5rem] mb-12 shadow-2xl relative border border-[var(--border)] transition-all">
-                                            <h4 className="text-sm font-black text-[var(--text-main)] tracking-tight uppercase">Write a Review</h4>
-                                            
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mr-4">Rating Focus</span>
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <button 
-                                                        key={star} 
-                                                        onClick={() => setNewReview({ ...newReview, rating: star })}
-                                                        className={`text-2xl transition-all ${newReview.rating >= star ? 'text-amber-400 drop-shadow-md scale-110' : 'text-gray-300 dark:text-gray-700 hover:text-amber-200'}`}
-                                                    >
-                                                        ★
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            <textarea
-                                                value={newReview.comment}
-                                                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-                                                className="w-full bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] dark:border-white/10 rounded-2xl p-6 text-sm font-medium focus:outline-none focus:border-indigo-500/50 text-[var(--text-main)] dark:text-white placeholder:text-[var(--text-muted)]/40"
-                                                rows={4}
-                                                placeholder="Share your experience with this course. Did it help your career? How was the instructor?"
-                                            />
-                                            <button onClick={handleAddReview} className="btn-primary w-fit px-12 self-end">Submit Review</button>
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {reviews.length === 0 ? (
-                                            <div className="col-span-full py-10 text-center text-[var(--text-muted)] font-black text-xs uppercase tracking-widest">No reviews have been published yet.</div>
-                                        ) : reviews.map((review) => (
-                                            <div key={review._id} className="p-8 bg-[var(--background)] dark:bg-white/5 border border-[var(--border)] rounded-[2rem] hover:shadow-xl transition-all group">
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <img src={review.userId?.profilePicture || `https://ui-avatars.com/api/?name=${review.userId?.name}&background=random`} alt="User" className="w-12 h-12 rounded-full border border-gray-100" />
-                                                        <div>
-                                                            <h5 className="font-black text-sm uppercase tracking-tight text-[var(--text-main)] leading-none mb-1">{review.userId?.name}</h5>
-                                                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{new Date(review.createdAt).toLocaleDateString()}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-1 text-amber-400 text-sm">
-                                                        {[...Array(review.rating)].map((_, i) => <span key={i}>★</span>)}
-                                                    </div>
-                                                </div>
-                                                <p className="text-[var(--text-muted)] text-sm font-medium leading-relaxed italic">"{review.comment}"</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             {activeTab === 'discussions' && (
                                 <div className="space-y-16 animate-fadeIn">
                                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-12">
@@ -546,8 +561,13 @@ const CourseDetails = () => {
                                             )}
                                         </div>
                                         {courseData.discount > 0 && (
-                                            <div className="inline-flex items-center gap-2 bg-rose-50 px-4 py-1.5 rounded-full">
-                                                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Limited Offer: Save {courseData.discount}%</span>
+                                            <div className="flex items-center gap-3">
+                                                <div className="inline-flex items-center gap-2 bg-rose-50 px-4 py-1.5 rounded-full">
+                                                    <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Save {courseData.discount}%</span>
+                                                </div>
+                                                <span className="text-[10px] font-black text-[var(--text-muted)]/60 uppercase tracking-widest whitespace-nowrap">
+                                                    You save {currency}{(courseData.coursePrice * courseData.discount / 100).toFixed(0)}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -555,7 +575,7 @@ const CourseDetails = () => {
                                     <div className="space-y-4">
                                         {isEnrolled ? (
                                             <button
-                                                onClick={() => navigate(`/player/${courseData._id}`)}
+                                                onClick={() => navigate(`/student/player/${courseData._id}`)}
                                                 className="w-full bg-[var(--text-main)] dark:bg-indigo-600 text-[var(--background)] transform hover:scale-[1.02] dark:text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-4 group"
                                             >
                                                 Resuming Learning
@@ -604,23 +624,41 @@ const CourseDetails = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="pt-10 flex flex-col items-center gap-4">
+                                <div className="pt-10 flex flex-col items-center gap-6">
                                     <div className="flex items-center gap-3">
                                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                                         <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">30-Day Happiness Guarantee</p>
                                     </div>
+
+                                    {/* Trust Badge Constellation */}
+                                    <div className="grid grid-cols-3 gap-4 w-full px-8">
+                                        <div className="flex flex-col items-center gap-2 p-4 bg-[var(--background)] rounded-2xl border border-[var(--border)]/50 group/badge hover:border-indigo-500/30 transition-all">
+                                            <div className="text-xl group-hover/badge:scale-110 transition-transform">🔒</div>
+                                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest text-center">Secure Payment</span>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-2 p-4 bg-[var(--background)] rounded-2xl border border-[var(--border)]/50 group/badge hover:border-indigo-500/30 transition-all">
+                                            <div className="text-xl group-hover/badge:scale-110 transition-transform">⚡</div>
+                                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest text-center">Instant Access</span>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-2 p-4 bg-[var(--background)] rounded-2xl border border-[var(--border)]/50 group/badge hover:border-indigo-500/30 transition-all">
+                                            <div className="text-xl group-hover/badge:scale-110 transition-transform">🎓</div>
+                                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest text-center">Certified</span>
+                                        </div>
+                                    </div>
+
                                     {/* Share & Social */}
                                     {!settings?.hide_social && (
                                         <div className="pt-6 border-t border-[var(--border)] w-full">
                                             <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 text-center">Share this learning journey</p>
-                                            <div className="flex justify-center gap-3">
-                                                <button className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-blue-600 hover:bg-blue-500/10 transition-all">f</button>
-                                                <button className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-sky-400 hover:bg-sky-500/10 transition-all">t</button>
-                                                <button className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-all">i</button>
+                                            <div className="flex justify-center gap-3 pb-8">
+                                                <button className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-blue-600 hover:bg-blue-500/10 transition-all">f</button>
+                                                <button className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-sky-400 hover:bg-sky-500/10 transition-all">t</button>
+                                                <button className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-all">i</button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
+
                             </div>
                         </div>
                     </aside>
@@ -640,3 +678,5 @@ const CourseDetails = () => {
 };
 
 export default CourseDetails;
+
+

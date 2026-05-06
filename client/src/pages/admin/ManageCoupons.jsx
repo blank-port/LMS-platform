@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     TicketIcon, 
@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ManageCoupons = () => {
-    const { backendUrl, token } = useContext(AppContext);
+    const { token } = useContext(AppContext);
     const [coupons, setCoupons] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -36,9 +36,7 @@ const ManageCoupons = () => {
         status: 'active'
     });
 
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
+
 
     useEffect(() => {
         fetchCoupons();
@@ -47,7 +45,7 @@ const ManageCoupons = () => {
 
     const fetchCoupons = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/coupon?page=${page}`, getHeaders());
+            const { data } = await api.get(`/coupon?page=${page}`);
             if (data.success) {
                 setCoupons(data.coupons);
                 setTotalPages(data.pages);
@@ -58,7 +56,7 @@ const ManageCoupons = () => {
 
     const fetchCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/course/all-courses`);
+            const { data } = await api.get('/course/all');
             if (data.success) setCourses(data.courses);
         } catch (error) {}
     };
@@ -68,9 +66,9 @@ const ManageCoupons = () => {
         const action = editingId ? 'Updating' : 'Creating';
         const loadingToast = toast.loading(`${action} Coupon...`);
         try {
-            const url = editingId ? `${backendUrl}/api/coupon/${editingId}` : `${backendUrl}/api/coupon`;
+            const url = editingId ? `/coupon/${editingId}` : '/coupon';
             const method = editingId ? 'put' : 'post';
-            const { data } = await axios[method](url, form, getHeaders());
+            const { data } = await api[method](url, form);
             
             if (data.success) {
                 toast.update(loadingToast, { render: `Coupon ${action.toLowerCase()}ed successfully`, type: "success", isLoading: false, autoClose: 3000 });
@@ -85,7 +83,7 @@ const ManageCoupons = () => {
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this coupon?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/coupon/${id}`, getHeaders());
+            const { data } = await api.delete(`/coupon/${id}`);
             if (data.success) {
                 toast.success('Coupon deleted');
                 fetchCoupons();
@@ -372,3 +370,7 @@ const ManageCoupons = () => {
 };
 
 export default ManageCoupons;
+
+
+
+

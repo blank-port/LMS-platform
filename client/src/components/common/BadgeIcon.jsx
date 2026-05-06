@@ -36,3 +36,6 @@ const BadgeIcon = ({ icon, className = "", alt = "Achievement Badge" }) => {
 };
 
 export default BadgeIcon;
+
+
+

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const InstructorQuestionBank = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [questions, setQuestions] = useState([]);
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
@@ -22,11 +21,9 @@ const InstructorQuestionBank = () => {
         level: 'Beginner'
     });
 
-    const getHeaders = () => ({ headers: { Authorization: `Bearer ${token}` } });
-
     const fetchInstructorCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/courses`, getHeaders());
+            const { data } = await api.get('/instructor/courses');
             if (data.success) {
                 setCourses(data.courses);
                 if (data.courses.length > 0) setSelectedCourse(data.courses[0]._id);
@@ -39,7 +36,7 @@ const InstructorQuestionBank = () => {
     const fetchGroups = async () => {
         if (!selectedCourse) return;
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-group/${selectedCourse}`, getHeaders());
+            const { data } = await api.get(`/education/question-group/${selectedCourse}`);
             if (data.success) {
                 setGroups(data.groups);
                 if (data.groups.length > 0) setSelectedGroup(data.groups[0]._id);
@@ -56,7 +53,7 @@ const InstructorQuestionBank = () => {
             return;
         }
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-bank/${selectedGroup}`, getHeaders());
+            const { data } = await api.get(`/education/question-bank/${selectedGroup}`);
             if (data.success) setQuestions(data.questions);
         } catch (error) {
             toast.error('Knowledge retrieval failed');
@@ -67,7 +64,7 @@ const InstructorQuestionBank = () => {
         e.preventDefault();
         try {
             if (editingQuestionId) {
-                const { data } = await axios.put(`${backendUrl}/api/education/question-bank/${editingQuestionId}`, formData, getHeaders());
+                const { data } = await api.put(`/education/question-bank/${editingQuestionId}`, formData);
                 if (data.success) {
                     toast.success('Knowledge Nexus Recalibrated');
                     setShowAddModal(false);
@@ -75,7 +72,7 @@ const InstructorQuestionBank = () => {
                     fetchQuestions();
                 }
             } else {
-                const { data } = await axios.post(`${backendUrl}/api/education/question-bank`, formData, getHeaders());
+                const { data } = await api.post('/education/question-bank', formData);
                 if (data.success) {
                     toast.success('Knowledge Nexus Integrated');
                     setShowAddModal(false);
@@ -90,7 +87,7 @@ const InstructorQuestionBank = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Exterminate this intelligence unit?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/education/question-bank/${id}`, getHeaders());
+            const { data } = await api.delete(`/education/question-bank/${id}`);
             if (data.success) {
                 toast.success('Nexus Purged');
                 fetchQuestions();
@@ -115,7 +112,7 @@ const InstructorQuestionBank = () => {
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.post(`${backendUrl}/api/education/question-group`, { name: newGroupName, course: selectedCourse }, getHeaders());
+            const { data } = await api.post('/education/question-group', { name: newGroupName, course: selectedCourse });
             if (data.success) {
                 toast.success('Group Nexus Established');
                 setNewGroupName('');
@@ -342,3 +339,7 @@ const InstructorQuestionBank = () => {
 };
 
 export default InstructorQuestionBank;
+
+
+
+

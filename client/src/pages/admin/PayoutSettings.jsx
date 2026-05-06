@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     BuildingLibraryIcon, 
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const PayoutSettings = () => {
-    const { backendUrl, currency, getHeaders, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
+    const { currency, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState('global'); // 'global' or 'accounts'
 
@@ -36,7 +36,7 @@ const PayoutSettings = () => {
         setLoading(true);
         try {
             // Fetch Global
-            const { data } = await axios.get(`${backendUrl}/api/finance/payout-settings`, getHeaders());
+            const { data } = await api.get('/finance/payout-settings');
             // Map legacy 'instructorCommission' to 'global_commission_percentage' if needed
             if (data.success) {
                 const fetched = data.settings;
@@ -68,7 +68,7 @@ const PayoutSettings = () => {
     const handleSaveGlobal = async () => {
         const actionToast = toast.loading('Synchronizing Remuneration Protocols...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/finance/payout-settings`, settings, getHeaders());
+            const { data } = await api.post('/finance/payout-settings', settings);
             if (data.success) {
                 toast.update(actionToast, { render: 'Remuneration protocols synchronized.', type: "success", isLoading: false, autoClose: 3000 });
             }
@@ -270,4 +270,9 @@ const PayoutSettings = () => {
 };
 
 export default PayoutSettings;
+
+
+
+
+
 

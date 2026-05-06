@@ -4,7 +4,7 @@ import { Award, Download, ShieldCheck, ExternalLink, Award as AwardIcon, FileTex
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '@/utils/api';
 
 const Certificates = () => {
     const { user, backendUrl, token, navigate } = useContext(AppContext);
@@ -20,9 +20,7 @@ const Certificates = () => {
 
     const fetchCertificates = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/certificate/my-certificates`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/certificate/my-certificates');
             if (data.success) {
                 setCertificates(data.certificates);
             }
@@ -175,3 +173,7 @@ const Certificates = () => {
 };
 
 export default Certificates;
+
+
+
+

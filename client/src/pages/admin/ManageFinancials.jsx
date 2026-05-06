@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageFinancials = ({ type }) => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [data, setData] = useState([]);
     const [revenue, setRevenue] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -12,14 +10,16 @@ const ManageFinancials = ({ type }) => {
     const fetchFinancials = async () => {
         try {
             if (type === 'revenue') {
-                const { data } = await axios.get(`${backendUrl}/api/finance/admin-revenue`, getHeaders());
+                const { data } = await api.get('/finance/admin-revenue');
                 if (data.success) setRevenue(data.revenue);
             }
             
-            const endpoint = type === 'revenue' ? '/api/finance/payments' : '/api/finance/refunds';
-            const { data: resData } = await axios.get(`${backendUrl}${endpoint}`, getHeaders());
-            if (resData.success) {
-                setData(resData.data);
+            const endpoint = type === 'revenue' ? '/finance/payments' : '/finance/refunds';
+            const { data: resData } = await api.get(endpoint);
+            // The api interceptor flattens the response, so resData is either the object (if multiple keys) 
+            // or the primary data array. For these endpoints, it's the array.
+            if (resData) {
+                setData(resData.data || (Array.isArray(resData) ? resData : []));
             }
         } catch (error) {
             toast.error('Fiscal Intelligence Synchronization Failure');
@@ -124,4 +124,8 @@ const ManageFinancials = ({ type }) => {
 };
 
 export default ManageFinancials;
+
+
+
+
 

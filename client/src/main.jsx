@@ -5,6 +5,9 @@ import './index.css'
 import { AppContextProvider } from './context/AppContextProvider.jsx'
 import { BrowserRouter } from 'react-router-dom'
 import './i18n';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -37,16 +40,21 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-import { GoogleOAuthProvider } from '@react-oauth/google';
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
     <BrowserRouter>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
+      <GoogleOAuthProvider clientId={googleClientId}>
         <AppContextProvider>
           <App />
+          <ToastContainer position="top-right" newestOnTop pauseOnFocusLoss={false} />
         </AppContextProvider>
       </GoogleOAuthProvider>
     </BrowserRouter>
   </ErrorBoundary>,
 )
+
+
+
+

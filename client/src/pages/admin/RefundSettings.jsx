@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const RefundSettings = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
         enableRefunds: true,
@@ -16,7 +16,7 @@ const RefundSettings = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/finance/refund-settings`, getHeaders());
+            const { data } = await api.get(`/finance/refund-settings`);
             if (data.success) setSettings(data.settings);
         } catch (error) {
             console.error('Settings retrieval failure');
@@ -28,7 +28,7 @@ const RefundSettings = () => {
     const handleSave = async () => {
         const actionToast = toast.loading('Synchronizing Refund Policies...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/finance/refund-settings`, settings, getHeaders());
+            const { data } = await api.post(`/finance/refund-settings`, settings);
             if (data.success) {
                 toast.update(actionToast, { render: 'Refund policies synchronized.', type: "success", isLoading: false, autoClose: 3000 });
             }
@@ -102,3 +102,8 @@ const RefundSettings = () => {
 };
 
 export default RefundSettings;
+
+
+
+
+

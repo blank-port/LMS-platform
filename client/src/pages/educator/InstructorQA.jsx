@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
-import { MessageCircle, Send, User, BookOpen, Clock, Award, Star, CheckCircle } from 'lucide-react';
+import { 
+    MessageCircle, Send, User, BookOpen, Clock, Award, Star, CheckCircle, X 
+} from 'lucide-react';
+import { format } from 'date-fns';
 
 const InstructorQA = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [replyingTo, setReplyingTo] = useState(null);
@@ -13,9 +15,7 @@ const InstructorQA = () => {
 
     const fetchQuestions = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/qa`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/instructor/qa');
             if (data.success) setQuestions(data.questions);
         } catch (err) { console.error(err); }
         setLoading(false);
@@ -26,10 +26,7 @@ const InstructorQA = () => {
     const handleReply = async (questionId) => {
         if (!replyText.trim()) return;
         try {
-            const { data } = await axios.post(`${backendUrl}/api/instructor/qa/reply`,
-                { questionId, message: replyText },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const { data } = await api.post('/instructor/qa/reply', { questionId, message: replyText });
             if (data.success) {
                 toast.success('Reply sent successfully');
                 setReplyingTo(null);
@@ -43,9 +40,7 @@ const InstructorQA = () => {
 
     const toggleGoldenKnowledge = async (id) => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/qa/${id}/golden`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post(`/comm/qa/${id}/golden`, {});
             if (data.success) {
                 toast.success(data.message);
                 fetchQuestions();
@@ -198,3 +193,7 @@ const InstructorQA = () => {
 };
 
 export default InstructorQA;
+
+
+
+

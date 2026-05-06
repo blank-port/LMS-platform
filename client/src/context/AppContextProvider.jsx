@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from '@/utils/api';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -22,13 +22,9 @@ export const AppContextProvider = (props) => {
     const [categories, setCategories] = useState([])
     const [settings, setSettings] = useState({})
 
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
-
     const login = async (email, password) => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/user/login', { email, password });
+            const { data } = await api.post('/user/login', { email, password });
             if (data.success) {
                 setToken(data.token);
                 setUser(data.user);
@@ -38,20 +34,20 @@ export const AppContextProvider = (props) => {
                 return data;
             } else {
                 if (data.verifyEmail) {
-                    return data; // Return to component to handle OTP verification
+                    return data;
                 }
                 toast.error(data.message);
                 return null;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
+            toast.error(error.response?.data?.message || 'Login failed');
             return null;
         }
     };
 
     const googleLogin = async (credential) => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/user/google-login', { credential });
+            const { data } = await api.post('/user/google-login', { credential });
             if (data.success) {
                 setToken(data.token);
                 setUser(data.user);
@@ -64,19 +60,19 @@ export const AppContextProvider = (props) => {
                 return null;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
+            toast.error(error.response?.data?.message || 'Google Login failed');
             return null;
         }
     };
 
     const register = async (name, email, password, role, referralCode = '') => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/user/register', {
+            const { data } = await api.post('/user/register', {
                 name, email, password, role, referralCode
             });
             if (data.success) {
                 if (data.verifyEmail) {
-                    return data; // Return to component to handle OTP verification
+                    return data;
                 }
                 setToken(data.token);
                 setUser(data.user);
@@ -89,14 +85,13 @@ export const AppContextProvider = (props) => {
                 return null;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
             return null;
         }
     };
 
     const verifyOtp = async (email, otp) => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/user/verify-otp', { email, otp });
+            const { data } = await api.post('/user/verify-otp', { email, otp });
             if (data.success) {
                 setToken(data.token);
                 setUser(data.user);
@@ -109,14 +104,13 @@ export const AppContextProvider = (props) => {
                 return null;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
             return null;
         }
     };
 
     const resendOtp = async (email) => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/user/resend-otp', { email });
+            const { data } = await api.post('/user/resend-otp', { email });
             if (data.success) {
                 toast.success('New OTP sent to your email');
                 return true;
@@ -125,7 +119,6 @@ export const AppContextProvider = (props) => {
                 return false;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
             return false;
         }
     };
@@ -144,7 +137,7 @@ export const AppContextProvider = (props) => {
 
     const fetchAllCourses = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/course/all');
+            const { data } = await api.get('/course/all');
             if (data.success) {
                 setAllCourses(data.courses);
             }
@@ -155,22 +148,24 @@ export const AppContextProvider = (props) => {
 
     const fetchUserData = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/user/data', getHeaders());
+            const { data } = await api.get('/user/data');
             if (data.success) {
-                setUser(data.user);
-                setWishlist(data.user.wishlist || []);
-                setIsEducator(data.user.role === 'instructor' || data.user.role === 'admin');
+                const userData = data.user;
+                if (userData && !userData.avatar && userData.profilePicture) {
+                    userData.avatar = userData.profilePicture;
+                }
+                setUser(userData);
+                setWishlist(userData.wishlist || []);
+                setIsEducator(userData.role === 'instructor' || userData.role === 'admin');
             }
         } catch (error) {
-            if (error.response?.status === 401) {
-                logout();
-            }
+            console.error('User data sync failure');
         }
     };
 
     const fetchUserEnrolledCourses = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/course/enrolled/my-courses', getHeaders());
+            const { data } = await api.get('/course/enrolled/my-courses');
             if (data.success) {
                 setEnrolledCourses(data.enrollments);
             }
@@ -181,7 +176,7 @@ export const AppContextProvider = (props) => {
 
     const fetchCategories = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/course/categories');
+            const { data } = await api.get('/course/categories');
             if (data.success) {
                 setCategories(data.categories);
             }
@@ -192,7 +187,7 @@ export const AppContextProvider = (props) => {
 
     const fetchPublicSettings = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/setting/public');
+            const { data } = await api.get('/setting/public');
             if (data.success) {
                 setSettings(data.settings);
             }
@@ -200,6 +195,7 @@ export const AppContextProvider = (props) => {
             console.error('Error fetching public settings:', error.message);
         }
     };
+
 
     const calculateChapterTime = (chapter) => {
         let time = 0;
@@ -257,7 +253,7 @@ export const AppContextProvider = (props) => {
 
     const fetchAllSettings = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/setting/all', getHeaders());
+            const { data } = await api.get('/setting/all');
             if (data.success) {
                 return data.settings;
             }
@@ -269,7 +265,7 @@ export const AppContextProvider = (props) => {
 
     const updateBatchSettings = async (settings, isSensitive = false) => {
         try {
-            const { data } = await axios.post(backendUrl + '/api/setting/update-batch', { settings, isSensitive }, getHeaders());
+            const { data } = await api.post('/setting/update-batch', { settings, isSensitive });
             if (data.success) {
                 setSettings(prev => ({ ...prev, ...settings }));
                 toast.success(data.message);
@@ -278,14 +274,14 @@ export const AppContextProvider = (props) => {
                 toast.error(data.message);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
+            // Error handled by interceptor
         }
         return false;
     };
 
     const toggleWishlist = async (courseId) => {
         try {
-            const { data } = await axios.post(backendUrl + `/api/user/wishlist/${courseId}`, {}, getHeaders());
+            const { data } = await api.post(`/user/wishlist/${courseId}`, {});
             if (data.success) {
                 toast.success(data.message);
                 if (data.action === 'added') {
@@ -297,23 +293,22 @@ export const AppContextProvider = (props) => {
             }
             return false;
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
             return false;
         }
     };
 
     const getWishlist = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/user/wishlist', getHeaders());
+            const { data } = await api.get('/user/wishlist');
             if (data.success) {
                 return data.wishlist;
             }
             return [];
         } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
             return [];
         }
     };
+
 
     const value = {
         backendUrl, currency, navigate,
@@ -326,7 +321,7 @@ export const AppContextProvider = (props) => {
         settings, setSettings, fetchPublicSettings,
         calculateChapterTime, calculateCourseDuration,
         calculateRating, calculateNoOfLectures,
-        login, googleLogin, register, logout, getHeaders,
+        login, googleLogin, register, logout,
         verifyOtp, resendOtp,
         fetchAllSettings, updateBatchSettings,
         wishlist, setWishlist, toggleWishlist, getWishlist
@@ -338,3 +333,7 @@ export const AppContextProvider = (props) => {
         </AppContext.Provider>
     )
 }
+
+
+
+

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { HelpCircle, Lock, Unlock, MessageSquare, Filter, ChevronRight, User as UserIcon } from 'lucide-react';
 import Pusher from 'pusher-js';
 
 const ManageQA = () => {
-    const { backendUrl, getHeaders, allCourses, settings } = useContext(AppContext);
+    const { backendUrl, allCourses, settings } = useContext(AppContext);
     const { pusher_app_key, pusher_active, pusher_cluster } = settings;
     const [discussions, setDiscussions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,9 +22,8 @@ const ManageQA = () => {
     const fetchQA = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/comm/qa`, {
-                params: { ...filters, limit, skip: (page - 1) * limit },
-                ...getHeaders()
+            const { data } = await api.get('/comm/qa', {
+                params: { ...filters, limit, skip: (page - 1) * limit }
             });
             if (data.success) {
                 setDiscussions(data.discussions);
@@ -39,7 +38,7 @@ const ManageQA = () => {
 
     const handleReserveToggle = async (id) => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/qa/${id}/reserve`, {}, getHeaders());
+            const { data } = await api.post(`/comm/qa/${id}/reserve`, {});
             if (data.success) {
                 setDiscussions(discussions.map(d => d._id === id ? { ...d, isReserved: data.isReserved } : d));
                 toast.success(data.message);
@@ -241,3 +240,7 @@ const ManageQA = () => {
 };
 
 export default ManageQA;
+
+
+
+

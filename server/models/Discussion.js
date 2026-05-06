@@ -6,6 +6,11 @@ const discussionSchema = new mongoose.Schema({
         ref: 'Course',
         required: true
     },
+    cohortId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Cohort', 
+        default: null 
+    },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     message: { type: String, required: true },
     lessonId: { type: String, default: null }, // Optional scope for specific lectures

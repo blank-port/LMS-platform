@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { 
     DollarSign, Filter, Search, CheckCircle2, XCircle, 
     Clock, Download, MoreVertical, User, Calendar, 
@@ -23,9 +23,8 @@ const ManageInstructorPayouts = () => {
     const fetchPayouts = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get(`${backendUrl}/api/admin/instructor-payouts`, {
-                params: filters,
-                headers: { Authorization: `Bearer ${token}` }
+            const { data } = await api.get('/admin/instructor-payouts', {
+                params: filters
             });
             if (data.success) {
                 setPayouts(data.payouts);
@@ -40,9 +39,7 @@ const ManageInstructorPayouts = () => {
 
     const fetchInstructors = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/instructors`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/admin/instructors');
             if (data.success) {
                 setInstructors(data.instructors);
             }
@@ -56,9 +53,8 @@ const ManageInstructorPayouts = () => {
 
     const handleStatusUpdate = async (id, status) => {
         try {
-            const { data } = await axios.put(`${backendUrl}/api/admin/instructor-payouts/${id}/status`, 
-                { status },
-                { headers: { Authorization: `Bearer ${adminToken}` } }
+            const { data } = await api.put(`/admin/instructor-payouts/${id}/status`, 
+                { status }
             );
             if (data.success) {
                 toast.success(`Payout ${status === 'success' ? 'authorized' : 'rejected'} successfully`);
@@ -261,3 +257,7 @@ const ManageInstructorPayouts = () => {
 };
 
 export default ManageInstructorPayouts;
+
+
+
+

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { MessageSquare, Plus, Send, Clock, CheckCircle2, AlertCircle, X, ChevronRight } from 'lucide-react';
 
@@ -22,9 +22,7 @@ const Support = () => {
 
     const fetchTickets = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/support/my-tickets`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/support/my-tickets');
             if (data.success) {
                 setTickets(data.tickets);
             }
@@ -38,9 +36,7 @@ const Support = () => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/support/create`, newTicket, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/support/create', newTicket);
             if (data.success) {
                 toast.success('Ticket raised successfully');
                 setShowCreateModal(false);
@@ -58,9 +54,7 @@ const Support = () => {
         if (!reply.trim()) return;
         setSubmitting(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/support/reply/${selectedTicket._id}`, { message: reply }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post(`/support/reply/${selectedTicket._id}`, { message: reply });
             if (data.success) {
                 setReply('');
                 const updatedTicket = { ...selectedTicket, messages: [...selectedTicket.messages, { sender: user._id, message: reply, createdAt: new Date() }] };
@@ -297,3 +291,7 @@ const Support = () => {
 };
 
 export default Support;
+
+
+
+

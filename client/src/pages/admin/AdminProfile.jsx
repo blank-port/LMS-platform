@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     User, Mail, Phone, Camera, Shield, Save, Key, Loader2
@@ -57,9 +57,7 @@ const AdminProfile = () => {
             formData.append('about', basicInfo.about);
             if (avatar) formData.append('profilePicture', avatar);
 
-            const { data } = await axios.put(`${backendUrl}/api/user/update-account-profile`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.put('/user/update-account-profile', formData);
 
             if (data.success) {
                 toast.success('Admin profile updated');
@@ -78,11 +76,9 @@ const AdminProfile = () => {
         if (passwords.new !== passwords.confirm) return toast.error('Passwords do not match');
         setLoading(true);
         try {
-            const { data } = await axios.put(`${backendUrl}/api/user/change-password`, {
+            const { data } = await api.put('/user/change-password', {
                 currentPassword: passwords.current,
                 newPassword: passwords.new
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (data.success) {
@@ -263,3 +259,7 @@ const AdminProfile = () => {
 };
 
 export default AdminProfile;
+
+
+
+

@@ -1,125 +1,129 @@
 import React, { useContext, useState } from 'react';
-import { assets } from '../../assets/assets';
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import SafeImage from '../common/SafeImage.jsx';
 import NotificationDropdown from './NotificationDropdown.jsx';
+import { Phone, Mail, Heart, Layout, LogOut, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   const { user, isEducator, navigate, logout, settings } = useContext(AppContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const isHome = location.pathname === '/';
 
   return (
-    <nav className="sticky top-0 z-50 bg-[var(--surface)] dark:bg-[#0C132B]/95 text-[var(--text-main)] dark:text-white py-3 shadow-lg border-b border-[var(--border)] dark:border-white/5 backdrop-blur-md bg-opacity-95">
-      {/* Top Bar (Optional but premium) */}
-      <div className="hidden lg:block border-b border-[var(--border)] dark:border-white/5 py-1.5 px-24">
-        <div className="container mx-auto flex justify-between text-[11px] font-medium text-[var(--text-muted)] dark:text-white/50 uppercase tracking-widest">
+    <nav
+      className={`sticky top-0 z-50 border-b py-2 text-[var(--text-main)] bg-white transition-all duration-300 ${isHome && !isScrolled
+        ? 'border-white/20 shadow-none'
+        : 'border-[var(--border)] shadow-lg'
+        }`}
+    >
+      <div className="hidden border-b border-[var(--border)]/70 lg:block">
+        <div className="container mx-auto flex justify-between px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)] md:px-12 lg:px-24">
           <div className="flex gap-6">
-            <span className="flex items-center gap-1.5"><span className="text-indigo-400">📞</span> +1 234 567 890</span>
-            <span className="flex items-center gap-1.5"><span className="text-indigo-400">✉️</span> support@prismed.com</span>
+            <span className="flex items-center gap-2 font-bold"><Phone size={12} className="text-[var(--primary)]" /> +1 234 567 890</span>
+            <span className="flex items-center gap-2 font-bold"><Mail size={12} className="text-[var(--primary)]" /> support@prismed.com</span>
           </div>
           <div className="flex gap-6">
-            <Link to="/about" className="hover:text-[var(--text-main)] dark:hover:text-white transition-colors">About Us</Link>
-            <Link to="/contact" className="hover:text-[var(--text-main)] dark:hover:text-white transition-colors">Contact</Link>
+            <Link to="/about" className="transition-colors hover:text-[var(--text-main)]">About Us</Link>
+            <Link to="/contact" className="transition-colors hover:text-[var(--text-main)]">Contact</Link>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 md:px-12 lg:px-24 flex items-center justify-between mt-2">
-        {/* Logo & Brand */}
-        <div
-          onClick={() => navigate('/')}
-          className="flex items-center gap-3 cursor-pointer group"
-        >
+      <div className="container mx-auto mt-1 flex items-center justify-between px-6 md:px-12 lg:px-24">
+        <div onClick={() => navigate('/')} className="group flex cursor-pointer items-center gap-3">
           {settings.site_logo_header ? (
             <img src={settings.site_logo_header} alt="Logo" className="h-10 object-contain" />
           ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-[#7C32FF] to-[#6366F1] rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform shadow-lg shadow-indigo-500/20">
-              <span className="text-2xl font-black italic">P</span>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-2xl font-black italic text-white shadow-lg shadow-emerald-500/20 transition-transform group-hover:rotate-0 rotate-3">
+              P
             </div>
           )}
           <div className="flex flex-col">
-            <span className="text-2xl font-extrabold tracking-tighter bg-gradient-to-r from-[var(--text-main)] via-[var(--text-main)] to-gray-400 dark:from-white dark:to-gray-400 bg-clip-text text-transparent leading-none">
+            <span className="bg-gradient-to-r from-[var(--text-main)] via-[var(--text-main)] to-slate-400 bg-clip-text text-xl font-extrabold tracking-tighter text-transparent md:text-2xl leading-none">
               {settings.site_title ? (
                 <>
-                  {settings.site_title.split(' ')[0]}<span className="text-[#7C32FF]">{settings.site_title.split(' ').slice(1).join(' ')}</span>
+                  {settings.site_title.split(' ')[0]}
+                  <span className="text-[var(--primary)]">{settings.site_title.split(' ').slice(1).join(' ')}</span>
                 </>
               ) : (
-                <>Prism<span className="text-[#7C32FF]">Ed</span></>
+                <>Prism<span className="text-[var(--primary)]">Ed</span></>
               )}
             </span>
-            <span className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-tighter mt-0.5">Shaping Skills</span>
+            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-tight text-[var(--primary)]/80">Shaping Skills</span>
           </div>
         </div>
 
-        {/* Desktop Menu */}
-        <div className="hidden lg:flex items-center gap-10 font-medium">
-          <Link to="/" className={`text-sm tracking-wide transition-all hover:text-[#7C32FF] ${location.pathname === '/' ? 'text-[#7C32FF]' : 'text-[var(--text-main)]/80 dark:text-white/80'}`}>Home</Link>
+        <div className="hidden items-center gap-10 lg:flex">
+          <Link to="/" className={`text-sm font-semibold transition-all hover:text-[var(--primary)] ${location.pathname === '/' ? 'text-[var(--primary)]' : 'text-[var(--text-main)]/80'}`}>Home</Link>
           {!settings.hide_search && (
-            <Link to="/course-list" className={`text-sm tracking-wide transition-all hover:text-[#7C32FF] ${location.pathname.startsWith('/course-list') ? 'text-[#7C32FF]' : 'text-[var(--text-main)]/80 dark:text-white/80'}`}>Explore</Link>
+            <Link to="/course-list" className={`text-sm font-semibold transition-all hover:text-[var(--primary)] ${location.pathname.startsWith('/course-list') ? 'text-[var(--primary)]' : 'text-[var(--text-main)]/80'}`}>Explore</Link>
           )}
-
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6">
           {user ? (
-            <div className="flex items-center gap-6">
-              <div className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="hidden items-center gap-5 text-xs font-bold uppercase tracking-[0.2em] md:flex">
                 {isEducator && (
-                  <button onClick={() => navigate('/educator')} className="hover:text-[#7C32FF] border-b-2 border-transparent hover:border-[#7C32FF] pb-1 transition-all">Teaching</button>
+                  <button onClick={() => navigate('/educator')} className="border-b-2 border-transparent pb-1 transition-all hover:border-[var(--primary)] hover:text-[var(--primary)]">Teaching</button>
                 )}
                 {user.role === 'admin' && (
-                  <button onClick={() => navigate('/admin')} className="text-indigo-400 border-b-2 border-transparent hover:border-indigo-400 pb-1 transition-all">Admin Panel</button>
+                  <button onClick={() => navigate('/admin')} className="border-b-2 border-transparent pb-1 transition-all hover:border-[var(--primary)] hover:text-[var(--primary)]">Admin</button>
                 )}
-                <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/dashboard'} className="hover:text-[#7C32FF] border-b-2 border-transparent hover:border-[#7C32FF] pb-1 transition-all">Dashboard</Link>
+                <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/student'} className="border-b-2 border-transparent pb-1 transition-all hover:border-[var(--primary)] hover:text-[var(--primary)]">Dashboard</Link>
               </div>
 
-              {/* Wishlist Access */}
-              <Link to="/student/wishlist" className="relative group/wishlist p-2 hover:bg-rose-500/10 rounded-xl transition-all" title="View Wishlist">
-                <span className="text-rose-500 group-hover/wishlist:scale-110 transition-transform">❤️</span>
-                {user.wishlist?.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--surface)]">
-                    {user.wishlist.length}
-                  </span>
-                )}
-              </Link>
+              {user.role !== 'admin' && (
+                <Link to="/student/wishlist" className="relative rounded-xl p-2 transition-all hover:bg-rose-500/10" title="View Wishlist">
+                  <Heart className="w-5 h-5 text-rose-500" />
+                  {user.wishlist?.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[var(--surface)] bg-rose-500 text-[8px] font-black text-white shadow-lg">
+                      {user.wishlist.length}
+                    </span>
+                  )}
+                </Link>
+              )}
 
-              {/* Notification Hub */}
               <NotificationDropdown />
 
-              <div className="relative group">
-                <button 
-                  className="flex items-center gap-2 bg-white dark:bg-white/5 p-1 pr-3 rounded-full border border-gray-200 dark:border-white/10 hover:border-indigo-500/30 transition-all shadow-sm"
-                >
+              <div className="group relative">
+                <button className="flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 pr-3 shadow-sm transition-all hover:border-emerald-500/30">
                   {user.avatar ? (
-                    <SafeImage src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-white/10" />
+                    <SafeImage src={user.avatar} alt="Profile" className="h-8 w-8 rounded-full object-cover border border-gray-100" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm text-white">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--primary)] text-sm font-bold text-white">
                       {user.name?.charAt(0)?.toUpperCase()}
                     </div>
                   )}
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 hidden sm:block">
-                    {user.name.split(' ')[0]}
-                  </span>
+                  <span className="hidden text-xs font-semibold text-gray-700 sm:block">{user.name.split(' ')[0]}</span>
                 </button>
 
-                {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] transform origin-top-right group-hover:translate-y-1">
-                  <div className="p-4 border-b border-gray-100 dark:border-white/5">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
-                    <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                <div className="invisible absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-gray-200 bg-white shadow-xl opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-1 group-hover:opacity-100 z-[100]">
+                  <div className="border-b border-gray-100 p-4">
+                    <p className="truncate text-sm font-bold text-gray-900">{user.name}</p>
+                    <p className="truncate text-[10px] text-gray-500">{user.email}</p>
                   </div>
                   <div className="p-2">
-                    <Link to="/student/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-xs text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition-colors">
-                      👤 My Profile
+                    <Link to="/student/profile" className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50 hover:text-[var(--primary)]">
+                      My Profile
                     </Link>
-                    <Link to="/student/account-settings" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-xs text-gray-600 dark:text-gray-300 hover:text-indigo-600 transition-colors">
-                      ⚙️ Account Settings
+                    <Link to="/student/account-settings" className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50 hover:text-[var(--primary)]">
+                      Account Settings
                     </Link>
-                    <hr className="my-2 border-gray-100 dark:border-white/5" />
-                    <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 text-xs text-rose-600 transition-colors">
+                    <hr className="my-2 border-gray-100" />
+                    <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs text-rose-600 transition-colors hover:bg-rose-50">
+                      <LogOut size={14} />
                       Logout
                     </button>
                   </div>
@@ -130,40 +134,41 @@ const Navbar = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/login')}
-                className="hidden md:block text-sm font-bold uppercase tracking-widest hover:text-[#7C32FF] transition-colors text-[var(--text-main)] dark:text-white"
+                className="hidden text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-main)] transition-colors hover:text-[var(--primary)] md:block"
               >
                 Log In
               </button>
               <button
                 onClick={() => navigate('/register')}
-                className="bg-[#7C32FF] hover:bg-[#6825E6] text-white px-7 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-lg shadow-purple-500/20 active:scale-95"
+                className="rounded-xl bg-[var(--primary)] px-7 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-[var(--primary-hover)] active:scale-95"
               >
                 Get Started
               </button>
             </div>
           )}
 
-          {/* Mobile Menu Trigger */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden w-10 h-10 bg-[var(--background)] dark:bg-white/5 rounded-xl flex items-center justify-center border border-[var(--border)] dark:border-white/10 text-[var(--text-main)] dark:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--text-main)] lg:hidden"
           >
-            <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Overlay (Basic) */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-[var(--surface)] dark:bg-[#0C132B] border-t border-[var(--border)] dark:border-white/5 p-6 animate-fadeInDown">
-          <div className="flex flex-col gap-6 font-medium text-white/80">
+        <div className="absolute left-0 top-full w-full border-t border-[var(--border)] bg-[var(--surface)] p-6 lg:hidden">
+          <div className="flex flex-col gap-6 font-medium text-[var(--text-main)]/80">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
             <Link to="/course-list" onClick={() => setIsMobileMenuOpen(false)}>Courses</Link>
             <Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
             {user && (
               <>
-                <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/dashboard'} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
-                <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-left text-red-400">Sign Out</button>
+                <Link to={user.role === 'admin' ? '/admin' : isEducator ? '/educator' : '/student'} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="text-left flex items-center gap-2 text-rose-500">
+                  <LogOut size={16} />
+                  Logout
+                </button>
               </>
             )}
           </div>
@@ -174,3 +179,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+

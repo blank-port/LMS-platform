@@ -1,13 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, ShieldCheck, CheckCircle2, CreditCard, Ship, Truck, X, Loader2 } from 'lucide-react';
 import RazorpayTestModal from './RazorpayTestModal.jsx';
 
 const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
-    const { backendUrl, token, currency } = useContext(AppContext);
+    const { backendUrl, token, currency, user } = useContext(AppContext);
     const [method, setMethod] = useState('razorpay');
     const [status, setStatus] = useState('idle'); // 'idle', 'preparing', 'success'
     const [showTestModal, setShowTestModal] = useState(false);
@@ -34,14 +34,11 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
 
         try {
             if (method === 'razorpay') {
-                const { data: orderData } = await axios.post(`${backendUrl}/api/payment/create-order`, { courseId: course._id }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data: orderData } = await api.post('/payment/create-order', { courseId: course._id });
 
                 if (!orderData.success) throw new Error(orderData.message);
 
-                const { data: settingsData } = await axios.get(`${backendUrl}/api/setting/public`);
-                const RAZORPAY_KEY_ID = settingsData.settings.razorpay_key_id;
+                const RAZORPAY_KEY_ID = settings.razorpay_key_id;
 
                 const options = {
                     key: RAZORPAY_KEY_ID,
@@ -54,10 +51,10 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
                     handler: async (response) => {
                         setStatus('preparing');
                         try {
-                            const { data: verifyData } = await axios.post(`${backendUrl}/api/payment/verify-payment`, {
+                            const { data: verifyData } = await api.post('/payment/verify-payment', {
                                 ...response,
                                 courseId: course._id
-                            }, { headers: { Authorization: `Bearer ${token}` } });
+                            });
 
                             if (verifyData.success) {
                                 setStatus('success');
@@ -75,9 +72,7 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } else if (method === 'cod') {
-                const { data } = await axios.post(`${backendUrl}/api/payment/request-cod`, { courseId: course._id }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.post('/payment/request-cod', { courseId: course._id });
 
                 if (data.success) {
                     toast.success("COD Request Latched. Pending institutional approval.");
@@ -160,9 +155,14 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
                             <div className="space-y-4">
                                 {[
                                     { id: 'razorpay', icon: CreditCard, label: 'Digital Matrix', sub: 'UPI, Cards, Netbanking', color: 'blue' },
-                                    { id: 'test_razorpay', icon: Ship, label: 'Sandbox Simulation', sub: 'Risk-free protocol verification', color: 'indigo' },
+                                    { id: 'test_razorpay', icon: Ship, label: 'Sandbox Simulation', sub: 'Risk-free protocol verification', color: 'indigo', hideInProd: true },
                                     { id: 'cod', icon: Truck, label: 'Manual Latch', sub: 'Institutional cash processing', color: 'slate' }
-                                ].map((opt) => (
+                                ].filter(opt => {
+                                    if (opt.hideInProd && import.meta.env.PROD && user?.role !== 'admin') {
+                                        return false;
+                                    }
+                                    return true;
+                                }).map((opt) => (
                                     <button 
                                         key={opt.id}
                                         onClick={() => setMethod(opt.id)}
@@ -259,9 +259,7 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
                 onPaymentSuccess={async () => {
                     setStatus('preparing');
                     try {
-                        const { data } = await axios.post(`${backendUrl}/api/course/enroll`, { courseId: course._id }, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
+                        const { data } = await api.post('/course/enroll', { courseId: course._id });
                         if (data.success) {
                             setStatus('success');
                             onPaymentSuccess();
@@ -277,3 +275,7 @@ const PaymentModal = ({ isOpen, onClose, course, onPaymentSuccess }) => {
 };
 
 export default PaymentModal;
+
+
+
+

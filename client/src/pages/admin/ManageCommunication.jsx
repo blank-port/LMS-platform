@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { MessageSquare, HelpCircle, Mail, Settings, Activity, Send, ShieldAlert, BarChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ManageCommunication = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [stats, setStats] = useState({
         pendingComments: 0,
         unrepliedQuestions: 0,
@@ -18,9 +15,9 @@ const ManageCommunication = () => {
         try {
             // Simplified for now, gathering counts from the modular APIs
             const [commRes, qaRes, msgRes] = await Promise.all([
-                axios.get(`${backendUrl}/api/comm/comments?status=pending`, getHeaders()),
-                axios.get(`${backendUrl}/api/comm/qa`, getHeaders()),
-                axios.get(`${backendUrl}/api/comm/messages`, getHeaders())
+                api.get('/comm/comments?status=pending'),
+                api.get('/comm/qa'),
+                api.get('/comm/messages')
             ]);
 
             setStats({
@@ -178,3 +175,8 @@ const ManageCommunication = () => {
 };
 
 export default ManageCommunication;
+
+
+
+
+

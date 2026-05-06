@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { BarChart3, Settings, ShieldCheck, Zap, Award, Activity, History } from 'lucide-react';
 
 const ManageGamification = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [settings, setSettings] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ const ManageGamification = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/settings`, getHeaders());
+            const { data } = await api.get('/gamification/settings');
             if (data.success) {
                 setSettings(data.settings);
             }
@@ -25,7 +25,7 @@ const ManageGamification = () => {
 
     const fetchAdminStats = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/admin-stats`, getHeaders());
+            const { data } = await api.get('/gamification/admin-stats');
             if (data.success) {
                 setStats(data.stats);
             }
@@ -38,7 +38,7 @@ const ManageGamification = () => {
         setSaving(true);
         const actionToast = toast.loading('Synchronizing Behavioral Protocols...');
         try {
-            const { data } = await axios.put(`${backendUrl}/api/gamification/settings`, { settings }, getHeaders());
+            const { data } = await api.put('/gamification/settings', { settings });
             if (data.success) {
                 toast.update(actionToast, { render: 'Protocols stabilized.', type: "success", isLoading: false, autoClose: 3000 });
             }
@@ -225,3 +225,7 @@ const ManageGamification = () => {
 };
 
 export default ManageGamification;
+
+
+
+

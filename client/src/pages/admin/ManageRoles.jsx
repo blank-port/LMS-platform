@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageRoles = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [roles, setRoles] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [formData, setFormData] = useState({ name: '', description: '', type: 'staff', permissions: [] });
@@ -21,7 +21,7 @@ const ManageRoles = () => {
 
     const fetchRoles = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/role/all`, getHeaders());
+            const { data } = await api.get(`/audit/role/all`);
             if (data.success) {
                 setRoles(data.roles);
             }
@@ -36,7 +36,7 @@ const ManageRoles = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Authorization Protocol...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/audit/role/create`, formData, getHeaders());
+            const { data } = await api.post(`/audit/role/create`, formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Authorization protocol established.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowAddModal(false);
@@ -182,4 +182,9 @@ const ManageRoles = () => {
 };
 
 export default ManageRoles;
+
+
+
+
+
 

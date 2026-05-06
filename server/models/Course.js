@@ -4,6 +4,7 @@ const lectureSchema = new mongoose.Schema({
     lectureTitle: { type: String, required: true },
     lectureDuration: { type: Number, default: 0 },
     lectureUrl: { type: String, default: '' },
+    lectureDescription: { type: String, default: '' },
     isPreviewFree: { type: Boolean, default: false },
     lectureOrder: { type: Number, default: 0 },
     attachments: [
@@ -44,6 +45,7 @@ const courseSchema = new mongoose.Schema({
         default: 'pending'
     },
     certificateTemplate: { type: mongoose.Schema.Types.ObjectId, ref: 'CertificateTemplate' },
+    isCertificateEnabled: { type: Boolean, default: true },
     issueMethod: { type: String, enum: ['quiz', 'completion'], default: 'quiz' },
     courseContent: [chapterSchema],
     instructor: {

@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const CreateQuiz = () => {
-    const { backendUrl, token } = useContext(AppContext);
+    const { navigate } = useContext(AppContext);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState('');
     const [title, setTitle] = useState('');
@@ -30,9 +30,7 @@ const CreateQuiz = () => {
 
     const fetchCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/courses`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/instructor/courses');
             if (data.success) setCourses(data.courses);
         } catch (error) {
             console.error(error);
@@ -45,9 +43,7 @@ const CreateQuiz = () => {
             return;
         }
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-group/${selectedCourse}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/education/question-group/${selectedCourse}`);
             if (data.success) {
                 setVaultGroups(data.groups);
                 setIsVaultModalOpen(true);
@@ -58,9 +54,7 @@ const CreateQuiz = () => {
     const fetchVaultQuestions = async (groupId) => {
         setSelectedVaultGroup(groupId);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-bank/${groupId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/education/question-bank/${groupId}`);
             if (data.success) setVaultQuestions(data.questions);
         } catch (error) { toast.error('Intelligence retrieval failed'); }
     };
@@ -120,7 +114,7 @@ const CreateQuiz = () => {
 
         setLoading(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/quiz/create`, {
+            const { data } = await api.post('/quiz/create', {
                 courseId: selectedCourse, 
                 title, 
                 instructions,
@@ -130,7 +124,7 @@ const CreateQuiz = () => {
                 allowReview,
                 attemptsAllowed: Number(attemptsAllowed),
                 questions
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
 
             if (data.success) {
                 toast.success('Intelligence Unit Deployed');
@@ -312,6 +306,38 @@ const CreateQuiz = () => {
                         </button>
                         <button
                             type="button"
+                            onClick={async () => {
+                                if (!title || !selectedCourse) {
+                                    toast.error("Set a Title and Target Module first to guide the AI.");
+                                    return;
+                                }
+                                setLoading(true);
+                                try {
+                                    const { data } = await api.post('/ai/generate-quiz', { 
+                                        topic: `${title} for course: ${courses.find(c => c._id === selectedCourse)?.courseTitle}`,
+                                        count: 5 
+                                    });
+                                    if (data.success) {
+                                        // Filter out initial empty question if any
+                                        const currentQuestions = (questions.length === 1 && !questions[0].questionText) ? [] : questions;
+                                        setQuestions([...currentQuestions, ...data.data]);
+                                        toast.success("Intelligence Units Syncronized");
+                                    } else {
+                                        toast.error(data.message || "AI Generator Busy");
+                                    }
+                                } catch (error) {
+                                    toast.error("AI Synchronization Failed");
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            disabled={loading}
+                            className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all shadow-xl shadow-emerald-500/5"
+                        >
+                            🧙‍♂️ AI Magic Generate
+                        </button>
+                        <button
+                            type="button"
                             onClick={fetchVaultGroups}
                             className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all shadow-xl shadow-indigo-500/5"
                         >
@@ -405,3 +431,7 @@ const CreateQuiz = () => {
 };
 
 export default CreateQuiz;
+
+
+
+

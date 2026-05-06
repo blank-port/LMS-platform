@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageSubCategories = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [page, setPage] = useState(1);
@@ -13,8 +13,8 @@ const ManageSubCategories = () => {
 
     const fetchData = async () => {
         try {
-            const catRes = await axios.get(`${backendUrl}/api/course/categories`, getHeaders());
-            const subRes = await axios.get(`${backendUrl}/api/sub-category/all?page=${page}`, getHeaders());
+            const catRes = await api.get('/course/categories');
+            const subRes = await api.get(`/sub-category/all?page=${page}`);
             if (catRes.data.success) setCategories(catRes.data.categories);
             if (subRes.data.success) {
                 setSubCategories(subRes.data.subCategories);
@@ -32,7 +32,7 @@ const ManageSubCategories = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.post(`${backendUrl}/api/sub-category/add`, formData, getHeaders());
+            const { data } = await api.post('/sub-category/add', formData);
             if (data.success) {
                 toast.success('Sub-Category initialized.');
                 setFormData({ name: '', categoryId: '', description: '' });
@@ -152,3 +152,7 @@ const ManageSubCategories = () => {
 };
 
 export default ManageSubCategories;
+
+
+
+

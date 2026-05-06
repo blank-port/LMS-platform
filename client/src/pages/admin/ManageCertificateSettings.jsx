@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageCertificateSettings = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
         enableAutoGeneration: true,
@@ -17,7 +17,7 @@ const ManageCertificateSettings = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/finance/certificate-settings`, getHeaders());
+            const { data } = await api.get('/finance/certificate-settings');
             if (data.success) setSettings(data.settings);
         } catch (error) {
             console.error('Settings retrieval failure');
@@ -29,7 +29,7 @@ const ManageCertificateSettings = () => {
     const handleSave = async () => {
         const actionToast = toast.loading('Synchronizing Issuance Protocols...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/finance/certificate-settings`, settings, getHeaders());
+            const { data } = await api.post('/finance/certificate-settings', settings);
             if (data.success) {
                 toast.update(actionToast, { render: 'Issuance protocols synchronized.', type: "success", isLoading: false, autoClose: 3000 });
             }
@@ -108,3 +108,7 @@ const ManageCertificateSettings = () => {
 };
 
 export default ManageCertificateSettings;
+
+
+
+

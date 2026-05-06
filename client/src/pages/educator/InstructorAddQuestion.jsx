@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
 const InstructorAddQuestion = () => {
-    const { backendUrl, getHeaders, token } = useContext(AppContext);
+    const { groups: contextGroups } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [formData, setFormData] = useState({
         group: '',
@@ -27,9 +27,7 @@ const InstructorAddQuestion = () => {
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.get('/education/question-group/all');
                 if (data.success) {
                     setGroups(data.groups);
                     if (data.groups.length > 0) setFormData(prev => ({ ...prev, group: data.groups[0]._id }));
@@ -52,7 +50,7 @@ const InstructorAddQuestion = () => {
                 setFormData(prev => ({ ...prev, explanation: explanationQuill.current.root.innerHTML }));
             });
         }
-    }, [backendUrl, token]);
+    }, []);
 
     const handleOptionChange = (index, value) => {
         const newOptions = [...formData.options];
@@ -68,16 +66,12 @@ const InstructorAddQuestion = () => {
             if (image) {
                 const imgData = new FormData();
                 imgData.append('image', image);
-                const uploadRes = await axios.post(`${backendUrl}/api/instructor/upload-image`, imgData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const uploadRes = await api.post('/instructor/upload-image', imgData);
                 if (uploadRes.data.success) imageUrl = uploadRes.data.imageUrl;
             }
 
             const payload = { ...formData, image: imageUrl };
-            const { data } = await axios.post(`${backendUrl}/api/education/question-bank`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/education/question-bank', payload);
             
             if (data.success) {
                 toast.update(actionToast, { render: 'Question added successfully!', type: "success", isLoading: false, autoClose: 3000 });
@@ -224,3 +218,7 @@ const InstructorAddQuestion = () => {
 };
 
 export default InstructorAddQuestion;
+
+
+
+

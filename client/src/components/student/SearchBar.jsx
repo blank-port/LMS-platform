@@ -25,3 +25,7 @@ const SearchBar = ({ data }) => {
 }
 
 export default SearchBar
+
+
+
+

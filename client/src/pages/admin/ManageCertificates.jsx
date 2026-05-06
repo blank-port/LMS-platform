@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const PLACEHOLDER_MAP = {
@@ -26,7 +26,6 @@ const replacePlaceholders = (html) => {
 const emptyForm = { title: '', htmlContent: '', cssContent: '', backgroundImage: '', fontSize: '32px', fontFamily: 'Outfit', isDefault: false };
 
 const ManageCertificates = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [templates, setTemplates] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -36,7 +35,7 @@ const ManageCertificates = () => {
 
     const fetchTemplates = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/finance/certificate-templates`, getHeaders());
+            const { data } = await api.get('/finance/certificate-templates');
             if (data.success) setTemplates(data.templates);
         } catch (error) {
             toast.error('Failed to load certificate templates');
@@ -51,10 +50,10 @@ const ManageCertificates = () => {
         const actionToast = toast.loading(isEdit ? 'Updating template...' : 'Creating template...');
         try {
             const url = isEdit
-                ? `${backendUrl}/api/finance/certificate-template/${editingId}`
-                : `${backendUrl}/api/finance/certificate-template`;
+                ? `/finance/certificate-template/${editingId}`
+                : `/finance/certificate-template`;
             const method = isEdit ? 'put' : 'post';
-            const { data } = await axios[method](url, formData, getHeaders());
+            const { data } = await api[method](url, formData);
             if (data.success) {
                 toast.update(actionToast, { render: isEdit ? 'Template updated!' : 'Template created!', type: 'success', isLoading: false, autoClose: 3000 });
                 closeModal();
@@ -69,6 +68,20 @@ const ManageCertificates = () => {
         setEditingId(null);
         setFormData({ ...emptyForm });
         setShowModal(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to decommission this blueprint? This action is irreversible.')) return;
+        const deleteToast = toast.loading('Decommissioning blueprint...');
+        try {
+            const { data } = await api.delete(`/finance/certificate-template/${id}`);
+            if (data.success) {
+                toast.update(deleteToast, { render: 'Blueprint decommissioned!', type: 'success', isLoading: false, autoClose: 3000 });
+                fetchTemplates();
+            }
+        } catch (error) {
+            toast.update(deleteToast, { render: 'Decommissioning failed.', type: 'error', isLoading: false, autoClose: 3000 });
+        }
     };
 
     const openEditModal = (t) => {
@@ -133,6 +146,7 @@ const ManageCertificates = () => {
                             <div className="absolute inset-0 bg-gray-900/80 p-10 opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-md">
                                 <button onClick={() => setPreviewTemplate(t)} className="w-full h-14 bg-[var(--surface)] text-[var(--text-main)] text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-purple-600 hover:text-white transition-all">Preview Architecture</button>
                                 <button onClick={() => openEditModal(t)} className="w-full h-14 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all">Adjust Protocol</button>
+                                <button onClick={() => handleDelete(t._id)} className="w-full h-14 border border-rose-500/30 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-rose-500 hover:text-white transition-all">Decommission</button>
                             </div>
                             {t.isDefault && (
                                 <div className="absolute top-8 right-8 z-20">
@@ -357,3 +371,7 @@ const ManageCertificates = () => {
 };
 
 export default ManageCertificates;
+
+
+
+

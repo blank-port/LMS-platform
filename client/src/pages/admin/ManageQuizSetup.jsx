@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageQuizSetup = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -22,8 +22,8 @@ const ManageQuizSetup = () => {
 
     const fetchData = async () => {
         try {
-            const categoryRes = await axios.get(`${backendUrl}/api/course/categories`, getHeaders());
-            const groupRes = await axios.get(`${backendUrl}/api/education/question-group/all`, getHeaders());
+            const categoryRes = await api.get('/course/categories');
+            const groupRes = await api.get('/education/question-group/all');
             if (categoryRes.data.success) setCategories(categoryRes.data.categories);
             if (groupRes.data.success) setGroups(groupRes.data.groups);
         } catch (error) {
@@ -33,7 +33,7 @@ const ManageQuizSetup = () => {
 
     const fetchSubCategories = async (catId) => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/sub-category/${catId}`, getHeaders());
+            const { data } = await api.get(`/sub-category/${catId}`);
             if (data.success) setSubCategories(data.subCategories);
         } catch (error) {
             console.error('Sub-Category Retrieval Failure');
@@ -64,7 +64,7 @@ const ManageQuizSetup = () => {
                 duration: 30, // Default or added to UI later
                 passingScore: formData.minimumPercentage
             };
-            const { data } = await axios.post(`${backendUrl}/api/education/quiz-setup`, payload, getHeaders());
+            const { data } = await api.post('/education/quiz-setup', payload);
             if (data.success) {
                 toast.update(actionToast, { render: 'Assessment blueprint finalized and linked.', type: "success", isLoading: false, autoClose: 3000 });
                 setFormData({ 
@@ -232,3 +232,7 @@ const ManageQuizSetup = () => {
 };
 
 export default ManageQuizSetup;
+
+
+
+

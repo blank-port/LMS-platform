@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { NavLink } from 'react-router-dom';
 
 const ManageQuizList = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchQuizzes = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/quiz-setup/all`, getHeaders());
+            const { data } = await api.get('/education/quiz-setup/all');
             if (data.success) {
                 setQuizzes(data.quizzes);
             }
@@ -30,7 +30,7 @@ const ManageQuizList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to decommission this assessment blueprint?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/quiz/${id}`, getHeaders());
+            const { data } = await api.delete(`/quiz/${id}`);
             if (data.success) {
                 toast.success('Assessment blueprint decommissioned.');
                 fetchQuizzes();
@@ -142,3 +142,7 @@ const ManageQuizList = () => {
 };
 
 export default ManageQuizList;
+
+
+
+

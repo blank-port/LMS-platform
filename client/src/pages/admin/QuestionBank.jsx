@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const QuestionBank = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [questions, setQuestions] = useState([]);
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
@@ -23,7 +23,7 @@ const QuestionBank = () => {
         if (!selectedGroup) return;
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-bank/${selectedGroup}`, getHeaders());
+            const { data } = await api.get(`/education/question-bank/${selectedGroup}`);
             if (data.success) {
                 setQuestions(data.questions);
             }
@@ -36,7 +36,7 @@ const QuestionBank = () => {
 
     const fetchGroups = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, getHeaders());
+            const { data } = await api.get(`/education/question-group/all`);
             if (data.success) {
                 setGroups(data.groups);
                 if (data.groups.length > 0) setSelectedGroup(data.groups[0]._id);
@@ -76,7 +76,7 @@ const QuestionBank = () => {
             try {
                 const importToast = toast.loading(`Importing ${questionsToImport.length} assets into the repository...`);
                 for (const q of questionsToImport) {
-                    await axios.post(`${backendUrl}/api/education/question-bank`, q, getHeaders());
+                    await api.post(`/education/question-bank`, q);
                 }
                 toast.update(importToast, { render: 'Batch synchronization completed.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchQuestions();
@@ -91,7 +91,7 @@ const QuestionBank = () => {
         if (!confirm('Are you sure you want to decommission this intelligence unit?')) return;
         const deleteToast = toast.loading('Decommissioning Asset...');
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/education/question-bank/${id}`, getHeaders());
+            const { data } = await api.delete(`/education/question-bank/${id}`);
             if (data.success) {
                 toast.update(deleteToast, { render: 'Asset decommissioned.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchQuestions();
@@ -111,7 +111,7 @@ const QuestionBank = () => {
 
         const actionToast = toast.loading('Synchronizing Intelligence Asset...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/education/question-bank`, formData, getHeaders());
+            const { data } = await api.post(`/education/question-bank`, formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Intelligence asset synchronized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowAddModal(false);
@@ -299,4 +299,9 @@ const QuestionBank = () => {
 };
 
 export default QuestionBank;
+
+
+
+
+
 

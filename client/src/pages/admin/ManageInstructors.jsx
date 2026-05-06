@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageInstructors = () => {
@@ -14,9 +14,7 @@ const ManageInstructors = () => {
 
     const fetchInstructors = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/admin/instructors?page=${page}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/admin/instructors?page=${page}`);
             if (data.success) {
                 setInstructors(data.instructors);
                 setTotalPages(data.pages);
@@ -28,9 +26,7 @@ const ManageInstructors = () => {
     const handleApproval = async (id, isApproved) => {
         const actionToast = toast.loading(isApproved ? 'Authorizing Educator Identity...' : 'Revoking Educator Credentials...');
         try {
-            const { data } = await axios.put(`${backendUrl}/api/admin/instructors/${id}/approve`, { isApproved }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.put(`/admin/instructors/${id}/approve`, { isApproved });
             if (data.success) {
                 toast.update(actionToast, { render: isApproved ? 'Educator authorized.' : 'Credentials revoked.', type: "success", isLoading: false, autoClose: 3000 });
                 fetchInstructors();
@@ -152,4 +148,8 @@ const ManageInstructors = () => {
 };
 
 export default ManageInstructors;
+
+
+
+
 

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { Trophy, Medal, Crown, Star, Shield, Award, Search, TrendingUp } from 'lucide-react';
 import BadgeIcon from '../../components/common/BadgeIcon.jsx';
 
@@ -18,9 +18,7 @@ const Leaderboard = () => {
 
     const fetchLeaderboard = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/leaderboard`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/gamification/leaderboard');
             if (data.success) {
                 setLeaderboard(data.leaderboard);
             }
@@ -114,7 +112,7 @@ const Leaderboard = () => {
                     {filteredLeaderboard.slice(3).map((scholar, i) => (
                         <div 
                             key={scholar._id} 
-                            className={`grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 rounded-[2.5rem] transition-all hover:bg-gray-50 group ${scholar._id === user._id ? 'bg-indigo-50/50 ring-2 ring-indigo-500/20 shadow-lg' : 'bg-white border border-gray-50/50'}`}
+                            className={`grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 rounded-[2.5rem] transition-all hover:bg-gray-50 group ${scholar._id === user?._id ? 'bg-indigo-50/50 ring-2 ring-indigo-500/20 shadow-lg' : 'bg-white border border-gray-50/50'}`}
                         >
                             <div className="col-span-1 flex items-center md:items-start">
                                 <span className="text-xl font-black text-gray-200 group-hover:text-indigo-500 transition-colors tracking-tighter italic">#{i + 4}</span>
@@ -128,7 +126,7 @@ const Leaderboard = () => {
                                 />
                                 <div>
                                     <p className="text-sm font-black text-gray-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight italic">
-                                        {scholar.name} {scholar._id === user._id && <span className="text-[10px] font-black text-indigo-500 bg-indigo-100/50 px-2 py-0.5 rounded ml-2">YOU</span>}
+                                        {scholar.name} {scholar._id === user?._id && <span className="text-[10px] font-black text-indigo-500 bg-indigo-100/50 px-2 py-0.5 rounded ml-2">YOU</span>}
                                     </p>
                                     <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.2em] mt-1">Verified Scholar Node</p>
                                 </div>
@@ -192,3 +190,7 @@ const Leaderboard = () => {
 };
 
 export default Leaderboard;
+
+
+
+

@@ -1,7 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     UserIcon, 
@@ -20,18 +19,13 @@ import {
 const StudentDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { backendUrl, token } = useContext(AppContext);
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
 
     useEffect(() => {
         const fetchStudent = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/admin/users/${id}`, getHeaders());
+                const { data } = await api.get(`/admin/users/${id}`);
                 if (data.success) {
                     setStudent(data.user);
                 } else {
@@ -46,7 +40,7 @@ const StudentDetails = () => {
             }
         };
         fetchStudent();
-    }, [id]);
+    }, [id, navigate]);
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-[60vh]">
@@ -273,3 +267,8 @@ const StudentDetails = () => {
 };
 
 export default StudentDetails;
+
+
+
+
+

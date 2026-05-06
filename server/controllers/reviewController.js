@@ -2,81 +2,85 @@ import Review from '../models/Review.js';
 import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
 import { grantPoints } from '../services/gamificationService.js';
+import responseHelper from "../utils/responseHelper.js";
+import AppError from "../utils/appError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 // Add Review
-export const addReview = async (req, res) => {
-    try {
-        const { courseId, rating, comment } = req.body;
-        const userId = req.user._id;
+export const addReview = asyncHandler(async (req, res, next) => {
+    const { courseId, rating, comment } = req.body;
+    const userId = req.user._id;
 
-        // Verify Enrollment
-        const isEnrolled = await Enrollment.findOne({ courseId, userId });
-        if (!isEnrolled) {
-            return res.json({ success: false, message: 'You must be enrolled to review this course.' });
-        }
-
-        // Check if already reviewed
-        const existing = await Review.findOne({ courseId, userId });
-        if (existing) {
-            existing.rating = rating;
-            existing.comment = comment;
-            await existing.save();
-            // Update course rating
-            await updateCourseRating(courseId);
-            return res.json({ success: true, message: 'Review updated' });
-        }
-
-        await Review.create({ courseId, userId, rating, comment });
-        await updateCourseRating(courseId);
-
-        // Grant points for feedback cycle
-        await grantPoints(userId, 'course_review');
-
-        res.json({ success: true, message: 'Review added' });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
+    // Verify Enrollment
+    const isEnrolled = await Enrollment.findOne({ courseId, userId });
+    if (!isEnrolled) {
+        return next(new AppError('Pedagogical requirement: You must be enrolled to review this course.', 403));
     }
-};
+
+    // Check if already reviewed
+    const existing = await Review.findOne({ courseId, userId });
+    if (existing) {
+        existing.rating = rating;
+        existing.comment = comment;
+        await existing.save();
+        await updateCourseRating(courseId);
+        return responseHelper.success(res, { review: existing }, 'Institutional review synchronized');
+    }
+
+    const review = await Review.create({ courseId, userId, rating, comment });
+    await updateCourseRating(courseId);
+
+    // Grant points for feedback cycle
+    await grantPoints(userId, 'course_review');
+
+    return responseHelper.success(res, { review }, 'Institutional review provisioned successfully', 201);
+});
 
 // Get Reviews for a Course
-export const getCourseReviews = async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        const reviews = await Review.find({ courseId })
-            .populate('userId', 'name profilePicture')
-            .sort({ createdAt: -1 });
-        res.json({ success: true, reviews });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-};
-
+export const getCourseReviews = asyncHandler(async (req, res, next) => {
+    const { courseId } = req.params;
+    const reviews = await Review.find({ courseId })
+        .populate('userId', 'name profilePicture')
+        .sort({ createdAt: -1 });
+    return responseHelper.success(res, { reviews }, 'Scholarly review registry synchronized');
+});
 // Delete Review
-export const deleteReview = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const review = await Review.findById(id);
+export const deleteReview = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const review = await Review.findById(id);
+    if (!review) return next(new AppError('Review not found', 404));
 
-        if (!review) {
-            return res.status(404).json({ success: false, message: 'Review not found' });
-        }
+    await Review.findByIdAndDelete(id);
+    await updateCourseRating(review.courseId);
 
-        if (review.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Not authorized' });
-        }
+    return responseHelper.success(res, {}, 'Institutional review artifact decommissioned');
+});
 
-        await Review.findByIdAndDelete(id);
-        await updateCourseRating(review.courseId);
+// Get All Reviews (Admin View)
+export const getAllReviews = asyncHandler(async (req, res, next) => {
+    const reviews = await Review.find({})
+        .populate('userId', 'name profilePicture email')
+        .populate('courseId', 'courseTitle')
+        .sort({ createdAt: -1 });
+    return responseHelper.success(res, { reviews }, 'Global review registry synchronized');
+});
 
-        res.json({ success: true, message: 'Review deleted' });
-    } catch (error) {
-        res.json({ success: false, message: error.message });
-    }
-};
+// Update Review Status (Admin View)
+export const updateReviewStatus = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const review = await Review.findByIdAndUpdate(id, { status }, { new: true });
+    if (!review) return next(new AppError('Review not found', 404));
+
+    await updateCourseRating(review.courseId);
+
+    return responseHelper.success(res, { review }, `Review status updated to ${status}`);
+});
 
 // Helper: Update course rating average
 async function updateCourseRating(courseId) {
-    const reviews = await Review.find({ courseId });
+    const reviews = await Review.find({ courseId, status: 'approved' });
     const ratings = reviews.map(r => ({ userId: r.userId, rating: r.rating }));
     await Course.findByIdAndUpdate(courseId, { courseRatings: ratings });
 }

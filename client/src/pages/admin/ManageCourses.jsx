@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const ManageCourses = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,17 +19,12 @@ const ManageCourses = () => {
         setLoading(true);
         try {
             const url = categoryFilter 
-                ? `${backendUrl}/api/admin/courses?category=${categoryFilter}`
-                : `${backendUrl}/api/admin/courses`;
+                ? `/admin/courses?category=${categoryFilter}`
+                : '/admin/courses';
             
-            console.log('Fetching assets from URL:', url);
-            
-            const { data } = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(url);
             if (data.success) {
-                console.log(`Retrieved ${data.courses.length} courses.`);
-                setCourses(data.courses);
+                setCourses(data.courses || []);
             }
         } catch (error) { console.error('Fetch Error:', error); }
         setLoading(false);
@@ -39,12 +33,10 @@ const ManageCourses = () => {
     const updateStatus = async (id, status) => {
         const loadingToast = toast.loading(`Synchronizing Asset Status: ${status}...`);
         try {
-            const { data } = await axios.put(`${backendUrl}/api/admin/courses/${id}/status`, { status }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.put(`/admin/courses/${id}/status`, { status });
             if (data.success) { 
                 toast.update(loadingToast, { render: `Asset ${status} successfully.`, type: "success", isLoading: false, autoClose: 3000 });
-                fetchCourses(); 
+                fetchCourses(categoryId); 
             }
         } catch (error) { 
             toast.update(loadingToast, { render: 'Synchronization failure.', type: "error", isLoading: false, autoClose: 3000 });
@@ -54,10 +46,8 @@ const ManageCourses = () => {
     const deleteCourse = async (id) => {
         if (!confirm('Proceed with permanent asset deletion? This action is irreversible.')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/admin/courses/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (data.success) { toast.success('Asset purged from repository.'); fetchCourses(); }
+            const { data } = await api.delete(`/admin/courses/${id}`);
+            if (data.success) { toast.success('Asset purged from repository.'); fetchCourses(categoryId); }
         } catch (error) { toast.error('Purge failed.'); }
     };
 
@@ -173,4 +163,8 @@ const ManageCourses = () => {
 };
 
 export default ManageCourses;
+
+
+
+
 

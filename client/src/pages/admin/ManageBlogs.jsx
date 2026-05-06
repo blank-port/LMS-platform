@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     NewspaperIcon, 
@@ -33,9 +33,7 @@ const ManageBlogs = () => {
         featuredImage: ''
     });
 
-    const getHeaders = () => ({
-        headers: { Authorization: `Bearer ${token}` }
-    });
+
 
     useEffect(() => {
         fetchBlogs();
@@ -43,7 +41,7 @@ const ManageBlogs = () => {
 
     const fetchBlogs = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/blog`, getHeaders());
+            const { data } = await api.get('/admin/blogs');
             if (data.success) setBlogs(data.blogs);
         } catch (error) { toast.error('Failed to fetch blogs'); }
         setLoading(false);
@@ -54,7 +52,7 @@ const ManageBlogs = () => {
         const action = editingId ? 'Updating' : 'Publishing';
         const loadingToast = toast.loading(`${action} Article...`);
         try {
-            const url = editingId ? `${backendUrl}/api/blog/${editingId}` : `${backendUrl}/api/blog`;
+            const url = editingId ? `/blog/${editingId}` : '/blog';
             const method = editingId ? 'put' : 'post';
             
             // Format tags as array
@@ -63,7 +61,7 @@ const ManageBlogs = () => {
                 tags: typeof form.tags === 'string' ? form.tags.split(',').map(t => t.trim()) : form.tags
             };
 
-            const { data } = await axios[method](url, formattedForm, getHeaders());
+            const { data } = await api[method](url, formattedForm);
             
             if (data.success) {
                 toast.update(loadingToast, { render: `Article ${action.toLowerCase()}ed successfully`, type: "success", isLoading: false, autoClose: 3000 });
@@ -78,7 +76,7 @@ const ManageBlogs = () => {
     const handleDelete = async (id) => {
         if (!confirm('Proceed with article deletion?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/blog/${id}`, getHeaders());
+            const { data } = await api.delete(`/blog/${id}`);
             if (data.success) {
                 toast.success('Article removed');
                 fetchBlogs();
@@ -318,3 +316,7 @@ const ManageBlogs = () => {
 };
 
 export default ManageBlogs;
+
+
+
+

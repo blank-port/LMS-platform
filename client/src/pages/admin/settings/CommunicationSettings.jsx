@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
-import { Settings, ShieldCheck, Bell, MessageSquare, Save, UserCheck } from 'lucide-react';
+import { ShieldCheck, Bell, MessageSquare, Save, UserCheck } from 'lucide-react';
 
 const CommunicationSettings = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [settings, setSettings] = useState({
         allowQuestionReplyRoles: ['admin', 'instructor'],
         realtimeNotifications: true,
@@ -18,7 +16,7 @@ const CommunicationSettings = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/comm/settings`, getHeaders());
+            const { data } = await api.get('/comm/settings');
             if (data.success) {
                 setSettings(data.settings);
             }
@@ -32,7 +30,7 @@ const CommunicationSettings = () => {
     const handleUpdate = async () => {
         setSaving(true);
         try {
-            const { data } = await axios.put(`${backendUrl}/api/comm/settings`, settings, getHeaders());
+            const { data } = await api.put('/comm/settings', settings);
             if (data.success) {
                 toast.success('Institutional Protocols Synchronized');
             }
@@ -173,3 +171,8 @@ const CommunicationSettings = () => {
 };
 
 export default CommunicationSettings;
+
+
+
+
+

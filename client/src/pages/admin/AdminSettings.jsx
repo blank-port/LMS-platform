@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const AdminSettings = () => {
@@ -19,9 +19,7 @@ const AdminSettings = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/setting/all`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/setting/all');
             if (data.success) {
                 const sObj = {};
                 data.settings.forEach(s => sObj[s.key] = s.value);
@@ -34,9 +32,9 @@ const AdminSettings = () => {
 
     const handleUpdate = async (key, value, isSensitive = false) => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/setting/update`, {
+            const { data } = await api.post('/setting/update', {
                 key, value, isSensitive
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             
             if (data.success) {
                 // Individual update success handled silently to prevent toast flooding during batch
@@ -174,4 +172,8 @@ const AdminSettings = () => {
 };
 
 export default AdminSettings;
+
+
+
+
 

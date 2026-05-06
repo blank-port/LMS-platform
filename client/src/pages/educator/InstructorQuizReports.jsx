@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const InstructorQuizReports = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState('');
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const getHeaders = () => ({ headers: { Authorization: `Bearer ${token}` } });
-
     const fetchInstructorCourses = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/courses`, getHeaders());
+            const { data } = await api.get('/instructor/courses');
             if (data.success) {
                 setCourses(data.courses);
                 if (data.courses.length > 0) setSelectedCourse(data.courses[0]._id);
@@ -28,7 +25,7 @@ const InstructorQuizReports = () => {
         if (!selectedCourse) return;
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/quiz/reports/unified`, getHeaders());
+            const { data } = await api.get('/quiz/reports/unified');
             if (data.success) {
                 setReports(data.reports.map(report => ({
                     studentName: report.userId.name,
@@ -135,3 +132,7 @@ const InstructorQuizReports = () => {
 };
 
 export default InstructorQuizReports;
+
+
+
+

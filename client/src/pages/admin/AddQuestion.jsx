@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
 const AddQuestion = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [formData, setFormData] = useState({
         group: '',
@@ -27,7 +25,7 @@ const AddQuestion = () => {
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, getHeaders());
+                const { data } = await api.get('/education/question-group/all');
                 if (data.success) {
                     setGroups(data.groups);
                     if (data.groups.length > 0) setFormData(prev => ({ ...prev, group: data.groups[0]._id }));
@@ -50,7 +48,7 @@ const AddQuestion = () => {
                 setFormData(prev => ({ ...prev, explanation: explanationQuill.current.root.innerHTML }));
             });
         }
-    }, [backendUrl]);
+    }, []);
 
     const handleOptionChange = (index, value) => {
         const newOptions = [...formData.options];
@@ -66,12 +64,14 @@ const AddQuestion = () => {
             if (image) {
                 const imgData = new FormData();
                 imgData.append('image', image);
-                const uploadRes = await axios.post(`${backendUrl}/api/instructor/upload-image`, imgData, getHeaders());
+                const uploadRes = await api.post('/instructor/upload-image', imgData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 if (uploadRes.data.success) imageUrl = uploadRes.data.imageUrl;
             }
 
             const payload = { ...formData, image: imageUrl };
-            const { data } = await axios.post(`${backendUrl}/api/education/question-bank`, payload, getHeaders());
+            const { data } = await api.post('/education/question-bank', payload);
             
             if (data.success) {
                 toast.update(actionToast, { render: 'Question added successfully!', type: "success", isLoading: false, autoClose: 3000 });
@@ -218,3 +218,8 @@ const AddQuestion = () => {
 };
 
 export default AddQuestion;
+
+
+
+
+

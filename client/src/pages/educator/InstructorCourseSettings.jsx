@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     CheckBadgeIcon, 
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const InstructorCourseSettings = () => {
-    const { backendUrl, fetchAllSettings } = useContext(AppContext);
+    const { fetchAllSettings } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
         course_approval: 'Yes',
@@ -26,12 +26,13 @@ const InstructorCourseSettings = () => {
     const loadSettingsData = async () => {
         setLoading(true);
         try {
-            const data = await fetchAllSettings();
-            if (data && Array.isArray(data)) {
+            const { data } = await api.get('/setting/public');
+            if (data && data.success && data.settings) {
+                const publicSettings = data.settings;
                 const mappedSettings = {};
-                data.forEach(s => {
-                    if (Object.keys(settings).includes(s.key)) {
-                        mappedSettings[s.key] = s.value;
+                Object.keys(settings).forEach(key => {
+                    if (publicSettings[key] !== undefined) {
+                        mappedSettings[key] = publicSettings[key];
                     }
                 });
                 setSettings(prev => ({ ...prev, ...mappedSettings }));
@@ -123,3 +124,7 @@ const InstructorCourseSettings = () => {
 };
 
 export default InstructorCourseSettings;
+
+
+
+

@@ -62,20 +62,34 @@ const userSchema = new mongoose.Schema({
             ref: 'Course'
         }
     ],
-    referralCode: { type: String, unique: true },
+    referralCode: { type: String, unique: true, sparse: true },
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     walletBalance: { type: Number, default: 0 },
     gamification: {
         totalPoints: { type: Number, default: 0 },
         currentPoints: { type: Number, default: 0 },
         level: { type: Number, default: 1 },
-        badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }]
+        badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
+        streakCount: { type: Number, default: 0 },
+        lastStreakUpdate: { type: Date }
     },
     lastActive: { type: Date, default: Date.now },
     isVerified: { type: Boolean, default: true },
+    requiresPasswordChange: { type: Boolean, default: false },
     verifyOtp: { type: String, default: '' },
     verifyOtpExpire: { type: Number, default: 0 },
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+userSchema.index({ name: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+
+// Virtual: backward-compatible alias so .populate('profilePicture') resolves
+userSchema.virtual('profilePicture').get(function () {
+    return this.avatar || '';
+}).set(function (val) {
+    this.avatar = val;
+});
 
 const User = mongoose.model("User", userSchema);
 

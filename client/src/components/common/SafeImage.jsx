@@ -14,3 +14,7 @@ const SafeImage = ({ src, alt, className, fallback = 'https://placehold.co/400x2
 };
 
 export default SafeImage;
+
+
+
+

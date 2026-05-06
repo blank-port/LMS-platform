@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageCertificateFonts = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [fonts, setFonts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -12,7 +12,7 @@ const ManageCertificateFonts = () => {
 
     const fetchFonts = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/finance/certificate-fonts`, getHeaders());
+            const { data } = await api.get('/finance/certificate-fonts');
             if (data.success) setFonts(data.fonts);
         } catch (error) {
             console.error('Font retrieval failure');
@@ -25,7 +25,7 @@ const ManageCertificateFonts = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Typography Asset...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/finance/certificate-font`, formData, getHeaders());
+            const { data } = await api.post('/finance/certificate-font', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Typography asset stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowModal(false);
@@ -112,3 +112,7 @@ const ManageCertificateFonts = () => {
 };
 
 export default ManageCertificateFonts;
+
+
+
+

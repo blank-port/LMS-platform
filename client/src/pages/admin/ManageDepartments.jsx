@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageDepartments = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [departments, setDepartments] = useState([]);
     const [institutes, setInstitutes] = useState([]);
     const [selectedInstitute, setSelectedInstitute] = useState('');
@@ -14,7 +12,7 @@ const ManageDepartments = () => {
 
     const fetchInstitutes = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/institute/all`, getHeaders());
+            const { data } = await api.get('/audit/institute/all');
             if (data.success) {
                 setInstitutes(data.institutes);
                 if (data.institutes.length > 0) setSelectedInstitute(data.institutes[0]._id);
@@ -28,7 +26,7 @@ const ManageDepartments = () => {
         if (!selectedInstitute) return;
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/audit/department/${selectedInstitute}`, getHeaders());
+            const { data } = await api.get(`/audit/department/${selectedInstitute}`);
             if (data.success) {
                 setDepartments(data.departments);
             }
@@ -42,7 +40,7 @@ const ManageDepartments = () => {
         e.preventDefault();
         const actionToast = toast.loading('Initializing Strategic Business Unit...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/audit/department/create`, formData, getHeaders());
+            const { data } = await api.post('/audit/department/create', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Strategic Business Unit initialized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowAddModal(false);
@@ -185,4 +183,9 @@ const ManageDepartments = () => {
 };
 
 export default ManageDepartments;
+
+
+
+
+
 

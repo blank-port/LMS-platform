@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { useParams, useNavigate } from 'react-router-dom';
 import Quill from 'quill';
@@ -29,6 +29,11 @@ const EditCourse = ({ isAdmin = false }) => {
     const [chapters, setChapters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isCertificateEnabled, setIsCertificateEnabled] = useState(true);
+    const [isQuizEnabled, setIsQuizEnabled] = useState(true);
+    const [selectedTemplate, setSelectedTemplate] = useState('');
+    const [issueMethod, setIssueMethod] = useState('quiz');
+    const [templates, setTemplates] = useState([]);
 
     useEffect(() => {
         if (!quillRef.current && editorRef.current && !loading) {
@@ -41,11 +46,23 @@ const EditCourse = ({ isAdmin = false }) => {
 
     useEffect(() => {
         fetchCourseData();
+        fetchTemplates();
     }, [id]);
+
+    const fetchTemplates = async () => {
+        try {
+            const { data } = await api.get('/finance/certificate-templates');
+            if (data.success) {
+                setTemplates(data.templates);
+            }
+        } catch (error) {
+            console.error("Failed to load templates", error);
+        }
+    };
 
     const fetchCourseData = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/course/${id}`);
+            const { data } = await api.get(`/course/${id}`);
             if (data.success) {
                 const course = data.courseData;
                 setCourseTitle(course.courseTitle);
@@ -59,6 +76,12 @@ const EditCourse = ({ isAdmin = false }) => {
                 setCourseRequirements(course.courseRequirements?.length > 0 ? course.courseRequirements : ['']);
                 setExistingImage(course.courseThumbnail);
                 setChapters(course.courseContent || []);
+                
+                if (course.isCertificateEnabled !== undefined) setIsCertificateEnabled(course.isCertificateEnabled);
+                if (course.isQuizEnabled !== undefined) setIsQuizEnabled(course.isQuizEnabled);
+                if (course.issueMethod) setIssueMethod(course.issueMethod);
+                if (course.certificateTemplate) setSelectedTemplate(course.certificateTemplate);
+
                 if (quillRef.current) {
                     quillRef.current.root.innerHTML = course.courseDescription || '';
                 }
@@ -86,6 +109,7 @@ const EditCourse = ({ isAdmin = false }) => {
         updated[chapterIndex].chapterContent.push({
             lectureId: generateId(),
             lectureTitle: '',
+            lectureDescription: '',
             lectureDuration: 0,
             lectureUrl: '',
             isPreviewFree: false,
@@ -140,12 +164,17 @@ const EditCourse = ({ isAdmin = false }) => {
                 chapterOrder: i,
                 chapterContent: ch.chapterContent.map((lec, j) => ({
                     lectureTitle: lec.lectureTitle,
+                    lectureDescription: lec.lectureDescription || '',
                     lectureDuration: Number(lec.lectureDuration),
                     lectureUrl: lec.lectureUrl,
                     isPreviewFree: lec.isPreviewFree,
                     lectureOrder: j
                 }))
-            }))
+            })),
+            isCertificateEnabled,
+            isQuizEnabled,
+            certificateTemplate: selectedTemplate,
+            issueMethod
         };
 
         const formData = new FormData();
@@ -155,12 +184,10 @@ const EditCourse = ({ isAdmin = false }) => {
         setSaving(true);
         try {
             const url = isAdmin 
-                ? `${backendUrl}/api/admin/courses/${id}`
-                : `${backendUrl}/api/instructor/update-course/${id}`;
+                ? `/admin/courses/${id}`
+                : `/instructor/update-course/${id}`;
 
-            const { data } = await axios.put(url, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.put(url, formData);
             if (data.success) {
                 toast.success('Course Identity Synchronized');
                 navigate(isAdmin ? '/admin/courses' : '/educator/my-courses');
@@ -180,7 +207,7 @@ const EditCourse = ({ isAdmin = false }) => {
             className={`flex flex-col items-center gap-4 group transition-all ${current === step ? 'opacity-100' : 'opacity-40 hover:opacity-60'}`}
         >
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black transition-all ${current === step ? 'bg-[#0C132B] text-white shadow-xl shadow-black/10' : 'bg-gray-100 text-gray-400'}`}>
-                {step === 'basic' ? '01' : step === 'details' ? '02' : step === 'curriculum' ? '03' : '04'}
+                {step === 'basic' ? '01' : step === 'details' ? '02' : step === 'curriculum' ? '03' : step === 'certification' ? '04' : '05'}
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
         </button>
@@ -213,6 +240,8 @@ const EditCourse = ({ isAdmin = false }) => {
                         <StepIcon step="details" label="Dynamics" current={activeTab} />
                         <div className="w-8 h-px bg-gray-100"></div>
                         <StepIcon step="curriculum" label="Modules" current={activeTab} />
+                        <div className="w-8 h-px bg-gray-100"></div>
+                        <StepIcon step="certification" label="Credentials" current={activeTab} />
                         <div className="w-8 h-px bg-gray-100"></div>
                         <StepIcon step="metadata" label="Economics" current={activeTab} />
                     </div>
@@ -346,7 +375,7 @@ const EditCourse = ({ isAdmin = false }) => {
                                                     placeholder="e.g. Master Neural Architectures"
                                                 />
                                                 {courseOutcomes.length > 1 && (
-                                                    <button type="button" onClick={() => setCourseOutcomes(courseOutcomes.filter((_, i) => i !== index))} className="w-12 h-12 rounded-xl hover:bg-rose-50 text-rose-400 text-lg transition-colors flex items-center justify-center">×</button>
+                                                    <button type="button" onClick={() => setCourseOutcomes(courseOutcomes.filter((_, i) => i !== index))} className="w-12 h-12 rounded-xl hover:bg-rose-50 text-rose-400 text-lg transition-flex items-center justify-center">×</button>
                                                 )}
                                             </div>
                                         ))}
@@ -373,7 +402,7 @@ const EditCourse = ({ isAdmin = false }) => {
                                                     placeholder="e.g. Proficiency in Linear Algebra"
                                                 />
                                                 {courseRequirements.length > 1 && (
-                                                    <button type="button" onClick={() => setCourseRequirements(courseRequirements.filter((_, i) => i !== index))} className="w-12 h-12 rounded-xl hover:bg-rose-50 text-rose-400 text-lg transition-colors flex items-center justify-center">×</button>
+                                                    <button type="button" onClick={() => setCourseRequirements(courseRequirements.filter((_, i) => i !== index))} className="w-12 h-12 rounded-xl hover:bg-rose-50 text-rose-400 text-lg transition-flex items-center justify-center">×</button>
                                                 )}
                                             </div>
                                         ))}
@@ -422,7 +451,7 @@ const EditCourse = ({ isAdmin = false }) => {
                                                 </div>
                                                 <div className="flex items-center gap-6">
                                                     <button type="button" onClick={() => addLecture(chIndex)} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:text-[#0C132B] transition-colors">Append Nexus</button>
-                                                    <button type="button" onClick={() => removeChapter(chIndex)} className="w-8 h-8 rounded-full hover:bg-rose-50 text-rose-400 text-lg transition-colors flex items-center justify-center">×</button>
+                                                    <button type="button" onClick={() => removeChapter(chIndex)} className="w-8 h-8 rounded-full hover:bg-rose-50 text-rose-400 text-lg transition-flex items-center justify-center">×</button>
                                                 </div>
                                             </div>
                                             <div className="divide-y divide-gray-50">
@@ -444,51 +473,13 @@ const EditCourse = ({ isAdmin = false }) => {
                                                                 className="w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all"
                                                                 placeholder="Streaming Repository (YouTube URL)" 
                                                             />
+                                                            <textarea
+                                                                value={lecture.lectureDescription || ''}
+                                                                onChange={(e) => updateLecture(chIndex, lecIndex, 'lectureDescription', e.target.value)}
+                                                                className="md:col-span-2 w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none min-h-[96px]"
+                                                                placeholder="AI lesson context and student-facing lecture summary"
+                                                            />
                                                         </div>
-                                                        <div className="flex items-center gap-6 w-full lg:w-auto">
-                                                            <div className="relative">
-                                                                <input 
-                                                                    type="number" 
-                                                                    value={lecture.lectureDuration} 
-                                                                    onChange={(e) => updateLecture(chIndex, lecIndex, 'lectureDuration', e.target.value)}
-                                                                    className="w-32 bg-gray-50/50 p-4 pl-12 rounded-xl text-xs font-bold text-[#0C132B] outline-none"
-                                                                    placeholder="Min" 
-                                                                    min="0" 
-                                                                />
-                                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs">⏱️</span>
-                                                            </div>
-                                                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                                                <input 
-                                                                    type="checkbox" 
-                                                                    checked={lecture.isPreviewFree} 
-                                                                    onChange={(e) => updateLecture(chIndex, lecIndex, 'isPreviewFree', e.target.checked)}
-                                                                    className="w-4 h-4 rounded border-gray-200 text-indigo-500 focus:ring-indigo-500"
-                                                                />
-                                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Public</span>
-                                                            </label>
-                                                            <button type="button" onClick={() => removeLecture(chIndex, lecIndex)} className="w-10 h-10 rounded-xl hover:bg-rose-50 text-rose-400 transition-all flex items-center justify-center">✕</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center pt-10">
-                                <button type="button" onClick={() => setActiveTab('details')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Dynamics</button>
-                                <button type="button" onClick={() => setActiveTab('metadata')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
-                                    Proceed to Economics →
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'metadata' && (
-                        <div className="bg-white rounded-[3rem] p-10 md:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 animate-in fade-in slide-in-from-bottom-5">
-                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Economic Calibration</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Acquisition Threshold (Price)</label>
                                     <div className="relative">
@@ -554,3 +545,7 @@ const EditCourse = ({ isAdmin = false }) => {
 };
 
 export default EditCourse;
+
+
+
+

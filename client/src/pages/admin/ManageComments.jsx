@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { MessageSquare, Filter, CheckCircle, XCircle, Trash2, Calendar, Search } from 'lucide-react';
 import Pusher from 'pusher-js';
 
 const ManageComments = () => {
-    const { backendUrl, getHeaders, settings } = useContext(AppContext);
+    const { backendUrl, settings } = useContext(AppContext);
     const { pusher_app_key, pusher_active, pusher_cluster } = settings;
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -23,9 +23,8 @@ const ManageComments = () => {
     const fetchComments = async () => {
         setLoading(true);
         try {
-            const { data } = await axios.get(`${backendUrl}/api/comm/comments`, {
-                params: { ...filters, limit, skip: (page - 1) * limit },
-                ...getHeaders()
+            const { data } = await api.get('/comm/comments', {
+                params: { ...filters, limit, skip: (page - 1) * limit }
             });
             if (data.success) {
                 setComments(data.comments);
@@ -40,7 +39,7 @@ const ManageComments = () => {
 
     const handleStatusUpdate = async (id, newStatus) => {
         try {
-            const { data } = await axios.patch(`${backendUrl}/api/comm/comments/${id}/status`, { status: newStatus }, getHeaders());
+            const { data } = await api.patch(`/comm/comments/${id}/status`, { status: newStatus });
             if (data.success) {
                 setComments(comments.map(c => c._id === id ? { ...c, status: newStatus } : c));
                 toast.success(`Protocol Calibrated: ${newStatus.toUpperCase()}`);
@@ -284,3 +283,7 @@ const ManageComments = () => {
 };
 
 export default ManageComments;
+
+
+
+

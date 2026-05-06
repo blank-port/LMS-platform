@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const GamificationHistory = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchHistory = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/history-all`, getHeaders());
+            const { data } = await api.get('/gamification/history-all');
             if (data.success) setHistory(data.history);
         } catch (error) {
             toast.error('Audit Log Synchronization Failure');
@@ -95,3 +95,7 @@ const GamificationHistory = () => {
 };
 
 export default GamificationHistory;
+
+
+
+

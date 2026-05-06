@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     CheckBadgeIcon, 
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ManageCourseSettings = () => {
-    const { backendUrl, getHeaders, fetchAllSettings, updateBatchSettings } = useContext(AppContext);
+    const { fetchAllSettings, updateBatchSettings } = useContext(AppContext);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({
         course_approval: 'Yes',
@@ -162,3 +162,7 @@ const ManageCourseSettings = () => {
 };
 
 export default ManageCourseSettings;
+
+
+
+

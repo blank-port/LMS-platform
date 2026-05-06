@@ -1,10 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import Footer from '../../components/student/Footer';
-import { assets } from '../../assets/assets';
 
 const QuizPage = () => {
     const { courseId } = useParams();
@@ -27,14 +26,17 @@ const QuizPage = () => {
 
     const fetchQuizzes = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/quiz/course/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const url = courseId 
+                ? `/quiz/course/${courseId}`
+                : `/quiz/all`; // Assuming an 'all accessible quizzes' endpoint or we'll handle empty
+            
+            const { data } = await api.get(url);
             if (data.success) {
                 setQuizzes(data.quizzes);
             }
         } catch (error) {
-            toast.error('Failed to load quizzes');
+            console.error('Quiz sync failure:', error);
+            if (courseId) toast.error('Failed to load quizzes for this course');
         }
         setLoading(false);
     };
@@ -60,10 +62,10 @@ const QuizPage = () => {
 
         setSubmitting(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/quiz/submit`, {
+            const { data } = await api.post('/quiz/submit', {
                 quizId: selectedQuiz._id,
                 answers
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
 
             if (data.success) {
                 setResult(data.result);
@@ -88,7 +90,7 @@ const QuizPage = () => {
             {/* High-Impact Header */}
             <div className="bg-[#0C132B] pt-40 pb-24 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] -mr-48 -mt-48"></div>
-                <div className="container mx-auto px-6 md:px-12 lg:px-24相对 z-10">
+                <div className="container mx-auto px-6 md:px-12 lg:px-24 relative z-10">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
                         <div>
                             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-indigo-400 hover:text-white mb-6 uppercase text-[10px] font-black tracking-widest transition-all group">
@@ -270,3 +272,7 @@ const QuizPage = () => {
 };
 
 export default QuizPage;
+
+
+
+

@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageECommerce = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [referrals, setReferrals] = useState([]);
     const [payouts, setPayouts] = useState([]);
     const [settings, setSettings] = useState({ 
@@ -17,7 +15,7 @@ const ManageECommerce = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const { data: settingsData } = await axios.get(`${backendUrl}/api/setting/public`);
+            const { data: settingsData } = await api.get('/setting/public');
             
             if (settingsData.success) {
                 setSettings({
@@ -45,10 +43,10 @@ const ManageECommerce = () => {
 
     const handleSaveSettings = async () => {
         try {
-            const { data } = await axios.post(`${backendUrl}/api/setting/update-batch`, {
+            const { data } = await api.post('/setting/update-batch', {
                 settings: settings,
                 isSensitive: false
-            }, getHeaders());
+            });
 
             if (data.success) {
                 toast.success('Strategic Architecture Recalibrated');
@@ -252,3 +250,8 @@ const ManageECommerce = () => {
 };
 
 export default ManageECommerce;
+
+
+
+
+

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const NewEnrollment = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,8 +12,8 @@ const NewEnrollment = () => {
 
     const fetchData = async () => {
         try {
-            const userRes = await axios.get(`${backendUrl}/api/admin/users`, getHeaders());
-            const courseRes = await axios.get(`${backendUrl}/api/course/list`, getHeaders());
+            const userRes = await api.get(`/admin/users`);
+            const courseRes = await api.get(`/course/list`);
             if (userRes.data.success) setUsers(userRes.data.users.filter(u => u.role === 'student'));
             if (courseRes.data.success) setCourses(courseRes.data.courses);
         } catch (error) {
@@ -27,7 +27,7 @@ const NewEnrollment = () => {
         e.preventDefault();
         const actionToast = toast.loading('Initializing Manual Enrollment Protocol...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/admin/enroll-student`, formData, getHeaders());
+            const { data } = await api.post(`/admin/enroll-student`, formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Scholar inducted into curriculum sector.', type: "success", isLoading: false, autoClose: 3000 });
                 setFormData({ userId: '', courseId: '', enrollmentDate: new Date().toISOString().split('T')[0] });
@@ -99,3 +99,8 @@ const NewEnrollment = () => {
 };
 
 export default NewEnrollment;
+
+
+
+
+

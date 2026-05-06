@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const InstructorQuestionImport = () => {
-    const { backendUrl, getHeaders, token } = useContext(AppContext);
+    const { groups: contextGroups } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
     const [file, setFile] = useState(null);
@@ -12,16 +12,14 @@ const InstructorQuestionImport = () => {
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.get('/education/question-group/all');
                 if (data.success) setGroups(data.groups);
             } catch (error) {
                 toast.error('Failed to fetch question groups');
             }
         };
         fetchGroups();
-    }, [backendUrl, token]);
+    }, []);
 
     const handleImport = async (e) => {
         e.preventDefault();
@@ -35,9 +33,7 @@ const InstructorQuestionImport = () => {
             formData.append('group', selectedGroup);
             formData.append('file', file);
             
-            const { data } = await axios.post(`${backendUrl}/api/education/question-import`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/education/question-import', formData);
             
             if (data.success) {
                 toast.update(actionToast, { render: 'Bulk synchronization completed successfully.', type: "success", isLoading: false, autoClose: 3000 });
@@ -126,3 +122,7 @@ const InstructorQuestionImport = () => {
 };
 
 export default InstructorQuestionImport;
+
+
+
+

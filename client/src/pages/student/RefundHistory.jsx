@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { History, RotateCcw, MessageSquare, Calendar, ChevronRight, Ban, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -12,9 +12,7 @@ const RefundHistory = () => {
 
     const fetchRefunds = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/finance/my-refunds`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/finance/my-refunds');
             if (data.success) setRefunds(data.refunds);
         } catch (error) {
             console.error('Refund Fetch Error:', error);
@@ -25,9 +23,7 @@ const RefundHistory = () => {
         e.preventDefault();
         const actionToast = toast.loading('Initiating Refund Protocol...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/finance/request-refund`, formData, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.post('/finance/request-refund', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Protocol engaged. Admin review pending.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowForm(false);
@@ -156,3 +152,7 @@ const RefundHistory = () => {
 };
 
 export default RefundHistory;
+
+
+
+

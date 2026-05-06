@@ -12,11 +12,37 @@ export const grantPoints = async (userId, event, context = {}) => {
         const setting = await GamificationSetting.findOne({ event, isActive: true });
         if (!setting || setting.points === 0) return null;
 
-        // One-time reward check for specific events
+        // 1. One-time reward check for specific events
         const oneTimeEvents = ['registration', 'profile_update', 'referral_success'];
         if (oneTimeEvents.includes(event)) {
             const existing = await PointHistory.findOne({ userId, event });
             if (existing) return null; // Already rewarded
+        }
+
+        // 2. Reference-based check for itemized rewards (unit, course, etc.)
+        if (context.referenceId) {
+            const existing = await PointHistory.findOne({ 
+                userId, 
+                event, 
+                referenceId: context.referenceId 
+            });
+            if (existing) return null; // Already rewarded for this specific item
+        }
+
+        // 3. Daily cap check for recurring events (e.g., login)
+        if (event === 'login') {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const todayLogin = await PointHistory.findOne({
+                userId,
+                event: 'login',
+                createdAt: { $gte: startOfDay, $lte: endOfDay }
+            });
+
+            if (todayLogin) return null; // Already rewarded today
         }
 
         const user = await User.findById(userId);
@@ -24,10 +50,29 @@ export const grantPoints = async (userId, event, context = {}) => {
 
         // Initialize gamification object if missing (defensive)
         if (!user.gamification) {
-            user.gamification = { totalPoints: 0, currentPoints: 0, level: 1, badges: [] };
+            user.gamification = { totalPoints: 0, currentPoints: 0, level: 1, badges: [], streakCount: 0 };
         }
 
+        // Auto-update streak if this is a points-earning activity
+        await updateUserStreak(user);
+
         const pointsToGrant = setting.points;
+
+        // Audit Trail (Created FIRST to enforce atomicity and prevent race-condition notification spam)
+        try {
+            await PointHistory.create({
+                userId,
+                points: pointsToGrant,
+                event,
+                referenceId: context.referenceId,
+                description: setting.description || `Points for ${event.replace('_', ' ')}`,
+                balanceAfter: user.gamification.currentPoints + pointsToGrant
+            });
+        } catch (error) {
+            if (error.code === 11000) return null; // Duplicate key error - already rewarded concurrently
+            throw error;
+        }
+
         user.gamification.totalPoints += pointsToGrant;
         user.gamification.currentPoints += pointsToGrant;
 
@@ -55,15 +100,6 @@ export const grantPoints = async (userId, event, context = {}) => {
         }
 
         await user.save();
-
-        // Audit Trail
-        await PointHistory.create({
-            userId,
-            points: pointsToGrant,
-            event,
-            description: setting.description || `Points for ${event.replace('_', ' ')}`,
-            balanceAfter: user.gamification.currentPoints
-        });
 
         // Trigger Badge Check
         await checkAndAwardBadges(user, event);
@@ -157,6 +193,42 @@ export const checkAndAwardBadges = async (user, event) => {
         }
     } catch (error) {
         console.error('Badge Service Error:', error);
+    }
+};
+
+/**
+ * Updates user streak based on activity frequency.
+ */
+export const updateUserStreak = async (user) => {
+    try {
+        const now = new Date();
+        const lastUpdate = user.gamification.lastStreakUpdate ? new Date(user.gamification.lastStreakUpdate) : null;
+        
+        const isSameDay = lastUpdate && now.toDateString() === lastUpdate.toDateString();
+        
+        if (isSameDay) return; // Already updated today
+
+        if (!lastUpdate) {
+            user.gamification.streakCount = 1;
+            user.gamification.lastStreakUpdate = now;
+            return;
+        }
+
+        // Check if it's exactly the next day for consecutive streak
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isNextDay = yesterday.toDateString() === lastUpdate.toDateString();
+
+        if (isNextDay) {
+            user.gamification.streakCount += 1;
+        } else {
+            // Streak broken (more than 1 day gap)
+            user.gamification.streakCount = 1;
+        }
+        
+        user.gamification.lastStreakUpdate = now;
+    } catch (e) {
+        console.error('Streak Update Error:', e);
     }
 };
 

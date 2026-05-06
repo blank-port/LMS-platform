@@ -2,10 +2,11 @@ import React, { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
 import SafeImage from '../common/SafeImage.jsx';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     BarChart3, PlusCircle, BookOpen, Users, HelpCircle,
-    MessageSquare, ChevronDown, ChevronRight, Wallet,
-    TrendingUp, PieChart, ShoppingBag, Settings
+    MessageSquare, ChevronRight, Wallet, Bell,
+    TrendingUp, PieChart, ShoppingBag, Settings, LogOut, Activity
 } from 'lucide-react';
 
 const menuStructure = [
@@ -13,101 +14,136 @@ const menuStructure = [
         type: 'link',
         path: '/educator',
         icon: BarChart3,
-        label: 'Dashboard',
+        label: 'Strategic Studio Dashboard 🏢',
         end: true
     },
     {
         type: 'group',
-        label: 'My Panel',
+        label: 'Studio Asset Vault 💰',
         icon: ShoppingBag,
         children: [
             { path: '/educator/my-panel?tab=purchase_history', label: 'Purchase History', matchPath: '/educator/my-panel' },
             { path: '/educator/my-panel?tab=refund_cancellation', label: 'Refund & Cancellation' },
-            { path: '/educator/my-panel?tab=referral', label: 'Referral' },
-            { path: '/educator/my-panel?tab=logged_in_device', label: 'Logged In Device' },
-            { path: '/educator/my-panel?tab=certificates', label: 'My Certificate' },
-            { path: '/educator/my-panel?tab=deposit', label: 'Deposit' },
-            { path: '/educator/my-panel?tab=topics', label: 'My Topics' },
+            { path: '/educator/my-panel?tab=referral', label: 'Referral Engine' },
+            { path: '/educator/my-panel?tab=logged_in_device', label: 'Device Security' },
+            { path: '/educator/my-panel?tab=certificates', label: 'Scholarly Credentials' },
+            { path: '/educator/my-panel?tab=deposit', label: 'Fiscal Deposit' },
+            { path: '/educator/my-panel?tab=topics', label: 'Subject Library' },
         ]
     },
     {
         type: 'section',
-        label: 'USERS'
+        label: 'HUMAN CAPITAL'
     },
     {
         type: 'group',
-        label: 'Instructors',
+        label: 'Human Capital Management 👥',
         icon: Users,
         children: [
-            { path: '/educator/payouts', label: 'Payout List' },
+            { path: '/educator/payouts', label: 'Revenue Payouts' },
         ]
     },
     {
         type: 'section',
-        label: 'EDUCATION'
+        label: 'LIVE OPERATIONS'
     },
     {
         type: 'group',
-        label: 'Courses',
+        label: 'Batch & Live Command 📡',
+        icon: Activity,
+        children: [
+            { path: '/educator/manage-cohorts', label: 'Batch Orchestration' },
+            { path: '/educator/live-sessions', label: 'Live Deployments' },
+        ]
+    },
+    {
+        type: 'section',
+        label: 'CURRICULUM ENGINE'
+    },
+    {
+        type: 'group',
+        label: 'Asset Inventory & Creation 📚',
         icon: BookOpen,
         children: [
-            { path: '/educator/my-courses', label: 'All Courses' },
-            { path: '/educator/add-course', label: 'Add Course' },
-            { path: '/educator/course-settings', label: 'Course Settings' },
+            { path: '/educator/my-courses', label: 'Asset Inventory' },
+            { path: '/educator/add-course', label: 'Initialize Course' },
+            { path: '/educator/course-settings', label: 'Global Settings' },
         ]
     },
     {
         type: 'group',
-        label: 'Quiz',
+        label: 'Evaluation & Testing Lab 🧪',
         icon: HelpCircle,
         children: [
-            { path: '/educator/question-group', label: 'Question Group' },
-            { path: '/educator/add-question', label: 'Add Question' },
-            { path: '/educator/question-bank', label: 'Question Bank' },
-            { path: '/educator/question-import', label: 'Question Import' },
-            { path: '/educator/create-quiz', label: 'Add Quiz' },
+            { path: '/educator/question-group', label: 'Cluster Management' },
+            { path: '/educator/add-question', label: 'Create Question' },
+            { path: '/educator/question-bank', label: 'Question Repository' },
+            { path: '/educator/question-import', label: 'Bulk Ingestion' },
+            { path: '/educator/create-quiz', label: 'Module Construction' },
+            { path: '/educator/manage-submissions', label: 'Strategic Submissions' },
         ]
     },
     {
         type: 'group',
-        label: 'Report',
+        label: 'Analytical Forensics 📊',
         icon: PieChart,
         children: [
-            { path: '/educator/quiz-reports', label: 'Quiz Reports' },
-            { path: '/educator/revenue', label: 'Instructor Revenue' },
-            { path: '/educator/course-stats', label: 'Course Statistics' },
+            { path: '/educator/quiz-reports', label: 'Performance Audit' },
+            { path: '/educator/revenue', label: 'Revenue Analytics' },
+            { path: '/educator/course-stats', label: 'Engagement Metrics' },
         ]
     },
     {
         type: 'section',
-        label: 'COMMUNICATION'
+        label: 'SIGNALING HUB'
+    },
+    {
+        type: 'link',
+        path: '/educator/communication?view=notices',
+        icon: Bell,
+        label: 'Institutional Notices 🔔',
     },
     {
         type: 'group',
-        label: 'Communications',
+        label: 'CMS & BLOGS 📝',
         icon: MessageSquare,
         children: [
-            { path: '/educator/communication', label: 'Private Message' },
+            { path: '/educator/blogs', label: 'Content Repository' },
         ]
     },
     {
         type: 'group',
-        label: 'Q&A',
+        label: 'Secure Communications 📩',
+        icon: MessageSquare,
+        children: [
+            { path: '/educator/communication', label: 'Encrypted Signaling' },
+            { path: '/educator/communication?view=notices', label: 'System Notifications' },
+        ]
+    },
+    {
+        type: 'group',
+        label: 'Scholar Oversight Q&A 💬',
         icon: HelpCircle,
         children: [
-            { path: '/educator/qa', label: 'Question List' },
+            { path: '/educator/qa', label: 'Thread Oversight' },
         ]
+    },
+    {
+        type: 'link',
+        path: '/student',
+        icon: Users,
+        label: 'Enter Student View 🎓',
     },
     {
         type: 'link',
         path: '/educator/settings',
         icon: Settings,
-        label: 'Settings',
+        label: 'Studio Config⚙️',
     },
 ];
 
 const SideBar = () => {
-    const { user } = useContext(AppContext);
+    const { user, logout } = useContext(AppContext);
     const [openGroups, setOpenGroups] = useState({});
 
     const toggleGroup = (label) => {
@@ -115,72 +151,103 @@ const SideBar = () => {
     };
 
     return (
-        <aside className="w-72 h-[calc(100vh-80px)] bg-[var(--surface)] border-r border-[var(--border)] pt-8 hidden md:block fixed top-20 left-0 z-40 overflow-y-auto no-scrollbar shadow-xl shadow-slate-200/40">
-            <div className="px-8 mb-8 flex items-center gap-3.5">
-                <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Studio Active</span>
+        <aside className="w-[300px] h-[calc(100vh-96px)] bg-[#0B0F1A] border-r border-white/5 hidden md:flex flex-col fixed top-24 left-0 z-40 overflow-y-auto no-scrollbar shadow-[20px_0_40px_-20px_rgba(0,0,0,0.5)]">
+            <div className="p-7 flex items-center justify-between border-b border-white/5">
+                <div className="flex items-center gap-3">
+                    <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </div>
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Node Active</span>
+                </div>
             </div>
 
-            <nav className="px-4 space-y-1">
+            <nav className="p-4 flex-1 space-y-1.5 pb-20 mt-4">
                 {menuStructure.map((item, idx) => {
                     if (item.type === 'section') {
                         return (
                             <div key={idx} className="pt-8 pb-3 px-6">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] opacity-60">{item.label}</span>
+                                <span className="text-[8.5px] font-bold text-slate-500 uppercase tracking-[0.4em] opacity-60">{item.label}</span>
                             </div>
                         );
                     }
 
                     if (item.type === 'link') {
+                        const isMain = item.path === '/educator' && item.end;
                         return (
                             <NavLink
                                 key={idx}
                                 to={item.path}
                                 end={item.end}
-                                className={({ isActive }) => `flex items-center gap-4 px-6 py-4 rounded-2xl text-[13px] font-black transition-all duration-500 group ${isActive
-                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/20'
-                                    : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'
-                                }`}
+                                className={({ isActive }) => `flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 group relative ${isActive
+                                    ? isMain ? 'bg-slate-800/50 text-white shadow-lg border border-white/10' : 'bg-emerald-500/10 text-emerald-400'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                    }`}
                             >
-                                <item.icon size={18} className={`transition-transform duration-300 group-hover:scale-110 ${window.location.pathname === item.path ? 'opacity-100' : 'opacity-60 grayscale group-hover:grayscale-0'}`} />
-                                <span className="tracking-tight uppercase tracking-widest text-[11px]">{item.label}</span>
+                                {({ isActive }) => (
+                                    <>
+                                        <div className={`p-2 rounded-lg transition-all duration-300 ${isActive && isMain ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' : ''}`}>
+                                            <item.icon size={16} strokeWidth={isMain && isActive ? 2 : 1.25} className={`transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`} />
+                                        </div>
+                                        <span className={`font-bold tracking-tight leading-none ${isMain ? 'text-[12px]' : 'text-[11px]'}`}>{item.label}</span>
+                                        {isActive && !isMain && (
+                                            <motion.div
+                                                layoutId="elite-active-indicator"
+                                                className="absolute right-4 w-1 h-1 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+                                            />
+                                        )}
+                                    </>
+                                )}
                             </NavLink>
                         );
                     }
 
                     if (item.type === 'group') {
                         const isOpen = openGroups[item.label];
-                        const Icon = item.icon;
-
                         return (
                             <div key={idx} className="space-y-1">
                                 <button
                                     onClick={() => toggleGroup(item.label)}
-                                    className={`w-full flex items-center justify-between gap-4 px-6 py-4 rounded-2xl text-[13px] font-black transition-all duration-300 group ${isOpen ? 'text-blue-600 bg-blue-50/50' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`}
+                                    className={`w-full flex items-center justify-between gap-4 px-6 py-4 rounded-xl transition-all duration-300 group ${isOpen ? 'text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <Icon size={18} className={`transition-transform duration-300 group-hover:scale-110 ${isOpen ? 'opacity-100 text-blue-600' : 'opacity-60 grayscale group-hover:grayscale-0'}`} />
-                                        <span className="tracking-tight uppercase tracking-widest text-[11px]">{item.label}</span>
+                                        <div className={`p-2 rounded-lg transition-all duration-300 ${isOpen ? 'bg-slate-800 text-emerald-400' : 'bg-white/5 text-slate-500'}`}>
+                                            <item.icon size={16} strokeWidth={1.25} />
+                                        </div>
+                                        <span className={`text-[11px] font-bold tracking-tight leading-none`}>{item.label}</span>
                                     </div>
-                                    <ChevronRight size={14} className={`transition-transform duration-300 opacity-40 ${isOpen ? 'rotate-90 text-blue-600 opacity-100' : ''}`} />
+                                    <ChevronRight size={14} className={`transition-transform duration-300 opacity-40 ${isOpen ? 'rotate-90 text-emerald-500 opacity-100' : ''}`} />
                                 </button>
-                                {isOpen && (
-                                    <div className="ml-10 pl-6 border-l-2 border-slate-100 space-y-1 py-1">
-                                        {item.children.map((child, ci) => (
-                                            <NavLink
-                                                key={ci}
-                                                to={child.path}
-                                                end
-                                                className={({ isActive }) => `block px-5 py-3 rounded-xl text-[12px] font-bold transition-all duration-300 ${isActive || (child.matchPath && window.location.pathname === child.matchPath)
-                                                    ? 'text-blue-600 bg-blue-50 font-black'
-                                                    : 'text-slate-400 hover:text-blue-500 hover:bg-slate-50'
-                                                }`}
-                                            >
-                                                {child.label}
-                                            </NavLink>
-                                        ))}
-                                    </div>
-                                )}
+                                <AnimatePresence>
+                                    {isOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="ml-5 pl-4 border-l border-white/5 space-y-1 mt-1 overflow-hidden"
+                                        >
+                                            {item.children.map((child, ci) => (
+                                                <NavLink
+                                                    key={ci}
+                                                    to={child.path}
+                                                    className={({ isActive }) => `flex items-center gap-4 px-6 py-3.5 rounded-lg text-[10.5px] font-bold tracking-tight transition-all duration-300 relative ${isActive || (child.matchPath && window.location.pathname === child.matchPath)
+                                                        ? 'text-emerald-400 bg-emerald-500/5'
+                                                        : 'text-slate-500 hover:text-white hover:translate-x-1'
+                                                        }`}
+                                                >
+                                                    {({ isActive }) => (
+                                                        <>
+                                                            {isActive && (
+                                                                <div className="absolute left-[-16px] w-[1px] h-4 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                                            )}
+                                                            {child.label}
+                                                        </>
+                                                    )}
+                                                </NavLink>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         );
                     }
@@ -188,27 +255,34 @@ const SideBar = () => {
                 })}
             </nav>
 
-            {/* Studio Profile Card */}
-            <div className="mt-10 mx-6 p-6 glass-effect rounded-[2rem] border border-slate-100 mb-10 shadow-lg shadow-slate-200/30 group hover:-translate-y-1 transition-all duration-500">
-                <div className="flex items-center gap-4">
+            {/* Studio Control Node */}
+            <div className="mt-auto p-4 border-t border-white/5">
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-4 mb-4">
                     <div className="relative">
                         {user?.avatar ? (
-                            <SafeImage src={user.avatar} className="w-12 h-12 rounded-2xl object-cover border border-slate-100 shadow-lg" />
+                            <SafeImage src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-white/10" />
                         ) : (
-                            <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-xl shadow-blue-500/20">
+                            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white text-[12px] font-black border border-white/10">
                                 {user?.name?.charAt(0)?.toUpperCase()}
                             </div>
                         )}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0B0F1A]"></span>
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="text-[13px] font-black text-slate-900 tracking-tighter leading-none truncate">{user?.name}</span>
-                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-2 opacity-80">Managing Instructor</span>
+                        <span className="text-[12px] font-bold text-white truncate leading-none">{user?.name}</span>
+                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Lead Instructor</span>
                     </div>
                 </div>
+
+                <button onClick={logout} className="flex items-center gap-4 px-6 py-4 w-full text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all duration-300 text-[10px] font-bold tracking-widest group">
+                    <LogOut size={16} strokeWidth={1.5} className="opacity-60 group-hover:opacity-100" />
+                    <span>TERMINATE</span>
+                </button>
             </div>
         </aside>
     );
 };
 
 export default SideBar;
+
+

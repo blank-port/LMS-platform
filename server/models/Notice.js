@@ -4,8 +4,9 @@ const noticeSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String, required: true },
     course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' }, // Optional: All students or specific course
+    cohort: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort' }, // Targeted cohort announcement
     instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    recipients: { type: String, enum: ['all', 'course'], default: 'all' },
+    recipients: { type: String, enum: ['all', 'course', 'cohort'], default: 'all' },
     priority: { type: String, enum: ['normal', 'urgent', 'critical'], default: 'normal' },
     expiryDate: { type: Date },
     isPublished: { type: Boolean, default: true }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { 
     MessageSquare, Send, Search, Filter, 
@@ -13,7 +13,6 @@ import NexusChat from '../../components/common/NexusChat.jsx';
 import { format } from 'date-fns';
 
 const InstructorCommunication = () => {
-    const { backendUrl, token } = useContext(AppContext);
     const [messages, setMessages] = useState([]);
     const [comments, setComments] = useState([]);
     const [notices, setNotices] = useState([]);
@@ -32,13 +31,13 @@ const InstructorCommunication = () => {
 
     const fetchCommunication = async () => {
         try {
-            const noticeRes = await axios.get(`${backendUrl}/api/comm/instructor-notices`, { headers: { Authorization: `Bearer ${token}` } });
+            const noticeRes = await api.get('/comm/instructor-notices');
             if (noticeRes.data.success) setNotices(noticeRes.data.notices);
 
-            const courseRes = await axios.get(`${backendUrl}/api/instructor/courses`, { headers: { Authorization: `Bearer ${token}` } });
+            const courseRes = await api.get('/instructor/courses');
             if (courseRes.data.success) setInstructorCourses(courseRes.data.courses);
 
-            const commRes = await axios.get(`${backendUrl}/api/comm/comments`, { headers: { Authorization: `Bearer ${token}` } });
+            const commRes = await api.get('/comm/comments');
             if (commRes.data.success) setComments(commRes.data.comments);
         } catch (error) {
             console.error(error);
@@ -47,7 +46,7 @@ const InstructorCommunication = () => {
 
     const handleDeleteNotice = async (id) => {
         try {
-            await axios.delete(`${backendUrl}/api/comm/notices/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/comm/notices/${id}`);
             toast.success('Notice removed');
             fetchCommunication();
         } catch (error) {
@@ -59,7 +58,7 @@ const InstructorCommunication = () => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/comm/notices`, newNotice, { headers: { Authorization: `Bearer ${token}` } });
+            const { data } = await api.post('/comm/notices', newNotice);
             if (data.success) {
                 toast.success('Notice dispatched successfully');
                 setShowNoticeModal(false);
@@ -324,3 +323,7 @@ const InstructorCommunication = () => {
 };
 
 export default InstructorCommunication;
+
+
+
+

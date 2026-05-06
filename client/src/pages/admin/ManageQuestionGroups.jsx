@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageQuestionGroups = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -12,7 +12,7 @@ const ManageQuestionGroups = () => {
 
     const fetchGroups = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, getHeaders());
+            const { data } = await api.get('/education/question-group/all');
             if (data.success) setGroups(data.groups);
         } catch (error) {
             toast.error('Question Group Retrieval Failure');
@@ -25,7 +25,7 @@ const ManageQuestionGroups = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Sector Node...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/education/question-group`, formData, getHeaders());
+            const { data } = await api.post('/education/question-group', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Sector node stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowModal(false);
@@ -127,3 +127,7 @@ const ManageQuestionGroups = () => {
 };
 
 export default ManageQuestionGroups;
+
+
+
+

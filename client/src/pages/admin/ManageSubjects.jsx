@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageSubjects = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [subjects, setSubjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -12,7 +12,7 @@ const ManageSubjects = () => {
 
     const fetchSubjects = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/education/subject/all`, getHeaders());
+            const { data } = await api.get('/education/subject/all');
             if (data.success) setSubjects(data.subjects);
         } catch (error) {
             toast.error('Domain Inventory Retrieval Failure');
@@ -25,7 +25,7 @@ const ManageSubjects = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Epistemological Domain...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/education/subject`, formData, getHeaders());
+            const { data } = await api.post('/education/subject', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Domain stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowModal(false);
@@ -40,7 +40,7 @@ const ManageSubjects = () => {
     const handleDelete = async (id) => {
         if (!confirm('Proceed with permanent domain excision?')) return;
         try {
-            await axios.delete(`${backendUrl}/api/education/subject/${id}`, getHeaders());
+            await api.delete(`/education/subject/${id}`);
             toast.success('Domain excised.');
             fetchSubjects();
         } catch (error) { toast.error('Excision failed.'); }
@@ -120,4 +120,8 @@ const ManageSubjects = () => {
 };
 
 export default ManageSubjects;
+
+
+
+
 

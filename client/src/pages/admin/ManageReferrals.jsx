@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageReferrals = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [referrals, setReferrals] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchReferrals = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/marketing/referrals`, getHeaders());
+            const { data } = await api.get(`/marketing/referrals`);
             if (data.success) setReferrals(data.referrals);
         } catch (error) {
             toast.error('Referral Matrix Retrieval Failure');
@@ -80,3 +80,8 @@ const ManageReferrals = () => {
 };
 
 export default ManageReferrals;
+
+
+
+
+

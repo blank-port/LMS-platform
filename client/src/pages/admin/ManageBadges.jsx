@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import BadgeIcon from '../../components/common/BadgeIcon.jsx';
 
 const ManageBadges = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [badges, setBadges] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -19,7 +19,7 @@ const ManageBadges = () => {
 
     const fetchBadges = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/badges`, getHeaders());
+            const { data } = await api.get('/gamification/badges');
             if (data.success) setBadges(data.badges);
         } catch (error) {
             console.error('Badge retrieval failure');
@@ -32,7 +32,7 @@ const ManageBadges = () => {
         e.preventDefault();
         const actionToast = toast.loading('Synchronizing Symbolic Asset...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/gamification/badges`, formData, getHeaders());
+            const { data } = await api.post('/gamification/badges', formData);
             if (data.success) {
                 toast.update(actionToast, { render: 'Symbolic asset stabilized.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowModal(false);
@@ -47,7 +47,7 @@ const ManageBadges = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Decommission this symbolic asset?')) return;
         try {
-            const { data } = await axios.delete(`${backendUrl}/api/gamification/badges/${id}`, getHeaders());
+            const { data } = await api.delete(`/gamification/badges/${id}`);
             if (data.success) {
                 toast.success('Asset decommissioned');
                 fetchBadges();
@@ -177,3 +177,7 @@ const ManageBadges = () => {
 };
 
 export default ManageBadges;
+
+
+
+

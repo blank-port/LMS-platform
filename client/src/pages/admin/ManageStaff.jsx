@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const ManageStaff = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
     const [institutes, setInstitutes] = useState([]);
@@ -13,12 +11,12 @@ const ManageStaff = () => {
 
     const fetchData = async () => {
         try {
-            const instRes = await axios.get(`${backendUrl}/api/audit/institute/all`, getHeaders());
+            const instRes = await api.get('/audit/institute/all');
             if (instRes.data.success) {
                 setInstitutes(instRes.data.institutes);
             }
             
-            const staffRes = await axios.get(`${backendUrl}/api/admin/users`, getHeaders());
+            const staffRes = await api.get('/admin/users');
             if (staffRes.data.success) {
                 setStaff(staffRes.data.users.filter(u => u.role === 'staff' || u.role === 'instructor'));
             }
@@ -33,14 +31,14 @@ const ManageStaff = () => {
         e.preventDefault();
         const actionToast = toast.loading('Recruiting New Operative...');
         try {
-            const { data } = await axios.post(`${backendUrl}/api/user/register`, formData);
+            const { data } = await api.post('/user/register', formData);
             if (data.success) {
                 if (formData.institute || formData.department) {
-                    await axios.post(`${backendUrl}/api/audit/institute/assign`, {
+                    await api.post('/audit/institute/assign', {
                         userId: data.user._id,
                         instituteId: formData.institute,
                         role: formData.role
-                    }, getHeaders());
+                    });
                 }
                 toast.update(actionToast, { render: 'New operative deployed to sector.', type: "success", isLoading: false, autoClose: 3000 });
                 setShowAddModal(false);
@@ -179,4 +177,9 @@ const ManageStaff = () => {
 };
 
 export default ManageStaff;
+
+
+
+
+
 

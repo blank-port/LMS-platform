@@ -3,7 +3,7 @@ import { AppContext } from '../../context/AppContextObject.jsx';
 import { Link } from 'react-router-dom';
 import { assets } from '../../assets/assets';
 import { BookOpen, GraduationCap, ChevronRight, Clock, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const MyEnrollments = () => {
@@ -13,9 +13,7 @@ const MyEnrollments = () => {
 
     const fetchPendingPayments = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/payment/my-pending-cod`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/payment/my-pending-cod');
             if (data.success) {
                 setPendingPayments(data.payments);
             }
@@ -162,12 +160,26 @@ const MyEnrollments = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-10 py-10 text-right">
-                                                    <button
-                                                        onClick={() => navigate(`/player/${course._id}`)}
-                                                        className="bg-[#0C132B] text-white w-12 h-12 rounded-2xl inline-flex items-center justify-center hover:bg-indigo-600 transition-all shadow-xl shadow-black/10 group-hover:shadow-indigo-500/20"
-                                                    >
-                                                        <ChevronRight size={18} />
-                                                    </button>
+                                                    {(() => {
+                                                        const flatLectures = course.courseContent?.flatMap(ch => ch.chapterContent) || [];
+                                                        const lastIndex = flatLectures.findIndex(l => l._id === enrollment.lastWatchedLessonId);
+                                                        const nextLesson = lastIndex !== -1 && lastIndex < flatLectures.length - 1 
+                                                            ? flatLectures[lastIndex + 1] 
+                                                            : flatLectures[0];
+                                                        
+                                                        return (
+                                                            <button
+                                                                onClick={() => navigate(`/student/player/${course._id}`)}
+                                                                className="bg-[#0C132B] hover:bg-indigo-600 text-white px-6 py-3 rounded-2xl inline-flex items-center gap-4 transition-all shadow-xl shadow-black/10 group-hover:shadow-indigo-500/20 whitespace-nowrap"
+                                                            >
+                                                                <div className="text-left hidden lg:block">
+                                                                    <p className="text-[8px] font-black text-indigo-300 uppercase tracking-widest">Resume</p>
+                                                                    <p className="text-[10px] font-bold text-white line-clamp-1 max-w-[120px] uppercase">{nextLesson?.lectureTitle || 'Start Matrix'}</p>
+                                                                </div>
+                                                                <ChevronRight size={18} />
+                                                            </button>
+                                                        );
+                                                    })()}
                                                 </td>
                                             </tr>
                                         );
@@ -183,4 +195,8 @@ const MyEnrollments = () => {
 };
 
 export default MyEnrollments;
+
+
+
+
 

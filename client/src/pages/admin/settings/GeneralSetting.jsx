@@ -9,7 +9,7 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { AppContext } from '../../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const LANGUAGES = [
@@ -121,7 +121,7 @@ const Toggle = ({ label, checked, onChange, tooltip }) => (
 );
 
 const GeneralSetting = () => {
-  const { fetchAllSettings, updateBatchSettings, backendUrl, token, fetchPublicSettings } = useContext(AppContext);
+  const { fetchAllSettings, updateBatchSettings, fetchPublicSettings } = useContext(AppContext);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
     site_title: '',
@@ -176,10 +176,9 @@ const GeneralSetting = () => {
 
     const loadingToast = toast.loading(`Uploading ${key.replace('site_logo_', '').replace('_', ' ')}...`);
     try {
-      const { data } = await axios.post(`${backendUrl}/api/setting/upload-logo`, formData, {
+      const { data } = await api.post(`/setting/upload-logo`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'multipart/form-data'
         }
       });
       if (data.success) {
@@ -311,3 +310,8 @@ const GeneralSetting = () => {
 };
 
 export default GeneralSetting;
+
+
+
+
+

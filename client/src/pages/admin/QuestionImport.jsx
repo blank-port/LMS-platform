@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 
 const QuestionImport = () => {
-    const { backendUrl, getHeaders } = useContext(AppContext);
+    const { backendUrl } = useContext(AppContext);
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
     const [file, setFile] = useState(null);
@@ -12,7 +12,7 @@ const QuestionImport = () => {
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/education/question-group/all`, getHeaders());
+                const { data } = await api.get(`/education/question-group/all`);
                 if (data.success) setGroups(data.groups);
             } catch (error) {
                 toast.error('Failed to fetch question groups');
@@ -33,7 +33,7 @@ const QuestionImport = () => {
             formData.append('group', selectedGroup);
             formData.append('file', file);
             
-            const { data } = await axios.post(`${backendUrl}/api/education/question-import`, formData, getHeaders());
+            const { data } = await api.post(`/education/question-import`, formData);
             
             if (data.success) {
                 toast.update(actionToast, { render: 'Bulk synchronization completed successfully.', type: "success", isLoading: false, autoClose: 3000 });
@@ -122,3 +122,8 @@ const QuestionImport = () => {
 };
 
 export default QuestionImport;
+
+
+
+
+

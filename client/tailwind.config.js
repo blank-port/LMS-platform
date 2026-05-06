@@ -37,6 +37,7 @@ export default {
         'premium': 'var(--card-shadow)',
         'premium-hover': 'var(--card-shadow-hover)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
@@ -63,12 +64,6 @@ export default {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-20px)' },
         }
-      },
-      boxShadow: {
-        'premium': 'var(--card-shadow)',
-        'premium-hover': 'var(--card-shadow-hover)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
       },
     },
   },

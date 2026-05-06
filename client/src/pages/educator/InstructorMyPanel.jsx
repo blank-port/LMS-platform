@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { 
     ShoppingBag, Award, BookOpen, ChevronRight, 
     Download, RotateCcw, Share2, Monitor, Wallet, Star
@@ -19,7 +19,7 @@ const TABS = [
 ];
 
 const InstructorMyPanel = () => {
-    const { backendUrl, token, currency } = useContext(AppContext);
+    const { currency } = useContext(AppContext);
     const location = useLocation();
     const queryTab = new URLSearchParams(location.search).get('tab');
     
@@ -30,9 +30,7 @@ const InstructorMyPanel = () => {
     const fetchData = async (tab) => {
         setLoading(true);
         try {
-            const { data: res } = await axios.get(`${backendUrl}/api/instructor/my-panel?tab=${tab}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data: res } = await api.get(`/instructor/my-panel?tab=${tab}`);
             if (res.success) setData(res.data);
         } catch (err) { console.error(err); }
         setLoading(false);
@@ -405,3 +403,7 @@ const InstructorMyPanel = () => {
 };
 
 export default InstructorMyPanel;
+
+
+
+

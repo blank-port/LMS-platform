@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { History, Package, CreditCard, Calendar, CheckCircle, Clock } from 'lucide-react';
 
 const PurchaseHistory = () => {
@@ -10,9 +10,7 @@ const PurchaseHistory = () => {
 
     const fetchHistory = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/user/purchase-history`, { 
-                headers: { Authorization: `Bearer ${token}` } 
-            });
+            const { data } = await api.get('/user/purchase-history');
             if (data.success) setHistory(data.history);
         } catch (error) {
             console.error('History Error:', error);
@@ -86,3 +84,7 @@ const PurchaseHistory = () => {
 };
 
 export default PurchaseHistory;
+
+
+
+

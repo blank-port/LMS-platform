@@ -15,7 +15,8 @@ const enrollmentSchema = new mongoose.Schema({
     completedLessons: [{ type: String }],
     lastWatchedLessonId: { type: String },
     lastWatchedTime: { type: Number, default: 0 },
-    completed: { type: Boolean, default: false }
+    completed: { type: Boolean, default: false },
+    status: { type: String, enum: ['active', 'refunded', 'suspended'], default: 'active' }
 }, { timestamps: true });
 
 enrollmentSchema.index({ userId: 1, courseId: 1 }, { unique: true });

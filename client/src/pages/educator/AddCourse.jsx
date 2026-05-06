@@ -1,15 +1,37 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 const generateId = () => Math.random().toString(36).substring(2, 9);
 import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 import { Line } from 'rc-progress';
+import { 
+    LayoutDashboard, 
+    FileText, 
+    Video, 
+    Download, 
+    Plus, 
+    Trash2, 
+    ChevronDown, 
+    ChevronUp, 
+    Settings, 
+    Award, 
+    Youtube, 
+    UploadCloud, 
+    ClipboardList,
+    FileDown,
+    Clock,
+    Link,
+    Search,
+    Sparkles
+} from 'lucide-react';
 
 
 const AddCourse = () => {
-    const { backendUrl, token, categories } = useContext(AppContext);
+    const { categories } = useContext(AppContext);
     const quillRef = useRef(null);
     const editorRef = useRef(null);
 
@@ -37,13 +59,13 @@ const AddCourse = () => {
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [issueMethod, setIssueMethod] = useState('quiz'); // 'quiz' or 'completion'
     const [templates, setTemplates] = useState([]);
+    const [courseDescription, setCourseDescription] = useState('');
+    const [assignments, setAssignments] = useState([]);
 
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
-                const { data } = await axios.get(`${backendUrl}/api/finance/certificate-templates`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data } = await api.get('/finance/certificate-templates');
                 if (data.success) {
                     setTemplates(data.templates);
                     // Set default template if exists
@@ -59,10 +81,19 @@ const AddCourse = () => {
     }, []);
 
     useEffect(() => {
-        if (!quillRef.current && editorRef.current) {
+        if (activeTab === 'basic' && editorRef.current) {
+            // Re-initialize on every mount of the basic tab to ensure it's attached to the new DOM element
             quillRef.current = new Quill(editorRef.current, {
                 theme: 'snow',
                 placeholder: 'Articulate the essence of your module...'
+            });
+            
+            // Populate with current state
+            quillRef.current.root.innerHTML = courseDescription;
+
+            // Sync changes back to state
+            quillRef.current.on('text-change', () => {
+                setCourseDescription(quillRef.current.root.innerHTML);
             });
         }
     }, [activeTab]);
@@ -76,9 +107,7 @@ const AddCourse = () => {
 
     const fetchCourseDetails = async (courseId) => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/instructor/course/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get(`/instructor/course/${courseId}`);
             if (data.success) {
                 const course = data.courseData;
                 setCourseTitle(course.courseTitle);
@@ -87,6 +116,7 @@ const AddCourse = () => {
                 setCategory(course.category?._id || course.category);
                 setCourseLevel(course.level || 'Beginner');
                 setCourseLanguage(course.courseLanguage || 'English');
+                setCourseDescription(course.courseDescription || '');
                 setCoursePreviewVideo(course.coursePreviewVideo || '');
                 setCourseOutcomes(course.courseOutcomes?.length ? course.courseOutcomes : ['']);
                 setCourseRequirements(course.courseRequirements?.length ? course.courseRequirements : ['']);
@@ -96,17 +126,30 @@ const AddCourse = () => {
                 if (course.issueMethod) setIssueMethod(course.issueMethod);
                 if (course.certificateTemplate) setSelectedTemplate(course.certificateTemplate);
                 
-                // Ensure Quill is populated if instantiated
-                setTimeout(() => {
-                    if (quillRef.current) {
-                        quillRef.current.root.innerHTML = course.courseDescription || '';
-                    }
-                }, 100);
+                // Fetch Assignments for the course
+                fetchAssignments(courseId);
             }
         } catch (error) {
             toast.error('Failed to load course details');
         }
     };
+
+    const fetchAssignments = async (courseId) => {
+        try {
+            const { data } = await api.get(`/assignment/course/${courseId}`);
+            if (data.success) {
+                // Map to ensure date format is correct for input[type="date"]
+                const mapped = data.assignments.map(a => ({
+                    ...a,
+                    deadline: a.deadline ? new Date(a.deadline).toISOString().split('T')[0] : ''
+                }));
+                setAssignments(mapped);
+            }
+        } catch (error) {
+            console.error("Failed to load assignments", error);
+        }
+    };
+
 
 
     const addChapter = () => {
@@ -124,6 +167,7 @@ const AddCourse = () => {
         updated[chapterIndex].chapterContent.push({
             lectureId: generateId(),
             lectureTitle: '',
+            lectureDescription: '',
             lectureDuration: 0,
             lectureUrl: '',
             isPreviewFree: false,
@@ -157,9 +201,7 @@ const AddCourse = () => {
 
         try {
             // 1. Get Signature
-            const { data: sigData } = await axios.get(`${backendUrl}/api/comm/upload-signature`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data: sigData } = await api.get('/comm/upload-signature');
 
             if (!sigData.success) throw new Error('Signature acquisition failed.');
 
@@ -199,6 +241,71 @@ const AddCourse = () => {
         }
     };
 
+    const handleAttachmentUpload = async (chIndex, lecIndex, file) => {
+        if (!file) return;
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const { data } = await api.post('/instructor/upload-image', formData);
+            if (data.success) {
+                const currentAttachments = chapters[chIndex].chapterContent[lecIndex].attachments || [];
+                const updated = [...chapters];
+                updated[chIndex].chapterContent[lecIndex].attachments = [...currentAttachments, {
+                    fileName: file.name,
+                    fileUrl: data.url
+                }];
+                setChapters(updated);
+                toast.success('Asset Transmitted');
+            }
+        } catch (error) {
+            toast.error('Transmission Failure');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const removeAttachment = (chIndex, lecIndex, attIndex) => {
+        const updated = [...chapters];
+        updated[chIndex].chapterContent[lecIndex].attachments = updated[chIndex].chapterContent[lecIndex].attachments.filter((_, i) => i !== attIndex);
+        setChapters(updated);
+    };
+
+
+    const addAssignment = () => {
+        setAssignments([...assignments, {
+            title: '',
+            description: '',
+            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            totalMarks: 100
+        }]);
+    };
+
+    const handleUpdateAssignment = (index, field, value) => {
+        const updated = [...assignments];
+        updated[index][field] = value;
+        setAssignments(updated);
+    };
+
+    const removeAssignment = (index) => {
+        setAssignments(assignments.filter((_, i) => i !== index));
+    };
+
+    const saveAssignments = async (courseId) => {
+        try {
+            for (const assignment of assignments) {
+                if (assignment._id) {
+                    await api.put(`/assignment/${assignment._id}`, assignment);
+                } else {
+                    await api.post('/assignment/create', { ...assignment, courseId });
+                }
+            }
+        } catch (error) {
+            console.error("Critical Assessment Sync Failure:", error);
+            toast.error("Modules updated, but some assessments failed to synchronize.");
+        }
+    };
+
     const removeChapter = (index) => {
         setChapters(chapters.filter((_, i) => i !== index));
     };
@@ -212,14 +319,13 @@ const AddCourse = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!courseTitle || !category) {
-            toast.error('Fundamental parameters required');
+            toast.error('Required fields are missing');
             return;
         }
 
-        const description = quillRef.current ? quillRef.current.root.innerHTML : '';
         const courseData = {
             courseTitle,
-            courseDescription: description,
+            courseDescription,
             coursePrice: Number(coursePrice),
             discount: Number(discount),
             category,
@@ -233,10 +339,12 @@ const AddCourse = () => {
                 chapterOrder: i,
                 chapterContent: ch.chapterContent.map((lec, j) => ({
                     lectureTitle: lec.lectureTitle,
+                    lectureDescription: lec.lectureDescription || '',
                     lectureDuration: Number(lec.lectureDuration),
                     lectureUrl: lec.lectureUrl,
                     isPreviewFree: lec.isPreviewFree,
-                    lectureOrder: j
+                    lectureOrder: j,
+                    attachments: lec.attachments || []
                 }))
             })),
             isCertificateEnabled,
@@ -251,13 +359,19 @@ const AddCourse = () => {
 
         setLoading(true);
         try {
-            const url = isEditMode ? `${backendUrl}/api/instructor/update-course/${id}` : `${backendUrl}/api/instructor/add-course`;
+            const url = isEditMode ? `/instructor/update-course/${id}` : `/instructor/add-course`;
             const method = isEditMode ? 'put' : 'post';
-            const { data } = await axios[method](url, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api[method](url, formData);
+            const targetCourseId = isEditMode ? id : data.courseId;
+            if (!targetCourseId) {
+                console.error("Course ID missing for assignment sync");
+                toast.error("Critical error: Course ID synchronization failed.");
+                return;
+            }
             if (data.success) {
-                toast.success(`Module ${isEditMode ? 'Updated' : 'Deployed'} Successfully`);
+                await saveAssignments(targetCourseId);
+
+                toast.success(isEditMode ? 'Course Updated' : 'Course Saved');
                 if (!isEditMode) {
                     setCourseTitle('');
                     setCoursePrice(0);
@@ -302,9 +416,9 @@ const AddCourse = () => {
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Knowledge Deployment</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Course Creation</p>
                         </div>
-                        <h1 className="text-4xl lg:text-5xl font-black text-[#0C132B] tracking-tighter">{isEditMode ? 'Reconfigure Module' : 'Compose Module'}</h1>
+                        <h1 className="text-4xl lg:text-5xl font-black text-[#0C132B] tracking-tighter">{isEditMode ? 'Update Course' : 'Create Course'}</h1>
                     </div>
 
                     <div className="flex items-center gap-8 bg-white px-10 py-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-gray-50">
@@ -323,10 +437,10 @@ const AddCourse = () => {
                 <form onSubmit={handleSubmit} className="space-y-12">
                     {activeTab === 'basic' && (
                         <div className="bg-white rounded-[3rem] p-10 md:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 animate-in fade-in slide-in-from-bottom-5">
-                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Foundational Intelligence</h2>
+                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Basic Information</h2>
                             <div className="grid gap-10">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Module Title</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Course Title</label>
                                     <input
                                         type="text"
                                         value={courseTitle}
@@ -337,21 +451,21 @@ const AddCourse = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Elaborate Description</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Course Description</label>
                                     <div className="bg-gray-50/50 border border-gray-100 rounded-[1.5rem] overflow-hidden min-h-[300px]">
                                         <div ref={editorRef}></div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-4">
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Knowledge Domain</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Course Category</label>
                                         <select
                                             value={category}
                                             onChange={(e) => setCategory(e.target.value)}
                                             className="w-full bg-gray-50/50 border border-gray-100 p-6 rounded-[1.5rem] text-sm font-bold text-[#0C132B] outline-none appearance-none hover:bg-white transition-colors"
                                             required
                                         >
-                                            <option value="">Select Domain</option>
+                                            <option value="">Select Category</option>
                                             {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
                                         </select>
                                     </div>
@@ -381,7 +495,7 @@ const AddCourse = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Visual Identity (Thumbnail)</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Course Thumbnail</label>
                                         <div className="relative h-[72px]">
                                             <input
                                                 type="file"
@@ -391,12 +505,12 @@ const AddCourse = () => {
                                             />
                                             <div className="absolute inset-0 bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-[1.5rem] flex items-center px-6 gap-4 text-gray-400 group-hover:border-indigo-500/50 transition-all">
                                                 <span className="text-xl">🖼️</span>
-                                                <span className="text-[10px] font-black uppercase tracking-widest truncate">{image ? image.name : 'Inject Visual Asset'}</span>
+                                                <span className="text-[10px] font-black uppercase tracking-widest truncate">{image ? image.name : 'Upload Thumbnail Asset'}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Preview Nexus (Promo Video URL)</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Promo Video URL</label>
                                         <input
                                             type="text"
                                             value={coursePreviewVideo}
@@ -408,7 +522,7 @@ const AddCourse = () => {
                                 </div>
                                 <div className="flex justify-end pt-10">
                                     <button type="button" onClick={() => setActiveTab('details')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
-                                        Configure Dynamics →
+                                        Proceed to Details →
                                     </button>
                                 </div>
                             </div>
@@ -417,7 +531,7 @@ const AddCourse = () => {
 
                     {activeTab === 'details' && (
                         <div className="bg-white rounded-[3rem] p-10 md:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 animate-in fade-in slide-in-from-bottom-5">
-                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Knowledge Dynamics</h2>
+                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Course Details</h2>
                             
                             <div className="space-y-12">
                                 <div className="space-y-6">
@@ -449,7 +563,7 @@ const AddCourse = () => {
 
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Functional Prerequisites</label>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Prerequisites</label>
                                         <button type="button" onClick={() => setCourseRequirements([...courseRequirements, ''])} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">+ Append Requirement</button>
                                     </div>
                                     <div className="grid gap-4">
@@ -476,9 +590,9 @@ const AddCourse = () => {
                             </div>
 
                             <div className="flex justify-between items-center pt-10">
-                                <button type="button" onClick={() => setActiveTab('basic')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Foundations</button>
+                                <button type="button" onClick={() => setActiveTab('basic')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Back to Overview</button>
                                 <button type="button" onClick={() => setActiveTab('curriculum')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
-                                    Evolve to Curriculum →
+                                    Next: Curriculum →
                                 </button>
                             </div>
                         </div>
@@ -487,22 +601,69 @@ const AddCourse = () => {
                     {activeTab === 'curriculum' && (
                         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-2xl font-black text-[#0C132B] tracking-tight">Curriculum Architecture</h2>
-                                <button type="button" onClick={addChapter} className="bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0C132B] transition-all shadow-xl shadow-indigo-500/20 flex items-center gap-3">
-                                    <span>Append Phase</span>
-                                    <span>+</span>
-                                </button>
+                                <h2 className="text-2xl font-black text-[#0C132B] tracking-tight">Course Curriculum</h2>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        type="button" 
+                                        onClick={async () => {
+                                            if (!courseTitle) {
+                                                toast.error("Set a Module Title first to guide the AI.");
+                                                return;
+                                            }
+                                            setLoading(true);
+                                            try {
+                                                const { data } = await api.post('/ai/generate-outline', { 
+                                                    title: courseTitle, 
+                                                    category: categories.find(c => c._id === category)?.name || category 
+                                                });
+                                                if (data.success) {
+                                                    const aiChapters = data.data.chapters.map(ch => ({
+                                                        chapterId: Math.random().toString(36).substring(2, 9),
+                                                        chapterTitle: ch.chapterTitle,
+                                                        chapterOrder: 0,
+                                                        chapterContent: ch.chapterContent.map(lec => ({
+                                                            lectureId: Math.random().toString(36).substring(2, 9),
+                                                            lectureTitle: lec.lectureTitle,
+                                                            lectureDescription: lec.lectureDescription || '',
+                                                            lectureDuration: lec.lectureDuration || 15,
+                                                            lectureUrl: '',
+                                                            isPreviewFree: false,
+                                                            lectureOrder: 0
+                                                        })),
+                                                        collapsed: false
+                                                    }));
+                                                    setChapters(aiChapters);
+                                                    toast.success("Course Saved");
+                                                } else {
+                                                    toast.error(data.message || "AI Generator Busy");
+                                                }
+                                            } catch (error) {
+                                                toast.error("AI Synchronization Failed");
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }} 
+                                        disabled={loading}
+                                        className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all shadow-xl shadow-emerald-500/5 flex items-center gap-3"
+                                    >
+                                        <span>✨ AI Smart Outline</span>
+                                    </button>
+                                    <button type="button" onClick={addChapter} className="bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0C132B] transition-all shadow-xl shadow-indigo-500/20 flex items-center gap-3">
+                                        <span>Append Phase</span>
+                                        <span>+</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {chapters.length === 0 ? (
                                 <div className="bg-white rounded-[3rem] p-24 text-center border-2 border-dashed border-gray-100">
                                     <div className="text-6xl mb-8 grayscale opacity-20">🧩</div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Curriculum Void Detected</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">No Chapters Found</p>
                                 </div>
                             ) : (
                                 <div className="space-y-8">
                                     {chapters.map((chapter, chIndex) => (
-                                        <div key={chapter.chapterId} className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.02)] border border-gray-50">
+                                        <div key={chapter.chapterId || chapter._id || chIndex} className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.02)] border border-gray-50">
                                             <div className="bg-gray-50/50 px-10 py-8 flex items-center justify-between gap-6 border-b border-gray-100">
                                                 <div className="flex items-center gap-6 flex-1">
                                                     <span className="w-10 h-10 bg-[#0C132B] text-white rounded-xl flex items-center justify-center text-[10px] font-black flex-shrink-0">P{chIndex + 1}</span>
@@ -521,7 +682,7 @@ const AddCourse = () => {
                                             </div>
                                             <div className="divide-y divide-gray-50">
                                                 {chapter.chapterContent.map((lecture, lecIndex) => (
-                                                    <div key={lecture.lectureId} className="px-10 py-10 flex flex-wrap lg:flex-nowrap items-center gap-8 bg-white/50 group">
+                                                    <div key={lecture.lectureId || lecture._id || lecIndex} className="px-10 py-10 flex flex-wrap lg:flex-nowrap items-center gap-8 bg-white/50 group">
                                                         <span className="text-[10px] font-black text-gray-300 w-8">{String(lecIndex + 1).padStart(2, '0')}</span>
                                                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-w-[300px]">
                                                             <input
@@ -588,6 +749,12 @@ const AddCourse = () => {
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                            <textarea
+                                                                value={lecture.lectureDescription || ''}
+                                                                onChange={(e) => updateLecture(chIndex, lecIndex, 'lectureDescription', e.target.value)}
+                                                                className="md:col-span-2 w-full bg-gray-50/50 p-4 rounded-xl text-xs font-bold text-[#0C132B] outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all resize-none min-h-[96px]"
+                                                                placeholder="AI lesson context and student-facing lecture summary"
+                                                            />
                                                         </div>
                                                         <div className="flex items-center gap-6 w-full lg:w-auto">
                                                             <div className="relative">
@@ -612,6 +779,42 @@ const AddCourse = () => {
                                                             </label>
                                                             <button type="button" onClick={() => removeLecture(chIndex, lecIndex)} className="w-10 h-10 rounded-xl hover:bg-rose-50 text-rose-400 transition-all flex items-center justify-center">✕</button>
                                                         </div>
+
+                                                        {/* Strategic Resources (Attachments) */}
+                                                        <div className="w-full mt-6 pt-6 border-t border-gray-100/50">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                                    <FileDown size={14} className="text-indigo-500" />
+                                                                    Strategic Assets
+                                                                </label>
+                                                                <div className="relative">
+                                                                    <input 
+                                                                        type="file" 
+                                                                        onChange={(e) => handleAttachmentUpload(chIndex, lecIndex, e.target.files[0])}
+                                                                        className="absolute inset-0 opacity-0 cursor-pointer w-full z-10"
+                                                                        disabled={isUploading}
+                                                                    />
+                                                                    <button type="button" className="text-[9px] font-black text-indigo-500 border border-indigo-100 px-4 py-1.5 rounded-lg uppercase tracking-widest hover:bg-indigo-50 transition-all flex items-center gap-2">
+                                                                        <Plus size={10} />
+                                                                        Append Asset
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {lecture.attachments?.map((att, attIdx) => (
+                                                                    <div key={attIdx} className="px-4 py-2 bg-gray-50/50 border border-gray-100 rounded-xl flex items-center gap-3 transition-all hover:border-indigo-200">
+                                                                        <FileText size={12} className="text-gray-400" />
+                                                                        <span className="text-[10px] font-bold text-gray-600 truncate max-w-[120px]">{att.fileName}</span>
+                                                                        <button type="button" onClick={() => removeAttachment(chIndex, lecIndex, attIdx)} className="text-gray-300 hover:text-rose-500 transition-colors">
+                                                                            <Trash2 size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                                {(!lecture.attachments || lecture.attachments.length === 0) && (
+                                                                    <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest py-2">No strategic assets deployed for this nexus</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -620,8 +823,95 @@ const AddCourse = () => {
                                 </div>
                             )}
 
+                            {/* Strategic Assessments (Assignments) */}
+                            <div className="mt-16 pt-16 border-t border-gray-100">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                            <ClipboardList size={24} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight">Strategic Assessments</h2>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">High-stakes Assignments</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        onClick={addAssignment}
+                                        className="bg-indigo-50 text-indigo-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-3"
+                                    >
+                                        <Plus size={16} />
+                                        Publish Course
+                                    </button>
+                                </div>
+
+                                {assignments.length === 0 ? (
+                                    <div className="bg-white rounded-[3rem] p-16 text-center border-2 border-dashed border-gray-100 opacity-50">
+                                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No assignments added yet</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {assignments.map((assignment, index) => (
+                                            <div key={assignment._id || index} className="bg-white rounded-[2.5rem] p-10 shadow-[0_30px_60px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-5">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4 flex-1">
+                                                        <span className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-[10px] font-black text-gray-400">A{index + 1}</span>
+                                                        <input
+                                                            type="text"
+                                                            value={assignment.title}
+                                                            onChange={(e) => handleUpdateAssignment(index, 'title', e.target.value)}
+                                                            className="flex-1 bg-transparent text-xl font-black text-[#0C132B] outline-none focus:text-indigo-500 transition-colors"
+                                                            placeholder="Assessment Designation"
+                                                        />
+                                                    </div>
+                                                    <button type="button" onClick={() => removeAssignment(index)} className="w-10 h-10 rounded-xl hover:bg-rose-50 text-rose-400 transition-all flex items-center justify-center">✕</button>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                    <div className="space-y-4">
+                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Assignment Description</label>
+                                                        <textarea
+                                                            value={assignment.description}
+                                                            onChange={(e) => handleUpdateAssignment(index, 'description', e.target.value)}
+                                                            className="w-full bg-gray-50/50 p-6 rounded-[1.5rem] text-sm font-bold text-[#0C132B] outline-none min-h-[120px] resize-none focus:bg-white transition-all"
+                                                            placeholder="Instructions for students..."
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-8">
+                                                        <div className="space-y-4">
+                                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Deadline Date</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="date"
+                                                                    value={assignment.deadline}
+                                                                    onChange={(e) => handleUpdateAssignment(index, 'deadline', e.target.value)}
+                                                                    className="w-full bg-gray-50/50 p-6 pl-14 rounded-[1.5rem] text-sm font-bold text-[#0C132B] outline-none"
+                                                                />
+                                                                <Clock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Total Marks</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    value={assignment.totalMarks}
+                                                                    onChange={(e) => handleUpdateAssignment(index, 'totalMarks', e.target.value)}
+                                                                    className="w-full bg-gray-50/50 p-6 pl-14 rounded-[1.5rem] text-sm font-bold text-[#0C132B] outline-none"
+                                                                />
+                                                                <Award size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="flex justify-between items-center pt-10">
-                                <button type="button" onClick={() => setActiveTab('basic')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Foundations</button>
+                                <button type="button" onClick={() => setActiveTab('basic')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Back to Basics</button>
                                 <button type="button" onClick={() => setActiveTab('certification')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
                                     Define Credentials →
                                 </button>
@@ -727,7 +1017,7 @@ const AddCourse = () => {
                             )}
 
                             <div className="flex justify-between items-center pt-16">
-                                <button type="button" onClick={() => setActiveTab('curriculum')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Regress to Architecture</button>
+                                <button type="button" onClick={() => setActiveTab('curriculum')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#0C132B] transition-colors">← Back to Curriculum</button>
                                 <button type="button" onClick={() => setActiveTab('metadata')} className="bg-[#0C132B] text-white px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-2xl shadow-black/10">
                                     Define Economics →
                                 </button>
@@ -737,7 +1027,7 @@ const AddCourse = () => {
 
                     {activeTab === 'metadata' && (
                         <div className="bg-white rounded-[3rem] p-10 md:p-16 shadow-[0_50px_100px_rgba(0,0,0,0.02)] border border-gray-50 animate-in fade-in slide-in-from-bottom-5">
-                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Economic Calibration</h2>
+                            <h2 className="text-2xl font-black text-[#0C132B] tracking-tight mb-12">Pricing & Discounts</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Acquisition Threshold (Price)</label>
@@ -779,7 +1069,7 @@ const AddCourse = () => {
                                     disabled={loading || isUploading}
                                     className={`bg-[#0C132B] text-white px-16 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-${isEditMode ? 'indigo' : 'emerald'}-500 transition-all shadow-2xl shadow-black/10 disabled:opacity-50 min-w-[280px]`}
                                 >
-                                    {isUploading ? 'Transmitting Assets...' : loading ? 'Transmitting Data...' : (isEditMode ? 'Commit Intelligence' : 'Deploy Global Module')}
+                                    {isUploading ? 'Uploading Assets...' : loading ? 'Saving...' : (isEditMode ? 'Update Course' : 'Publish Course')}
                                 </button>
 
                             </div>
@@ -796,3 +1086,7 @@ const AddCourse = () => {
 };
 
 export default AddCourse;
+
+
+
+

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../context/AppContextObject.jsx';
-import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'react-toastify';
 import { Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, CreditCard, Smartphone, Banknote, ShieldCheck, X, Zap } from 'lucide-react';
 
@@ -24,9 +24,7 @@ const Wallet = () => {
 
     const fetchTransactions = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/wallet/details`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/wallet/details');
             if (data.success) {
                 setTransactions(data.transactions);
             }
@@ -38,15 +36,11 @@ const Wallet = () => {
 
     const fetchPointsData = async () => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/gamification/stats`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.get('/gamification/stats');
             if (data.success) {
                 setPointsData(data.stats);
             }
-            const { data: histData } = await axios.get(`${backendUrl}/api/gamification/history`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data: histData } = await api.get('/gamification/history');
             if (histData.success) {
                 setPointHistory(histData.history);
             }
@@ -61,9 +55,7 @@ const Wallet = () => {
         }
         setProcessing(true);
         try {
-            const { data } = await axios.post(`${backendUrl}/api/gamification/redeem`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await api.post('/gamification/redeem', {});
             if (data.success) {
                 toast.success(data.message);
                 fetchUserData();
@@ -87,11 +79,11 @@ const Wallet = () => {
         setProcessing(true);
         setTimeout(async () => {
             try {
-                const { data } = await axios.post(`${backendUrl}/api/wallet/deposit`, {
+                const { data } = await api.post('/wallet/deposit', {
                     amount: parseFloat(amount),
                     paymentMethod,
                     transactionId: `TXN_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-                }, { headers: { Authorization: `Bearer ${token}` } });
+                });
 
                 if (data.success) {
                     toast.success('Funds added successfully!');
@@ -183,9 +175,9 @@ const Wallet = () => {
                                 <div key={txn._id} className="flex items-center justify-between p-6 rounded-[2rem] bg-gray-50/50 border border-gray-50 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center gap-6">
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${
-                                            txn.amount > 0 ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'
+                                            txn.type === 'credit' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'
                                         }`}>
-                                            {txn.amount > 0 ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                                            {txn.type === 'credit' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                                         </div>
                                         <div>
                                             <p className="text-sm font-black text-gray-900 tracking-tight">{txn.description || 'System Update'}</p>
@@ -195,8 +187,8 @@ const Wallet = () => {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className={`text-lg font-black tracking-tight ${txn.amount > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                            {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString()}
+                                        <p className={`text-lg font-black tracking-tight ${txn.type === 'credit' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                            {txn.type === 'credit' ? '+' : '-'}₹{Math.abs(txn.amount).toLocaleString()}
                                         </p>
                                         <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-1">Confirmed</p>
                                     </div>
@@ -321,3 +313,7 @@ const Wallet = () => {
 };
 
 export default Wallet;
+
+
+
+
